@@ -1,5 +1,5 @@
 [package]
-name = "hopper"
+name = "hopper_rust"
 version = "0.1.0"
 authors = ["David Weis <davidmichaelweis@gmail.com>"]
 edition = "2018"
