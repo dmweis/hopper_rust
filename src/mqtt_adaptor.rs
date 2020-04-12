@@ -1,4 +1,4 @@
-use paho_mqtt as mqtt;
+use rumqtt::{MqttClient, MqttOptions, QoS};
 use std::thread;
 use std::sync::mpsc::{ channel, Sender };
 use log::*;
@@ -18,30 +18,20 @@ impl MqttAdaptor {
         let host = host.to_owned();
         let (tx, rx): (Sender<Command>, _) = channel();
         let mqtt_thread = thread::spawn(move || {
-            let client = match mqtt::Client::new(host) {
-                Ok(client) => client,
-                Err(_) => {
-                    error!("Failed to initialize MQTT client");
-                    return;
-                }
-            };
 
-            let connection_options = mqtt::ConnectOptionsBuilder::new()
-                .clean_session(true)
-                .finalize();
-            
-            match client.connect(connection_options) {
-                Ok(connection) => trace!("Connected to MQTT host {:?}", connection),
+            let mqtt_options = MqttOptions::new("hopper-telemetry", host, 1883);
+            let (mut mqtt_client, _) = match MqttClient::start(mqtt_options) {
+                Ok(client) => client,
                 Err(error) => {
                     error!("Failed to connect to MQTT host {}", error);
                     return;
                 }
-            }
+            };
 
             for message in rx.iter() {
                 match message {
                     Command::SendMessage(message) => {
-                        if let Err(error) = client.publish(mqtt::Message::new("hopper/telemetry", message, 0)) {
+                        if let Err(error) = mqtt_client.publish("hopper/telemetry", QoS::AtMostOnce, false, message) {
                             error!("Failed to send MQTT message {}", error);
                         }
                     },
