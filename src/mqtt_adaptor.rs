@@ -55,7 +55,7 @@ impl MqttAdaptor {
         }
     }
 
-    pub fn send(&mut self, message: &str) {
+    pub fn send(&self, message: &str) {
         if let Err(error) = self.sender.send(Command::SendMessage(message.to_owned())) {
             error!("Failed to load MQTT message to channel {}", error);
         }

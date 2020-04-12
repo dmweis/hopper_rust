@@ -1,5 +1,6 @@
 mod hopper_config;
 mod mqtt_adaptor;
+mod body_controller;
 
 use clap::{App, Arg};
 use std::error::Error;
@@ -8,6 +9,9 @@ use std::path::Path;
 use log::*;
 use simplelog::*;
 use std::fs::OpenOptions;
+
+use std::thread::sleep;
+use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Hopper body controller")
@@ -35,26 +39,36 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .required(false)
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("dynamixel_port")
+                .long("dynamixel_port")
+                .help("Serial port name of the dynamixel port")
+                .required(false)
+                .takes_value(true),
+        )
         .get_matches();
-
+    
+    //
     if let Some(path) = matches.value_of("log_path") {
         let log_file = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(path)
-        .expect("Failed to open log file");
-        CombinedLogger::init(
-            vec![
-                TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed).expect("Failed to initialize logger"),
-                WriteLogger::new(LevelFilter::Info, Config::default(), log_file),
-            ]
-        ).expect("Failed to initialize logger");
+            .append(true)
+            .create(true)
+            .open(path)
+            .expect("Failed to open log file");
+        CombinedLogger::init(vec![
+            TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed)
+                .expect("Failed to initialize logger"),
+            WriteLogger::new(LevelFilter::Info, Config::default(), log_file),
+        ])
+        .expect("Failed to initialize logger");
     } else {
-        CombinedLogger::init(
-            vec![
-                TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed).expect("Failed to initialize logger"),
-            ]
-        ).expect("Failed to initialize logger");
+        CombinedLogger::init(vec![TermLogger::new(
+            LevelFilter::Info,
+            Config::default(),
+            TerminalMode::Mixed,
+        )
+        .expect("Failed to initialize logger")])
+        .expect("Failed to initialize logger");
     }
 
     let body_config_path = Path::new(
@@ -64,10 +78,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     );
 
     let mqtt_host = matches.value_of("mqtt_host").unwrap_or("mqtt.local");
+    let dynamixel_port = matches.value_of("dynamixel_port").unwrap();
 
-    let _ = hopper_config::HopperConfig::load(body_config_path)?;
+    let hopper_config = hopper_config::HopperConfig::load(body_config_path)?;
 
-    let mut mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
-    mqtt.send("Hi there!");
+    let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
+
+    let _body_controller = body_controller::BodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
+
+    sleep(Duration::from_secs(10));
     Ok(())
 }

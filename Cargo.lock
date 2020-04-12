@@ -186,7 +186,7 @@ checksum = "4358a9e11b9a09cf52383b451b49a169e8d797b68aa02301ff586d70d9661ea3"
 [[package]]
 name = "dynamixel_driver"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/dynamixel_driver#11a1bd4ac8f05e805ef7934c745fb9bca152b88f"
+source = "git+https://github.com/dmweis/dynamixel_driver#4e24867fd6f4ff00de05898a775843e8e278d5e4"
 dependencies = [
  "serialport",
 ]
@@ -247,6 +247,7 @@ dependencies = [
  "dynamixel_driver",
  "log",
  "paho-mqtt",
+ "ratelimit",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -423,6 +424,12 @@ checksum = "2bdc6c187c65bca4260c9011c9e3132efe4909da44726bad24cf7572ae338d7f"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "ratelimit"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c4777eb47471c2a42bee8b553b22b8e5c496f657dc6f8b8e29bd69662f31e7e"
 
 [[package]]
 name = "redox_syscall"
