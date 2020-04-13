@@ -87,6 +87,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut buffer = String::new();
     println!("Press Enter to exit");
-    io::stdin().read_to_string(&mut buffer)?;
+    io::stdin().read_line(&mut buffer)?;
     Ok(())
 }
