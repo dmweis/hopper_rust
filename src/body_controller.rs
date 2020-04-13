@@ -7,7 +7,7 @@ use std::sync::{
 use log::*;
 use crate::hopper_config::BodyConfig;
 use crate::mqtt_adaptor::MqttAdaptor;
-use ratelimit::Builder;
+use looprate;
 
 enum BodyControllerCommand {
     MoveToPosition(BodyMotorPositions),
@@ -43,17 +43,9 @@ impl BodyController {
         let port = port.to_owned();
         let join_handle = thread::spawn(move || {
 
-            let mut telemetry_rate = Builder::new()
-                .capacity(1)
-                .quantum(1)
-                .frequency(5)
-                .build();
+            let mut telemetry_rate = looprate::Rate::from_frequency(5.0);
 
-            let mut loop_rate = Builder::new()
-                .capacity(1)
-                .quantum(1)
-                .frequency(50)
-                .build();
+            let mut loop_rate = looprate::Rate::from_frequency(100.0);
 
             let mut dynamixel_driver = DynamixelDriver::new(&port).unwrap();
 
@@ -67,7 +59,7 @@ impl BodyController {
                         BodyControllerCommand::Exit => return,
                     }
                 }
-                if let Ok(()) = telemetry_rate.try_wait() {
+                if telemetry_rate.check() {
                     let mut voltages = vec![];
                     for id in &body_config.get_ids() {
                         let voltage = dynamixel_driver.read_voltage(*id).unwrap();

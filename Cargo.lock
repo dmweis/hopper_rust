@@ -394,7 +394,7 @@ dependencies = [
  "clap",
  "dynamixel_driver",
  "log",
- "ratelimit",
+ "looprate",
  "rumqtt",
  "serde",
  "serde_json",
@@ -497,6 +497,11 @@ checksum = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "looprate"
+version = "0.1.0"
+source = "git+https://github.com/dmweis/looprate#106cfdbce782a851ed643912444705cedf5a3c59"
 
 [[package]]
 name = "mach"
@@ -805,12 +810,6 @@ checksum = "cbf7e9e623549b0e21f6e97cf8ecf247c1a8fd2e8a992ae265314300b2455d5c"
 dependencies = [
  "rand_core 0.3.1",
 ]
-
-[[package]]
-name = "ratelimit"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c4777eb47471c2a42bee8b553b22b8e5c496f657dc6f8b8e29bd69662f31e7e"
 
 [[package]]
 name = "rdrand"
