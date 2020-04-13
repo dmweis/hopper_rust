@@ -10,8 +10,7 @@ use log::*;
 use simplelog::*;
 use std::fs::OpenOptions;
 
-use std::thread::sleep;
-use std::time::Duration;
+use std::io::{self, Read};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Hopper body controller")
@@ -86,6 +85,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let _body_controller = body_controller::BodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
 
-    sleep(Duration::from_secs(10));
+    let mut buffer = String::new();
+    println!("Press Enter to exit");
+    io::stdin().read_to_string(&mut buffer)?;
     Ok(())
 }
