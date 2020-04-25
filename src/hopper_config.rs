@@ -1,15 +1,16 @@
 use serde::{Deserialize, Serialize};
-
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use mint::Point3;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
-pub struct Vector3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Point3")]
+pub struct Point3Def<T> {
+    pub x: T,
+    pub y: T,
+    pub z: T,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -18,7 +19,8 @@ pub struct LegConfig {
     pub femur_id: u8,
     pub tibia_id: u8,
     pub angle_offset: f32,
-    pub position: Vector3,
+    #[serde(with = "Point3Def")]
+    pub position: Point3<f32>,
     pub femur_correction: f32,
     pub tibia_correction: f32,
 }

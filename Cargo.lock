@@ -306,7 +306,7 @@ checksum = "4358a9e11b9a09cf52383b451b49a169e8d797b68aa02301ff586d70d9661ea3"
 [[package]]
 name = "dynamixel_driver"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/dynamixel_driver#369e3401d0c895094342d8c075c4d6c91ca4e9e2"
+source = "git+https://github.com/dmweis/dynamixel_driver#4fc717edef14fe2d72daefb06837f93c2016fd46"
 dependencies = [
  "serialport",
 ]
@@ -395,6 +395,7 @@ dependencies = [
  "dynamixel_driver",
  "log",
  "looprate",
+ "mint",
  "rumqtt",
  "serde",
  "serde_json",
@@ -541,6 +542,12 @@ checksum = "b4fc2c02a7e374099d4ee95a193111f72d2110197fe200272371758f6c3643d8"
 dependencies = [
  "autocfg 1.0.0",
 ]
+
+[[package]]
+name = "mint"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d42e54f364a39ad5238e3072db2e8747785b37655368da756987d3b09ada91e0"
 
 [[package]]
 name = "mio"
