@@ -1,6 +1,7 @@
+mod body_controller;
 mod hopper_config;
 mod mqtt_adaptor;
-mod body_controller;
+mod utilities;
 
 use clap::{App, Arg};
 use std::error::Error;
@@ -46,29 +47,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .takes_value(true),
         )
         .get_matches();
-    
-    //
-    if let Some(path) = matches.value_of("log_path") {
-        let log_file = OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(path)
-            .expect("Failed to open log file");
-        CombinedLogger::init(vec![
-            TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed)
-                .expect("Failed to initialize logger"),
-            WriteLogger::new(LevelFilter::Info, Config::default(), log_file),
-        ])
-        .expect("Failed to initialize logger");
-    } else {
-        CombinedLogger::init(vec![TermLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            TerminalMode::Mixed,
-        )
-        .expect("Failed to initialize logger")])
-        .expect("Failed to initialize logger");
-    }
+
+    utilities::start_loggers(matches.value_of("log_path"))?;
 
     let body_config_path = Path::new(
         matches
@@ -83,7 +63,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
 
-    let _body_controller = body_controller::BodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
+    let _body_controller =
+        body_controller::BodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
 
     let mut buffer = String::new();
     println!("Press Enter to exit");
