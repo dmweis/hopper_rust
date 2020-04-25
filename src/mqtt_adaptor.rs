@@ -1,11 +1,11 @@
-use rumqtt::{MqttClient, MqttOptions, QoS};
-use std::thread;
-use std::sync::mpsc::{ channel, Sender };
 use log::*;
+use rumqtt::{MqttClient, MqttOptions, QoS, ReconnectOptions};
+use std::sync::mpsc::{channel, Sender};
+use std::thread;
 
 enum Command {
     SendMessage(String),
-    Exit
+    Exit,
 }
 
 pub struct MqttAdaptor {
@@ -18,8 +18,8 @@ impl MqttAdaptor {
         let host = host.to_owned();
         let (tx, rx): (Sender<Command>, _) = channel();
         let mqtt_thread = thread::spawn(move || {
-
-            let mqtt_options = MqttOptions::new("hopper-telemetry", host, 1883);
+            let mqtt_options = MqttOptions::new("hopper-telemetry", host, 1883)
+                .set_reconnect_opts(ReconnectOptions::Always(1));
             let (mut mqtt_client, _) = match MqttClient::start(mqtt_options) {
                 Ok(client) => client,
                 Err(error) => {
@@ -31,10 +31,12 @@ impl MqttAdaptor {
             for message in rx.iter() {
                 match message {
                     Command::SendMessage(message) => {
-                        if let Err(error) = mqtt_client.publish("hopper/telemetry", QoS::AtMostOnce, false, message) {
+                        if let Err(error) =
+                            mqtt_client.publish("hopper/telemetry", QoS::AtMostOnce, false, message)
+                        {
                             error!("Failed to send MQTT message {}", error);
                         }
-                    },
+                    }
                     Command::Exit => break,
                 }
             }
@@ -59,10 +61,10 @@ impl Drop for MqttAdaptor {
         }
         match self.join_handle.take() {
             Some(handle) => {
-                    if let Err(error) = handle.join() {
-                        error!("Failed joining MQTT thread with {:?}", error);
-                    }
-                },
+                if let Err(error) = handle.join() {
+                    error!("Failed joining MQTT thread with {:?}", error);
+                }
+            }
             None => error!("Missing join handle for MQTT thread"),
         }
     }

@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use std::error::Error;
 use std::fs::File;
@@ -9,7 +9,7 @@ use std::path::Path;
 pub struct Vector3 {
     pub x: f32,
     pub y: f32,
-    pub z: f32
+    pub z: f32,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -39,23 +39,18 @@ impl BodyConfig {
             self.left_front.coxa_id,
             self.left_front.femur_id,
             self.left_front.tibia_id,
-
             self.left_middle.coxa_id,
             self.left_middle.femur_id,
             self.left_middle.tibia_id,
-
             self.left_rear.coxa_id,
             self.left_rear.femur_id,
             self.left_rear.tibia_id,
-
             self.right_front.coxa_id,
             self.right_front.femur_id,
             self.right_front.tibia_id,
-
             self.right_middle.coxa_id,
             self.right_middle.femur_id,
             self.right_middle.tibia_id,
-
             self.right_rear.coxa_id,
             self.right_rear.femur_id,
             self.right_rear.tibia_id,
@@ -75,8 +70,7 @@ impl HopperConfig {
     pub fn load(path: &Path) -> Result<HopperConfig, Box<dyn Error>> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
-        let deserialized_config: HopperConfig =
-            serde_yaml::from_reader(reader)?;
+        let deserialized_config: HopperConfig = serde_yaml::from_reader(reader)?;
         Ok(deserialized_config)
     }
 }

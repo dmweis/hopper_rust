@@ -1,17 +1,14 @@
-use dynamixel_driver::*;
-use std::thread;
-use std::sync::{
-    Mutex,
-    Arc,
-};
-use log::*;
 use crate::hopper_config::BodyConfig;
 use crate::mqtt_adaptor::MqttAdaptor;
+use dynamixel_driver::*;
+use log::*;
 use looprate;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 enum BodyControllerCommand {
     MoveToPosition(BodyMotorPositions),
-    Exit
+    Exit,
 }
 
 pub struct LegMotorPositions {
@@ -31,18 +28,20 @@ pub struct BodyMotorPositions {
 
 pub struct BodyController {
     join_handle: Option<thread::JoinHandle<()>>,
-    command: Arc<Mutex<Option<BodyControllerCommand>>>
+    command: Arc<Mutex<Option<BodyControllerCommand>>>,
 }
 
 impl BodyController {
-    pub fn new(port: &str, body_config: BodyConfig, telemetry_sender: MqttAdaptor) -> BodyController {
-
+    pub fn new(
+        port: &str,
+        body_config: BodyConfig,
+        telemetry_sender: MqttAdaptor,
+    ) -> BodyController {
         let body_config = body_config.clone();
         let command = Arc::new(Mutex::new(None));
         let command_copy = Arc::clone(&command);
         let port = port.to_owned();
         let join_handle = thread::spawn(move || {
-
             let mut telemetry_rate = looprate::Rate::from_frequency(5.0);
 
             let mut loop_rate = looprate::Rate::from_frequency(100.0);
@@ -55,7 +54,7 @@ impl BodyController {
                     match command {
                         BodyControllerCommand::MoveToPosition(_positions) => {
                             // write position to motors
-                        },
+                        }
                         BodyControllerCommand::Exit => return,
                     }
                 }
@@ -81,13 +80,16 @@ impl BodyController {
 
 impl Drop for BodyController {
     fn drop(&mut self) {
-        self.command.lock().unwrap().replace(BodyControllerCommand::Exit);
+        self.command
+            .lock()
+            .unwrap()
+            .replace(BodyControllerCommand::Exit);
         match self.join_handle.take() {
             Some(handle) => {
-                    if let Err(error) = handle.join() {
-                        error!("Failed joining body controller thread with {:?}", error);
-                    }
-                },
+                if let Err(error) = handle.join() {
+                    error!("Failed joining body controller thread with {:?}", error);
+                }
+            }
             None => error!("Missing join handle for body controller thread"),
         }
     }
