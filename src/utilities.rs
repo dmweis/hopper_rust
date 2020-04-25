@@ -23,7 +23,10 @@ pub fn start_loggers(log_file: Option<&str>) -> Result<(), Box<dyn Error>> {
     }
     match TermLogger::new(LevelFilter::Trace, Config::default(), TerminalMode::Mixed) {
         Some(logger) => loggers.push(logger as Box<dyn SharedLogger>),
-        None => loggers.push(SimpleLogger::new(LevelFilter::Trace, Config::default())),
+        None => {
+            loggers.push(SimpleLogger::new(LevelFilter::Trace, Config::default()));
+            warn!("Failed to create Term logger, creating simple logger instead");
+        },
     }
     CombinedLogger::init(loggers)?;
     Ok(())

@@ -21,7 +21,10 @@ impl MqttAdaptor {
             let mqtt_options = MqttOptions::new("hopper-telemetry", host, 1883)
                 .set_reconnect_opts(ReconnectOptions::Always(1));
             let (mut mqtt_client, _) = match MqttClient::start(mqtt_options) {
-                Ok(client) => client,
+                Ok(client) => {
+                    info!("MQTT adapter started");
+                    client
+                },
                 Err(error) => {
                     error!("Failed to connect to MQTT host {}", error);
                     return;
@@ -35,9 +38,14 @@ impl MqttAdaptor {
                             mqtt_client.publish("hopper/telemetry", QoS::AtMostOnce, false, message)
                         {
                             error!("Failed to send MQTT message {}", error);
+                        } else {
+                            trace!("Sent new MQTT telemetry message");
                         }
                     }
-                    Command::Exit => break,
+                    Command::Exit => {
+                        info!("MQTT adapter signaled to exit");
+                        break
+                    },
                 }
             }
         });
@@ -63,6 +71,8 @@ impl Drop for MqttAdaptor {
             Some(handle) => {
                 if let Err(error) = handle.join() {
                     error!("Failed joining MQTT thread with {:?}", error);
+                } else {
+                    info!("MQTT adaptor exited");
                 }
             }
             None => error!("Missing join handle for MQTT thread"),

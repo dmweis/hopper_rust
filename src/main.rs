@@ -2,16 +2,15 @@ mod body_controller;
 mod hopper_config;
 mod mqtt_adaptor;
 mod utilities;
+mod udp_adaptor;
 
 use clap::{App, Arg};
 use std::error::Error;
 use std::path::Path;
+use looprate::RateTimer;
 
 use log::*;
-use simplelog::*;
-use std::fs::OpenOptions;
 
-use std::io::{self, Read};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Hopper body controller")
@@ -47,8 +46,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .takes_value(true),
         )
         .get_matches();
-
     utilities::start_loggers(matches.value_of("log_path"))?;
+    trace!("Started main controller");
 
     let body_config_path = Path::new(
         matches
@@ -57,17 +56,24 @@ fn main() -> Result<(), Box<dyn Error>> {
     );
 
     let mqtt_host = matches.value_of("mqtt_host").unwrap_or("mqtt.local");
-    let dynamixel_port = matches.value_of("dynamixel_port").unwrap();
+    let dynamixel_port = matches
+        .value_of("dynamixel_port")
+        .expect("Dynamixel port has to be provided");
 
     let hopper_config = hopper_config::HopperConfig::load(body_config_path)?;
 
     let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
 
-    let _body_controller =
+    let mut body_controller =
         body_controller::BodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
 
-    let mut buffer = String::new();
-    println!("Press Enter to exit");
-    io::stdin().read_line(&mut buffer)?;
-    Ok(())
+    let mut udp_command_receiver = udp_adaptor::UdpCommandReceiver::new();
+
+    let mut rate_timer = RateTimer::new();
+    info!("Starting main body loop");
+    loop {
+        let new_postition = udp_command_receiver.get_command();
+        body_controller.move_to_position(new_postition);
+        rate_timer.tick();
+    }
 }

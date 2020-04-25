@@ -5,18 +5,22 @@ use log::*;
 use looprate;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use serde::{Deserialize, Serialize};
+
 
 enum BodyControllerCommand {
     MoveToPosition(BodyMotorPositions),
     Exit,
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct LegMotorPositions {
     coxa: f32,
     femur: f32,
     tibia: f32,
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct BodyMotorPositions {
     left_front: LegMotorPositions,
     left_middle: LegMotorPositions,
@@ -76,6 +80,11 @@ impl BodyController {
             command: command,
         }
     }
+
+    pub fn move_to_position(&mut self, positions: BodyMotorPositions) {
+        let mut command = self.command.lock().expect("Body controller thread panicked");
+        command.replace(BodyControllerCommand::MoveToPosition(positions));
+    }
 }
 
 impl Drop for BodyController {
@@ -88,6 +97,8 @@ impl Drop for BodyController {
             Some(handle) => {
                 if let Err(error) = handle.join() {
                     error!("Failed joining body controller thread with {:?}", error);
+                } else {
+                    info!("Body controller exited");
                 }
             }
             None => error!("Missing join handle for body controller thread"),
