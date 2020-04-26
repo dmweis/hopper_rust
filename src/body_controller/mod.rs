@@ -25,7 +25,7 @@ pub struct BodyController {
     join_handle: Option<thread::JoinHandle<()>>,
     command: Arc<Mutex<Option<ImmediateCommand>>>,
     buffered_command_sender: Sender<BufferedCommand>,
-    position_receiver: Receiver<BodyMotorPositions>,
+    position_receiver: Receiver<Option<BodyMotorPositions>>,
 }
 
 impl BodyController {
@@ -52,26 +52,39 @@ impl BodyController {
                 if let Some(command) = command {
                     match command {
                         ImmediateCommand::MoveToPosition(positions) => {
-                            motor_controller.move_to(positions).unwrap();
+                            if let Err(error) = motor_controller.move_to(positions) {
+                                warn!("Failed moving motors {}", error);
+                            }
                         }
                         ImmediateCommand::Exit => return,
                     }
                 }
                 if telemetry_rate.check() {
-                    let mean = motor_controller.read_mean_voltage().unwrap();
-                    telemetry_sender.send(&format!("{}", mean));
+                    match motor_controller.read_mean_voltage() {
+                        Ok(mean) => telemetry_sender.send(&format!("{}", mean)),
+                        Err(error) => warn!("Failed to read voltage {}", error),
+                    }
                 }
                 if let Ok(buffered_command) = command_rx.try_recv() {
                     match buffered_command {
                         BufferedCommand::SetSpeed(speed) => {
-                            motor_controller.set_speed(speed).unwrap();
+                            if let Err(error) = motor_controller.set_speed(speed) {
+                                warn!("failed setting speed {}", error);
+                            }
                         },
                         BufferedCommand::SetCompliance(compliance) => {
-                            motor_controller.set_compliance(compliance).unwrap();
+                            if let Err(error) = motor_controller.set_compliance(compliance) {
+                                warn!("Failed setting compliance {}", error);
+                            }
                         },
                         BufferedCommand::ReadPosition => {
-                            let motor_positions = motor_controller.read_positions().unwrap();
-                            position_tx.send(motor_positions).unwrap();
+                            match motor_controller.read_positions() {
+                                Ok(motor_positions) => position_tx.send(Some(motor_positions)).unwrap(),
+                                Err(error) => {
+                                    warn!("Failed reading motor positions {}", error);
+                                    position_tx.send(None).unwrap()
+                                }
+                            }
                         }
                     }
                 }
@@ -103,7 +116,7 @@ impl BodyController {
             .unwrap();
     }
 
-    pub fn read_position(&mut self) -> BodyMotorPositions {
+    pub fn read_position(&mut self) -> Option<BodyMotorPositions> {
         self.buffered_command_sender
             .send(BufferedCommand::ReadPosition)
             .unwrap();

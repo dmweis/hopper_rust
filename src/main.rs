@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .get_matches();
     utilities::start_loggers(matches.value_of("log_path"))?;
-    trace!("Started main controller");
+    info!("Started main controller");
 
     let body_config_path = Path::new(
         matches

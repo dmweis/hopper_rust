@@ -306,8 +306,9 @@ checksum = "4358a9e11b9a09cf52383b451b49a169e8d797b68aa02301ff586d70d9661ea3"
 [[package]]
 name = "dynamixel_driver"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/dynamixel_driver#4fc717edef14fe2d72daefb06837f93c2016fd46"
+source = "git+https://github.com/dmweis/dynamixel_driver#11433b184d60fa4ea3cab7f69df966d9a1b607bd"
 dependencies = [
+ "log",
  "serialport",
 ]
 
@@ -380,9 +381,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.11"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a0d737e0f947a1864e93d33fdef4af8445a00d1ed8dc0c8ddb73139ea6abf15"
+checksum = "61565ff7aaace3525556587bd2dc31d4a07071957be715e63ce7b1eccf51a8f4"
 dependencies = [
  "libc",
 ]
@@ -1040,9 +1041,9 @@ dependencies = [
 
 [[package]]
 name = "simplelog"
-version = "0.7.5"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcacac97349a890d437921dfb23cbec52ab5b4752551cb637df2721371acd467"
+checksum = "3cf9a002ccce717d066b3ccdb8a28829436249867229291e91b25d99bd723f0d"
 dependencies = [
  "chrono",
  "log",
