@@ -64,16 +64,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
 
-    let mut body_controller =
+    let body_controller =
         body_controller::BodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
 
-    let mut udp_command_receiver = udp_adaptor::UdpCommandReceiver::new();
+    udp_adaptor::udp_command_loop(body_controller).unwrap();
+    Ok(())
+    // let mut udp_command_receiver = udp_adaptor::UdpCommandReceiver::new();
 
-    let mut rate_timer = RateTimer::new();
-    info!("Starting main body loop");
-    loop {
-        let new_postition = udp_command_receiver.get_command();
-        body_controller.move_to_position(new_postition);
-        rate_timer.tick();
-    }
+    // let mut rate_timer = RateTimer::new();
+    // info!("Starting main body loop");
+    // loop {
+    //     let new_postition = udp_command_receiver.get_command();
+    //     body_controller.move_to_position(new_postition);
+    //     rate_timer.tick();
+    // }
 }

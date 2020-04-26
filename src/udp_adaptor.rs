@@ -1,4 +1,4 @@
-use crate::body_controller::BodyMotorPositions;
+use crate::body_controller::{ BodyMotorPositions, BodyController };
 use log::*;
 use std::error::Error;
 use std::net::UdpSocket;
@@ -8,11 +8,64 @@ use std::sync::{
 };
 use std::thread;
 use std::time::Duration;
+use serde::{Deserialize, Serialize};
 
 pub struct UdpCommandReceiver {
     receiver: Receiver<BodyMotorPositions>,
     thread_handle: Option<thread::JoinHandle<()>>,
     keep_running: Arc<Mutex<bool>>,
+}
+
+
+#[derive(Deserialize)]
+enum Command {
+    MoveTo(BodyMotorPositions),
+    SetSpeed(u16),
+    SetCompliance(u8),
+    ReadPosition,
+}
+
+#[derive(Deserialize)]
+struct Message {
+    command: Command,
+}
+
+
+pub fn udp_command_loop(mut controller: BodyController) -> Result<(), Box<dyn Error>> {
+    let socket = UdpSocket::bind("0.0.0.0:6666")?;
+    let mut buffer = [0; 1024];
+    loop {
+        if let Ok((amt, addr)) = socket.recv_from(&mut buffer) {
+            trace!("got new message");
+            let received = &mut buffer[..amt];
+            let message: Result<Message, _> = serde_json::from_slice(&received);
+            if let Ok(message) = message {
+                match message.command {
+                    Command::MoveTo(position) => {
+                        trace!("Moving to pos");
+                        controller.move_to_position(position);
+                    },
+                    Command::SetSpeed(speed) => {
+                        trace!("Setting speed");
+                        controller.set_speed(speed);
+                    },
+                    Command::SetCompliance(compliance) => {
+                        trace!("Setting compliance");
+                        controller.set_compliance(compliance);
+                    },
+                    Command::ReadPosition => {
+                        trace!("Reading position");
+                        let positions = controller.read_position();
+                        let json = serde_json::to_vec(&positions)?;
+                        socket.send_to(&json, addr).unwrap();
+                    }
+                }
+            } else {
+                error!("Got malformed message");
+            }
+        }
+        
+    }
 }
 
 fn start_receiver_loop(
