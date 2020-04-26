@@ -35,7 +35,7 @@ impl MqttAdaptor {
                 match message {
                     Command::SendMessage(message) => {
                         if let Err(error) =
-                            mqtt_client.publish("hopper/telemetry", QoS::AtMostOnce, false, message)
+                            mqtt_client.publish("hopper/telemetry/voltage", QoS::AtMostOnce, false, message)
                         {
                             error!("Failed to send MQTT message {}", error);
                         } else {
