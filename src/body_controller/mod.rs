@@ -13,6 +13,7 @@ use std::thread;
 enum BufferedCommand {
     SetCompliance(u8),
     SetSpeed(u16),
+    SetTorque(bool),
     ReadPosition,
 }
 
@@ -21,19 +22,27 @@ enum ImmediateCommand {
     Exit,
 }
 
-pub struct BodyController {
+pub trait BodyController {
+    fn move_to_position(&mut self, positions: BodyMotorPositions);
+    fn set_compliance(&mut self, compliance: u8);
+    fn set_speed(&mut self, speed: u16);
+    fn set_torque(&mut self, torque: bool);
+    fn read_position(&mut self) -> Option<BodyMotorPositions>;
+}
+
+pub struct AsyncBodyController {
     join_handle: Option<thread::JoinHandle<()>>,
     command: Arc<Mutex<Option<ImmediateCommand>>>,
     buffered_command_sender: Sender<BufferedCommand>,
     position_receiver: Receiver<Option<BodyMotorPositions>>,
 }
 
-impl BodyController {
+impl AsyncBodyController {
     pub fn new(
         port: &str,
         body_config: BodyConfig,
         telemetry_sender: MqttAdaptor,
-    ) -> BodyController {
+    ) -> Box<dyn BodyController> {
         let (command_tx, command_rx) = channel();
         let (position_tx, position_rx) = channel();
         let body_config = body_config.clone();
@@ -52,7 +61,7 @@ impl BodyController {
                 if let Some(command) = command {
                     match command {
                         ImmediateCommand::MoveToPosition(positions) => {
-                            if let Err(error) = motor_controller.move_to(positions) {
+                            if let Err(error) = motor_controller.move_to_position(positions) {
                                 warn!("Failed moving motors {}", error);
                             }
                         }
@@ -85,46 +94,59 @@ impl BodyController {
                                     position_tx.send(None).unwrap()
                                 }
                             }
+                        },
+                        BufferedCommand::SetTorque(torque) => {
+                            if let Err(error) = motor_controller.set_torque(torque) {
+                                warn!("Failed setting torque {}", error);
+                            }
                         }
                     }
                 }
                 loop_rate.wait()
             }
         });
-        BodyController {
+        Box::new(AsyncBodyController {
             join_handle: Some(join_handle),
             command: command,
             buffered_command_sender: command_tx,
             position_receiver: position_rx,
-        }
+        })
     }
+}
 
-    pub fn move_to_position(&mut self, positions: BodyMotorPositions) {
+impl BodyController for AsyncBodyController {
+    fn move_to_position(&mut self, positions: BodyMotorPositions) {
         let mut command = self.command.lock().expect("Body controller thread panicked");
         command.replace(ImmediateCommand::MoveToPosition(positions));
     }
 
-    pub fn set_compliance(&mut self, compliance: u8) {
+    fn set_compliance(&mut self, compliance: u8) {
         self.buffered_command_sender
             .send(BufferedCommand::SetCompliance(compliance))
             .unwrap();
     }
 
-    pub fn set_speed(&mut self, speed: u16) {
+    fn set_speed(&mut self, speed: u16) {
         self.buffered_command_sender
             .send(BufferedCommand::SetSpeed(speed))
             .unwrap();
     }
 
-    pub fn read_position(&mut self) -> Option<BodyMotorPositions> {
+    fn read_position(&mut self) -> Option<BodyMotorPositions> {
         self.buffered_command_sender
             .send(BufferedCommand::ReadPosition)
             .unwrap();
         self.position_receiver.recv().unwrap()
     }
+
+    fn set_torque(&mut self, torque: bool) {
+        self.buffered_command_sender
+            .send(BufferedCommand::SetTorque(torque))
+            .unwrap();
+    }
 }
 
-impl Drop for BodyController {
+impl Drop for AsyncBodyController {
     fn drop(&mut self) {
         self.command
             .lock()
@@ -142,4 +164,3 @@ impl Drop for BodyController {
         }
     }
 }
-

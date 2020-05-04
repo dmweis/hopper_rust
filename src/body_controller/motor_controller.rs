@@ -19,7 +19,7 @@ impl MotorController {
         })
     }
 
-    pub fn move_to(&mut self, positions: BodyMotorPositions) -> Result<(), Box<dyn Error>> {
+    pub fn move_to_position(&mut self, positions: BodyMotorPositions) -> Result<(), Box<dyn Error>> {
         let commands = create_commands_for_body(
             &self.body_config,
             &positions,
@@ -47,6 +47,17 @@ impl MotorController {
             .map(|id| SyncCommand::new(*id, compliance as u32))
             .collect::<Vec<_>>();
         self.driver.sync_write_compliance_both(commands)?;
+        Ok(())
+    }
+
+    pub fn set_torque(&mut self, torque: bool) -> Result<(), Box<dyn Error>> {
+        let commands = self
+            .body_config
+            .get_ids()
+            .iter()
+            .map(|id| (*id, torque))
+            .collect::<Vec<_>>();
+        self.driver.sync_write_torque(commands)?;
         Ok(())
     }
 

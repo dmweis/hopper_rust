@@ -22,6 +22,7 @@ enum Command {
     MoveTo(BodyMotorPositions),
     SetSpeed(u16),
     SetCompliance(u8),
+    SetTorque(bool),
     ReadPosition,
 }
 
@@ -31,7 +32,7 @@ struct Message {
 }
 
 
-pub fn udp_command_loop(mut controller: BodyController) -> Result<(), Box<dyn Error>> {
+pub fn udp_command_loop(mut controller: Box<dyn BodyController>) -> Result<(), Box<dyn Error>> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {
@@ -52,6 +53,10 @@ pub fn udp_command_loop(mut controller: BodyController) -> Result<(), Box<dyn Er
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
                         controller.set_compliance(compliance);
+                    },
+                    Command::SetTorque(torque) => {
+                        trace!("Setting compliance");
+                        controller.set_torque(torque);
                     },
                     Command::ReadPosition => {
                         trace!("Reading position");

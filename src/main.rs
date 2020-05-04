@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
 
     let body_controller =
-        body_controller::BodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
+        body_controller::AsyncBodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
 
     udp_adaptor::udp_command_loop(body_controller).unwrap();
     Ok(())
