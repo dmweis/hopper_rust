@@ -84,11 +84,11 @@ impl MotorController {
         }
         Ok(BodyMotorPositions::new(
             read_leg_positions(&mut self.driver, &self.body_config.left_front)?,
-            read_leg_positions(&mut self.driver, &self.body_config.left_front)?,
-            read_leg_positions(&mut self.driver, &self.body_config.left_front)?,
-            read_leg_positions(&mut self.driver, &self.body_config.left_front)?,
-            read_leg_positions(&mut self.driver, &self.body_config.left_front)?,
-            read_leg_positions(&mut self.driver, &self.body_config.left_front)?,
+            read_leg_positions(&mut self.driver, &self.body_config.left_middle)?,
+            read_leg_positions(&mut self.driver, &self.body_config.left_rear)?,
+            read_leg_positions(&mut self.driver, &self.body_config.right_front)?,
+            read_leg_positions(&mut self.driver, &self.body_config.right_middle)?,
+            read_leg_positions(&mut self.driver, &self.body_config.right_rear)?,
         ))
     }
 }
