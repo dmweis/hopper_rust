@@ -11,7 +11,7 @@ pub(crate) struct LegPositions {
 }
 
 impl LegPositions {
-    fn new(
+    pub(crate) fn new(
         left_front: Point3<f32>,
         left_middle: Point3<f32>,
         left_rear: Point3<f32>,

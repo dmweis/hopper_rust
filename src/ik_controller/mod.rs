@@ -153,10 +153,29 @@ mod tests {
         assert_approx_eq!(motor_positions.tibia().to_degrees(), 103.929955);
     }
 
-    // #[test]
-    // fn basic_ik_right_front() {
-    //     let hopper_config = HopperConfig::default();
-    //     let target = Point3::new(0.18, -0.15, -0.09);
-    //     let motor_positions = calculate_ik().unwrap();
-    // }
+    #[test]
+    fn full_ik_resting_magic_number() {
+        // This is a magic number test for hoppers standard resting position
+        // if it fails it's a good indicator something went wrong
+        // but not a good indicator of what went wrong
+        let hopper_config = HopperConfig::default();
+        let pose = LegPositions::new(
+            Point3::new(0.18, 0.15, -0.09),
+            Point3::new(0.0, 0.22, -0.09),
+            Point3::new(-0.18, 0.15, -0.09),
+            Point3::new(0.18, -0.15, -0.09),
+            Point3::new(0.0, -0.22, -0.09),
+            Point3::new(-0.18, -0.15, -0.09),
+        );
+        let motor_positions = calculate_ik(&pose, &hopper_config).unwrap();
+        let expected_motor_positions = BodyMotorPositions::new(
+            LegMotorPositions::new(1.9771307, 1.9575489, 3.4260802),
+            LegMotorPositions::new(2.6187901, 1.9678993, 3.3529518),
+            LegMotorPositions::new(3.2604494, 1.9575489, 3.4260802),
+            LegMotorPositions::new(3.258857, 3.2824512, 1.8139199),
+            LegMotorPositions::new(2.6171975, 3.2721004, 1.8870485),
+            LegMotorPositions::new(1.9755381, 3.2824512, 1.8139199),
+        );
+        assert_eq!(motor_positions, expected_motor_positions);
+    }
 }
