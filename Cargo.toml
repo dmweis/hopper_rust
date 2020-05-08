@@ -17,3 +17,7 @@ simplelog = "0.7"
 log = "0.4"
 rumqtt = "0.31"
 mint = "0.5.5"
+nalgebra = { version = "0.21", features = ["serde-serialize"] }
+
+[dev-dependencies]
+assert_approx_eq = "1.1"

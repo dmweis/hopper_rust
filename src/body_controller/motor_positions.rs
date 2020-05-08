@@ -13,6 +13,18 @@ impl LegMotorPositions {
     pub fn new(coxa: f32, femur: f32, tibia: f32) -> LegMotorPositions {
         LegMotorPositions { coxa, femur, tibia }
     }
+
+    pub fn coxa(&self) -> f32 {
+        self.coxa
+    }
+
+    pub fn femur(&self) -> f32 {
+        self.femur
+    }
+
+    pub fn tibia(&self) -> f32 {
+        self.tibia
+    }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -91,7 +103,7 @@ pub fn create_commands_for_body(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mint::Point3;
+    use nalgebra::Point3;
 
     #[test]
     fn creating_commands_for_legs_aligns() {
@@ -100,7 +112,7 @@ mod tests {
             femur_id: 2,
             tibia_id: 3,
             angle_offset: 0.0,
-            position: Point3::from([0.0, 0.0, 0.0]),
+            position: Point3::new(0.0, 0.0, 0.0),
             femur_correction: 0.0,
             tibia_correction: 0.0,
         };

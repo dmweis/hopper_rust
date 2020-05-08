@@ -3,15 +3,8 @@ use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use mint::Point3;
+use nalgebra::Point3;
 
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "Point3")]
-pub struct Point3Def<T> {
-    pub x: T,
-    pub y: T,
-    pub z: T,
-}
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct LegConfig {
@@ -19,7 +12,6 @@ pub struct LegConfig {
     pub femur_id: u8,
     pub tibia_id: u8,
     pub angle_offset: f32,
-    #[serde(with = "Point3Def")]
     pub position: Point3<f32>,
     pub femur_correction: f32,
     pub tibia_correction: f32,
@@ -65,6 +57,8 @@ pub struct HopperConfig {
     pub coxa_length: f32,
     pub femur_length: f32,
     pub tibia_length: f32,
+    pub femur_offset: f32,
+    pub tibia_offset: f32,
     pub legs: BodyConfig,
 }
 
@@ -74,5 +68,36 @@ impl HopperConfig {
         let reader = BufReader::new(file);
         let deserialized_config: HopperConfig = serde_yaml::from_reader(reader)?;
         Ok(deserialized_config)
+    }
+}
+
+
+impl Default for HopperConfig {
+    fn default() -> Self {
+        serde_yaml::from_slice(include_bytes!("../config/hopper.yaml")).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_hopper_config_loads() {
+        let _ = HopperConfig::default();
+    }
+
+    #[test]
+    fn serialize_point() {
+        let point = Point3::new(1.0, 1.0, 1.0);
+        let yaml = serde_yaml::to_string(&point).unwrap();
+        assert_eq!(yaml, "---\n- 1.0\n- 1.0\n- 1.0");
+    }
+
+    #[test]
+    fn deserialize_point() {
+        let yaml = "--- [1, 1, 1]";
+        let point: Point3<f32> = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(point, Point3::new(1.0, 1.0, 1.0));
     }
 }

@@ -1,4 +1,5 @@
 mod body_controller;
+mod ik_controller;
 mod hopper_config;
 mod mqtt_adaptor;
 mod utilities;
