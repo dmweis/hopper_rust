@@ -1,35 +1,63 @@
-use crate::body_controller::motor_positions::LegMotorPositions;
+mod leg_positions;
+
+use leg_positions::*;
+use crate::body_controller::{ motor_positions::{LegMotorPositions, BodyMotorPositions}, BodyController };
 use crate::hopper_config::{ LegConfig, HopperConfig };
 use nalgebra::{Point3, Vector3};
 use std::error::Error;
 
-pub(crate) struct LegPositions {
-    pub left_front: Point3<f32>,
-    pub left_middle: Point3<f32>,
-    pub left_rear: Point3<f32>,
-    pub right_front: Point3<f32>,
-    pub right_middle: Point3<f32>,
-    pub right_rear: Point3<f32>,
+trait IkControlable {
+    fn move_to(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>>;
+    fn disable_motors(&mut self);
 }
 
-impl LegPositions {
+struct IkController {
+    body_controller: Box<dyn BodyController>,
+    body_configuration: HopperConfig,
+}
+
+impl IkController {
     fn new(
-        left_front: Point3<f32>,
-        left_middle: Point3<f32>,
-        left_rear: Point3<f32>,
-        right_front: Point3<f32>,
-        right_middle: Point3<f32>,
-        right_rear: Point3<f32>,
-    ) -> LegPositions {
-        LegPositions {
-            left_front,
-            left_middle,
-            left_rear,
-            right_front,
-            right_middle,
-            right_rear,
+        body_controller: Box<dyn BodyController>,
+        body_configuration: HopperConfig
+    ) -> IkController {
+        IkController {
+            body_controller,
+            body_configuration
         }
     }
+}
+
+impl IkControlable for IkController {
+    fn move_to(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>> {
+        let motor_positions = calculate_ik(&positions, &self.body_configuration)?;
+        self.body_controller.move_to_position(motor_positions);
+        Ok(())
+    }
+
+    fn disable_motors(&mut self) {
+        self.body_controller.set_torque(false);
+    }
+}
+
+fn calculate_ik(
+    positions: &LegPositions,
+    body_config: &HopperConfig
+) -> Result<BodyMotorPositions, Box<dyn Error>> {
+    let left_front = calculate_ik_for_leg(&positions.left_front, &body_config, &body_config.legs.left_front)?;
+    let right_front = calculate_ik_for_leg(&positions.right_front, &body_config, &body_config.legs.right_front)?;
+    let left_middle = calculate_ik_for_leg(&positions.left_middle, &body_config, &body_config.legs.left_middle)?;
+    let right_middle = calculate_ik_for_leg(&positions.right_middle, &body_config, &body_config.legs.right_middle)?;
+    let left_rear = calculate_ik_for_leg(&positions.left_rear, &body_config, &body_config.legs.left_rear)?;
+    let right_rear = calculate_ik_for_leg(&positions.right_rear, &body_config, &body_config.legs.right_rear)?;
+    Ok(BodyMotorPositions::new(
+        left_front,
+        left_middle,
+        left_rear,
+        right_front,
+        right_middle,
+        right_rear
+    ))
 }
 
 fn calculate_ik_for_leg(
@@ -76,16 +104,6 @@ fn get_alpha_angle(a: &f32, b: &f32, c: &f32) -> f32 {
     let divident: f32 = (-1_f32).max((1_f32).min(upper / bottom));
     divident.acos()
 }
-
-pub(crate) struct OptionalLegPositions {
-    pub left_front: Option<Point3<f32>>,
-    pub left_middle: Option<Point3<f32>>,
-    pub left_rear: Option<Point3<f32>>,
-    pub right_front: Option<Point3<f32>>,
-    pub right_middle: Option<Point3<f32>>,
-    pub right_rear: Option<Point3<f32>>,
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -134,4 +152,11 @@ mod tests {
         assert_approx_eq!(motor_positions.femur().to_degrees(), 188.0706);
         assert_approx_eq!(motor_positions.tibia().to_degrees(), 103.929955);
     }
+
+    // #[test]
+    // fn basic_ik_right_front() {
+    //     let hopper_config = HopperConfig::default();
+    //     let target = Point3::new(0.18, -0.15, -0.09);
+    //     let motor_positions = calculate_ik().unwrap();
+    // }
 }
