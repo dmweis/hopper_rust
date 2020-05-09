@@ -8,8 +8,6 @@ mod udp_adaptor;
 use clap::{App, Arg};
 use std::error::Error;
 use std::path::Path;
-use looprate::RateTimer;
-
 use log::*;
 
 
@@ -68,15 +66,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let body_controller =
         body_controller::AsyncBodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
 
-    udp_adaptor::udp_command_loop(body_controller).unwrap();
-    Ok(())
-    // let mut udp_command_receiver = udp_adaptor::UdpCommandReceiver::new();
+    let ik_controller = ik_controller::IkController::new(body_controller, hopper_config.clone());
 
-    // let mut rate_timer = RateTimer::new();
-    // info!("Starting main body loop");
-    // loop {
-    //     let new_postition = udp_command_receiver.get_command();
-    //     body_controller.move_to_position(new_postition);
-    //     rate_timer.tick();
-    // }
+    udp_adaptor::udp_ik_commander(ik_controller).unwrap();
+    Ok(())
 }

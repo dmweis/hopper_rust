@@ -1,4 +1,4 @@
-mod leg_positions;
+pub mod leg_positions;
 
 use leg_positions::*;
 use crate::body_controller::{ motor_positions::{LegMotorPositions, BodyMotorPositions}, BodyController };
@@ -6,26 +6,26 @@ use crate::hopper_config::{ LegConfig, HopperConfig };
 use nalgebra::{Point3, Vector3};
 use std::error::Error;
 
-trait IkControlable {
+pub(crate) trait IkControlable {
     fn move_to(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>>;
     fn read_positions(&mut self) -> Result<LegPositions, Box<dyn Error>>;
     fn disable_motors(&mut self);
 }
 
-struct IkController {
+pub(crate) struct IkController {
     body_controller: Box<dyn BodyController>,
     body_configuration: HopperConfig,
 }
 
 impl IkController {
-    fn new(
+    pub(crate) fn new(
         body_controller: Box<dyn BodyController>,
         body_configuration: HopperConfig
-    ) -> IkController {
-        IkController {
+    ) -> Box<dyn IkControlable> {
+        Box::new(IkController {
             body_controller,
             body_configuration
-        }
+        })
     }
 }
 

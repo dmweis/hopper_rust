@@ -94,6 +94,7 @@ pub(crate) struct OptionalLegPositions {
     pub right_rear: Option<Point3<f32>>,
 }
 
+#[allow(dead_code)]
 impl OptionalLegPositions {
     fn new(
         left_front: Option<Point3<f32>>,
