@@ -19,8 +19,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .arg(
             Arg::with_name("body_config")
                 .long("body_config")
-                .help("Sets path to body config file (.yaml)")
-                .required(true)
+                .help("Sets path to body config file (.yaml)\nIf unset uses default value.")
+                .required(false)
                 .takes_value(true),
         )
         .arg(
@@ -41,25 +41,25 @@ fn main() -> Result<(), Box<dyn Error>> {
             Arg::with_name("dynamixel_port")
                 .long("dynamixel_port")
                 .help("Serial port name of the dynamixel port")
-                .required(false)
+                .required(true)
                 .takes_value(true),
         )
         .get_matches();
     utilities::start_loggers(matches.value_of("log_path"))?;
     info!("Started main controller");
 
-    let body_config_path = Path::new(
-        matches
-            .value_of("body_config")
-            .ok_or("body_config must be specified")?,
-    );
-
     let mqtt_host = matches.value_of("mqtt_host").unwrap_or("mqtt.local");
     let dynamixel_port = matches
         .value_of("dynamixel_port")
         .expect("Dynamixel port has to be provided");
 
-    let hopper_config = hopper_config::HopperConfig::load(body_config_path)?;
+    let hopper_config = match matches.value_of("body_config") {
+        Some(path) =>  {
+            let path = Path::new(path);
+            hopper_config::HopperConfig::load(path)?
+        },
+        None => hopper_config::HopperConfig::default()
+    };
 
     let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
 
