@@ -60,7 +60,7 @@ pub fn udp_command_loop(mut controller: Box<dyn BodyController>) -> Result<(), B
                     },
                     Command::ReadPosition => {
                         trace!("Reading position");
-                        if let Some(positions) = controller.read_position() {
+                        if let Ok(positions) = controller.read_position() {
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {

@@ -29,12 +29,12 @@ impl LegMotorPositions {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct BodyMotorPositions {
-    pub(super) left_front: LegMotorPositions,
-    pub(super) left_middle: LegMotorPositions,
-    pub(super) left_rear: LegMotorPositions,
-    pub(super) right_front: LegMotorPositions,
-    pub(super) right_middle: LegMotorPositions,
-    pub(super) right_rear: LegMotorPositions,
+    pub left_front: LegMotorPositions,
+    pub left_middle: LegMotorPositions,
+    pub left_rear: LegMotorPositions,
+    pub right_front: LegMotorPositions,
+    pub right_middle: LegMotorPositions,
+    pub right_rear: LegMotorPositions,
 }
 
 impl BodyMotorPositions {

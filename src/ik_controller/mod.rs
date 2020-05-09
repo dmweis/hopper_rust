@@ -8,6 +8,7 @@ use std::error::Error;
 
 trait IkControlable {
     fn move_to(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>>;
+    fn read_positions(&mut self) -> Result<LegPositions, Box<dyn Error>>;
     fn disable_motors(&mut self);
 }
 
@@ -34,6 +35,12 @@ impl IkControlable for IkController {
         self.body_controller.move_to_position(motor_positions);
         Ok(())
     }
+    
+    fn read_positions(&mut self) -> Result<LegPositions, Box<dyn Error>> {
+        let motor_positions = self.body_controller.read_position()?;
+        let leg_positions = calculate_fk(&motor_positions, &self.body_configuration);
+        Ok(leg_positions)
+    }
 
     fn disable_motors(&mut self) {
         self.body_controller.set_torque(false);
@@ -58,6 +65,26 @@ fn calculate_ik(
         right_middle,
         right_rear
     ))
+}
+
+fn calculate_fk(
+    motor_positions: &BodyMotorPositions,
+    body_config: &HopperConfig
+) -> LegPositions {
+    let left_front = calculate_fk_for_leg(&motor_positions.left_front, &body_config, &body_config.legs.left_front);
+    let right_front = calculate_fk_for_leg(&motor_positions.right_front, &body_config, &body_config.legs.right_front);
+    let left_middle = calculate_fk_for_leg(&motor_positions.left_middle, &body_config, &body_config.legs.left_middle);
+    let right_middle = calculate_fk_for_leg(&motor_positions.right_middle, &body_config, &body_config.legs.right_middle);
+    let left_rear = calculate_fk_for_leg(&motor_positions.left_rear, &body_config, &body_config.legs.left_rear);
+    let right_rear = calculate_fk_for_leg(&motor_positions.right_rear, &body_config, &body_config.legs.right_rear);
+    LegPositions::new(
+        left_front,
+        left_middle,
+        left_rear,
+        right_front,
+        right_middle,
+        right_rear
+    )
 }
 
 fn calculate_ik_for_leg(
@@ -195,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn full_ik_resting_magic_number() {
+    fn full_ik_resting_pose_magic_number() {
         // This is a magic number test for hoppers standard resting position
         // if it fails it's a good indicator something went wrong
         // but not a good indicator of what went wrong
@@ -254,5 +281,26 @@ mod tests {
         );
         let result_distance = distance(&target, &fk_calculated);
         assert!(result_distance < 0.0000001);
+    }
+
+    #[test]
+    fn test_full_fk_against_ik() {
+        let hopper_config = HopperConfig::default();
+        let origin = LegPositions::new(
+            Point3::new(0.18, 0.15, -0.09),
+            Point3::new(0.0, 0.22, -0.09),
+            Point3::new(-0.18, 0.15, -0.09),
+            Point3::new(0.18, -0.15, -0.09),
+            Point3::new(0.0, -0.22, -0.09),
+            Point3::new(-0.18, -0.15, -0.09),
+        );
+        let motor_positions = calculate_ik(&origin, &hopper_config).unwrap();
+        let result = calculate_fk(&motor_positions, &hopper_config);
+        assert!(distance(&origin.left_front, &result.left_front) < 0.0000001);
+        assert!(distance(&origin.left_middle, &result.left_middle) < 0.0000001);
+        assert!(distance(&origin.left_rear, &result.left_rear) < 0.0000001);
+        assert!(distance(&origin.right_front, &result.right_front) < 0.0000001);
+        assert!(distance(&origin.right_middle, &result.right_middle) < 0.0000001);
+        assert!(distance(&origin.right_rear, &result.right_rear) < 0.0000001);
     }
 }

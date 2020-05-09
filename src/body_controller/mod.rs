@@ -9,6 +9,8 @@ use log::*;
 use looprate;
 use std::sync::{Arc, Mutex, mpsc::{channel, Sender, Receiver}};
 use std::thread;
+use std::error::Error;
+
 
 enum BufferedCommand {
     SetCompliance(u8),
@@ -27,7 +29,7 @@ pub trait BodyController {
     fn set_compliance(&mut self, compliance: u8);
     fn set_speed(&mut self, speed: u16);
     fn set_torque(&mut self, torque: bool);
-    fn read_position(&mut self) -> Option<BodyMotorPositions>;
+    fn read_position(&mut self) -> Result<BodyMotorPositions, Box<dyn Error>>;
 }
 
 pub struct AsyncBodyController {
@@ -132,11 +134,11 @@ impl BodyController for AsyncBodyController {
             .unwrap();
     }
 
-    fn read_position(&mut self) -> Option<BodyMotorPositions> {
+    fn read_position(&mut self) -> Result<BodyMotorPositions, Box<dyn Error>> {
         self.buffered_command_sender
             .send(BufferedCommand::ReadPosition)
             .unwrap();
-        self.position_receiver.recv().unwrap()
+        self.position_receiver.recv().unwrap().ok_or(Err("Positions couldn't be read")?)
     }
 
     fn set_torque(&mut self, torque: bool) {
