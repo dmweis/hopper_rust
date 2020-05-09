@@ -1,6 +1,8 @@
+use std::error::Error;
 use nalgebra::{ Point3, distance };
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub(crate) struct LegPositions {
     pub left_front: Point3<f32>,
     pub left_middle: Point3<f32>,
@@ -76,13 +78,48 @@ impl MoveTowards for LegPositions {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub(crate) struct OptionalLegPositions {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub left_front: Option<Point3<f32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub left_middle: Option<Point3<f32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub left_rear: Option<Point3<f32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub right_front: Option<Point3<f32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub right_middle: Option<Point3<f32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub right_rear: Option<Point3<f32>>,
+}
+
+impl OptionalLegPositions {
+    fn new(
+        left_front: Option<Point3<f32>>,
+        left_middle: Option<Point3<f32>>,
+        left_rear: Option<Point3<f32>>,
+        right_front: Option<Point3<f32>>,
+        right_middle: Option<Point3<f32>>,
+        right_rear: Option<Point3<f32>>,
+    ) -> OptionalLegPositions {
+        OptionalLegPositions {
+            left_front,
+            left_middle,
+            left_rear,
+            right_front,
+            right_middle,
+            right_rear,
+        }
+    }
+
+    fn to_json(&self) -> Result<String, Box<dyn Error>> {
+        Ok(serde_json::to_string(self)?)
+    }
+
+    fn from_json(json: &str) -> Result<OptionalLegPositions, Box<dyn Error>> {
+        Ok(serde_json::from_str(json)?)
+    }
 }
 
 
@@ -212,5 +249,34 @@ mod tests {
         }
         assert_eq!(counter, 7);
         assert_eq!(target, step);
+    }
+
+    #[test]
+    fn optional_leg_positions_serializes_without_nones() {
+        let positions = OptionalLegPositions::new(
+            Some(Point3::new(0.15, 0.15, 0.15)),
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let json = positions.to_json().unwrap();
+        assert_eq!(json, "{\"left_front\":[0.15,0.15,0.15]}");
+    }
+
+    #[test]
+    fn optional_leg_positions_deserializes_with_or_without_none() {
+        let json = "{\"left_front\":[0.15,0.15,0.15],\"right_front\":null,\"right_middle\":null,\"right_rear\":null}";
+        let positions = OptionalLegPositions::from_json(&json).unwrap();
+        let expected = OptionalLegPositions::new(
+            Some(Point3::new(0.15, 0.15, 0.15)),
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        assert_eq!(expected, positions);
     }
 }
