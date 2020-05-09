@@ -98,6 +98,46 @@ fn calculate_ik_for_leg(
     Ok(LegMotorPositions::new(corrected_coxa, corrected_femur, corrected_tibia))
 }
 
+fn calculate_fk_for_leg(
+    motor_positions: &LegMotorPositions,
+    body_config: &HopperConfig,
+    leg_config: &LegConfig,) -> Point3<f32> {
+        let femur_angle = (
+            motor_positions.femur() -
+            (
+                leg_config.femur_correction +
+                body_config.femur_offset
+            ).abs()
+        ).abs();
+        let tibia_angle = (
+            motor_positions.tibia() -
+            (
+                leg_config.tibia_correction +
+                body_config.tibia_offset
+            ).abs()
+        ).abs();
+        let coxa_angle =
+            motor_positions.coxa() -
+            150_f32.to_radians() -
+            leg_config.angle_offset;
+        let base_x = coxa_angle.cos();
+        let base_y = coxa_angle.sin();
+        let coxa_vector = Vector3::new(base_x, base_y, 0.0) * body_config.coxa_length;
+        let femur_x = (femur_angle - 90_f32.to_radians()).sin() * body_config.femur_length;
+        let femur_y = (femur_angle - 90_f32.to_radians()).cos() * body_config.femur_length;
+        let femur_vector = Vector3::new(base_x * femur_y, base_y * femur_y, femur_x);
+        // to calculate tibia we need angle between tibia and a vertical line
+        // we get this by calculating the angles formed by a horizontal line from femur
+        // femur and part of tibia by knowing that the sum of angles is 180
+        // than we just remove this from teh tibia angle and done
+        let angle_tibia_vector = tibia_angle - (90_f32.to_radians() - (femur_angle - 90_f32.to_radians()));
+        let tibia_x = angle_tibia_vector.sin() * body_config.tibia_length;
+        let tibia_y = angle_tibia_vector.cos() * body_config.tibia_length;
+        let tibia_vector = Vector3::new(base_x * tibia_x, base_y * tibia_x, -tibia_y);
+        let coxa_position = leg_config.position;
+        coxa_position + coxa_vector + femur_vector + tibia_vector
+}
+
 fn get_alpha_angle(a: &f32, b: &f32, c: &f32) -> f32 {
     let upper = b.powi(2) + c.powi(2) - a.powi(2);
     let bottom = 2.0 * b * c;
@@ -109,6 +149,7 @@ fn get_alpha_angle(a: &f32, b: &f32, c: &f32) -> f32 {
 mod tests {
     use super::*;
     use assert_approx_eq::*;
+    use nalgebra::distance;
 
     #[test]
     fn get_angle_equilateral_triangle() {
@@ -177,5 +218,41 @@ mod tests {
             LegMotorPositions::new(1.9755381, 3.2824512, 1.8139199),
         );
         assert_eq!(motor_positions, expected_motor_positions);
+    }
+
+    #[test]
+    fn test_fk_against_ik_left_front(){
+        let hopper_config = HopperConfig::default();
+        let target = Point3::new(0.18, 0.15, -0.09);
+        let motor_positions = calculate_ik_for_leg(
+            &target,
+            &hopper_config,
+            &hopper_config.legs.left_front
+        ).unwrap();
+        let fk_calculated = calculate_fk_for_leg(
+            &motor_positions, 
+            &hopper_config,
+            &hopper_config.legs.left_front
+        );
+        let result_distance = distance(&target, &fk_calculated);
+        assert!(result_distance < 0.0000001);
+    }
+
+    #[test]
+    fn test_fk_against_ik_right_front(){
+        let hopper_config = HopperConfig::default();
+        let target = Point3::new(0.18, -0.15, -0.09);
+        let motor_positions = calculate_ik_for_leg(
+            &target,
+            &hopper_config,
+            &hopper_config.legs.right_front
+        ).unwrap();
+        let fk_calculated = calculate_fk_for_leg(
+            &motor_positions, 
+            &hopper_config,
+            &hopper_config.legs.right_front
+        );
+        let result_distance = distance(&target, &fk_calculated);
+        assert!(result_distance < 0.0000001);
     }
 }
