@@ -87,7 +87,9 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
                 match message.command {
                     Command::MoveLegsTo(position) => {
                         trace!("Moving to pos");
-                        controller.move_to_positions(position)?;
+                        if let Err(error) = controller.move_to_positions(position) {
+                            warn!("Failed writing position {}", &error);
+                        }
                     },
                     Command::DisableMotors => {
                         trace!("Disabling motors");

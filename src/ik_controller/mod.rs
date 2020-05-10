@@ -5,6 +5,8 @@ use crate::body_controller::{ motor_positions::{LegMotorPositions, BodyMotorPosi
 use crate::hopper_config::{ LegConfig, HopperConfig };
 use nalgebra::{Point3, Vector3};
 use std::error::Error;
+use log::*;
+
 
 pub(crate) trait IkControlable : BodyController {
     fn move_to_positions(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>>;
@@ -138,6 +140,7 @@ fn calculate_ik_for_leg(
     // we have angles of the SSS triangle. now we need angle for the servos
     let ground_target_angle = horizontal_distance.atan2(-relative_vector.z);
     if target_angle >= 90_f32.to_radians() || target_angle <= (-90_f32).to_radians() {
+        warn!("Failed IK for leg: {} target: {}", leg_config.position, &target);
         Err(format!("sad math for {}", target_angle))?
     }
     let femur_angle = angle_by_femur + ground_target_angle;
