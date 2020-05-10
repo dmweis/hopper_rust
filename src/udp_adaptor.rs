@@ -4,7 +4,7 @@ use crate::ik_controller::IkControlable;
 use log::*;
 use std::error::Error;
 use std::net::UdpSocket;
-
+use std::str::from_utf8;
 use serde::Deserialize;
 
 
@@ -130,7 +130,7 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
                     },
                 }
             } else {
-                error!("Got malformed message");
+                error!("Received malformed message {:?}", from_utf8(&received));
             }
         }
         
