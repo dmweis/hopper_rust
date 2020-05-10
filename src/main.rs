@@ -44,8 +44,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .required(true)
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("v")
+                .short("v")
+                .multiple(true)
+                .help("Sets the level of verbosity")
+        )
         .get_matches();
-    utilities::start_loggers(matches.value_of("log_path"))?;
+    utilities::start_loggers(matches.value_of("log_path"), matches.occurrences_of("v"))?;
     info!("Started main controller");
 
     let mqtt_host = matches.value_of("mqtt_host").unwrap_or("mqtt.local");
