@@ -104,6 +104,7 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {
+                            error!("Failed reading position");
                             socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
                         }
                     }
