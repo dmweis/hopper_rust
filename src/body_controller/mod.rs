@@ -24,11 +24,11 @@ enum ImmediateCommand {
 }
 
 pub trait BodyController {
-    fn move_to_position(&mut self, positions: BodyMotorPositions);
+    fn move_motors_to(&mut self, positions: BodyMotorPositions);
     fn set_compliance(&mut self, compliance: u8);
     fn set_speed(&mut self, speed: u16);
     fn set_torque(&mut self, torque: bool);
-    fn read_position(&mut self) -> Result<BodyMotorPositions, &str>;
+    fn read_motor_positions(&mut self) -> Result<BodyMotorPositions, &str>;
 }
 
 pub struct AsyncBodyController {
@@ -116,7 +116,7 @@ impl AsyncBodyController {
 }
 
 impl BodyController for AsyncBodyController {
-    fn move_to_position(&mut self, positions: BodyMotorPositions) {
+    fn move_motors_to(&mut self, positions: BodyMotorPositions) {
         let mut command = self.command.lock().expect("Body controller thread panicked");
         command.replace(ImmediateCommand::MoveToPosition(positions));
     }
@@ -133,7 +133,7 @@ impl BodyController for AsyncBodyController {
             .unwrap();
     }
 
-    fn read_position(&mut self) -> Result<BodyMotorPositions, &str> {
+    fn read_motor_positions(&mut self) -> Result<BodyMotorPositions, &str> {
         self.buffered_command_sender
             .send(BufferedCommand::ReadPosition)
             .unwrap();

@@ -6,9 +6,9 @@ use crate::hopper_config::{ LegConfig, HopperConfig };
 use nalgebra::{Point3, Vector3};
 use std::error::Error;
 
-pub(crate) trait IkControlable {
-    fn move_to(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>>;
-    fn read_positions(&mut self) -> Result<LegPositions, Box<dyn Error>>;
+pub(crate) trait IkControlable : BodyController {
+    fn move_to_positions(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>>;
+    fn read_leg_positions(&mut self) -> Result<LegPositions, Box<dyn Error>>;
     fn disable_motors(&mut self);
 }
 
@@ -29,15 +29,37 @@ impl IkController {
     }
 }
 
+impl BodyController for IkController {
+    fn move_motors_to(&mut self, positions: BodyMotorPositions) {
+        self.body_controller.move_motors_to(positions);
+    }
+
+    fn set_compliance(&mut self, compliance: u8) {
+        self.body_controller.set_compliance(compliance);
+    }
+
+    fn set_speed(&mut self, speed: u16) {
+        self.body_controller.set_speed(speed);
+    }
+
+    fn set_torque(&mut self, torque: bool) {
+        self.body_controller.set_torque(torque);
+    }
+
+    fn read_motor_positions(&mut self) -> Result<BodyMotorPositions, &str> {
+        self.body_controller.read_motor_positions()
+    }
+}
+
 impl IkControlable for IkController {
-    fn move_to(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>> {
+    fn move_to_positions(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>> {
         let motor_positions = calculate_ik(&positions, &self.body_configuration)?;
-        self.body_controller.move_to_position(motor_positions);
+        self.body_controller.move_motors_to(motor_positions);
         Ok(())
     }
     
-    fn read_positions(&mut self) -> Result<LegPositions, Box<dyn Error>> {
-        let motor_positions = self.body_controller.read_position()?;
+    fn read_leg_positions(&mut self) -> Result<LegPositions, Box<dyn Error>> {
+        let motor_positions = self.body_controller.read_motor_positions()?;
         let leg_positions = calculate_fk(&motor_positions, &self.body_configuration);
         Ok(leg_positions)
     }

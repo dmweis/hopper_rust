@@ -9,17 +9,20 @@ use serde::Deserialize;
 
 
 #[derive(Deserialize)]
-enum MotorCommand {
-    MoveTo(BodyMotorPositions),
+enum Command {
+    MoveMotorsTo(BodyMotorPositions),
     SetSpeed(u16),
     SetCompliance(u8),
     SetTorque(bool),
-    ReadPosition,
+    ReadMotorPosition,
+    MoveLegsTo(LegPositions),
+    DisableMotors,
+    ReadLegPosition,
 }
 
 #[derive(Deserialize)]
-struct MotorMessage {
-    command: MotorCommand,
+struct Message {
+    command: Command,
 }
 
 #[allow(dead_code)]
@@ -30,33 +33,37 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
         if let Ok((amt, addr)) = socket.recv_from(&mut buffer) {
             trace!("got new message");
             let received = &mut buffer[..amt];
-            let message: Result<MotorMessage, _> = serde_json::from_slice(&received);
+            let message: Result<Message, _> = serde_json::from_slice(&received);
             if let Ok(message) = message {
                 match message.command {
-                    MotorCommand::MoveTo(position) => {
+                    Command::MoveMotorsTo(position) => {
                         trace!("Moving to pos");
-                        controller.move_to_position(position);
+                        controller.move_motors_to(position);
                     },
-                    MotorCommand::SetSpeed(speed) => {
+                    Command::SetSpeed(speed) => {
                         trace!("Setting speed");
                         controller.set_speed(speed);
                     },
-                    MotorCommand::SetCompliance(compliance) => {
+                    Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
                         controller.set_compliance(compliance);
                     },
-                    MotorCommand::SetTorque(torque) => {
+                    Command::SetTorque(torque) => {
                         trace!("Setting torque");
                         controller.set_torque(torque);
                     },
-                    MotorCommand::ReadPosition => {
+                    Command::ReadMotorPosition => {
                         trace!("Reading position");
-                        if let Ok(positions) = controller.read_position() {
+                        if let Ok(positions) = controller.read_motor_positions() {
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {
                             socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
                         }
+                    },
+                    _ => {
+                        error!("Command not supported by body controller");
+                        panic!("Command not supported by body controller");
                     }
                 }
             } else {
@@ -68,18 +75,6 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
 }
 
 
-#[derive(Deserialize)]
-enum IkCommand {
-    MoveTo(LegPositions),
-    DisableMotors,
-    ReadPosition,
-}
-
-#[derive(Deserialize)]
-struct IKMessage {
-    command: IkCommand,
-}
-
 pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<(), Box<dyn Error>> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
@@ -87,27 +82,52 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
         if let Ok((amt, addr)) = socket.recv_from(&mut buffer) {
             trace!("got new message");
             let received = &mut buffer[..amt];
-            let message: Result<IKMessage, _> = serde_json::from_slice(&received);
+            let message: Result<Message, _> = serde_json::from_slice(&received);
             if let Ok(message) = message {
                 match message.command {
-                    IkCommand::MoveTo(position) => {
+                    Command::MoveLegsTo(position) => {
                         trace!("Moving to pos");
-                        controller.move_to(position)?;
+                        controller.move_to_positions(position)?;
                     },
-                    IkCommand::DisableMotors => {
+                    Command::DisableMotors => {
                         trace!("Disabling motors");
                         controller.disable_motors();
                     },
-                    IkCommand::ReadPosition => {
+                    Command::ReadLegPosition => {
                         trace!("Reading position");
-                        if let Ok(positions) = controller.read_positions() {
+                        if let Ok(positions) = controller.read_leg_positions() {
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {
                             error!("Failed reading position");
                             socket.send_to("{\"value\": \"error\"}".as_bytes(), addr).unwrap();
                         }
-                    }
+                    },
+                    Command::MoveMotorsTo(position) => {
+                        trace!("Moving to pos");
+                        controller.move_motors_to(position);
+                    },
+                    Command::SetSpeed(speed) => {
+                        trace!("Setting speed");
+                        controller.set_speed(speed);
+                    },
+                    Command::SetCompliance(compliance) => {
+                        trace!("Setting compliance");
+                        controller.set_compliance(compliance);
+                    },
+                    Command::SetTorque(torque) => {
+                        trace!("Setting torque");
+                        controller.set_torque(torque);
+                    },
+                    Command::ReadMotorPosition => {
+                        trace!("Reading position");
+                        if let Ok(positions) = controller.read_motor_positions() {
+                            let json = serde_json::to_vec(&positions)?;
+                            socket.send_to(&json, addr).unwrap();
+                        } else {
+                            socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
+                        }
+                    },
                 }
             } else {
                 error!("Got malformed message");
