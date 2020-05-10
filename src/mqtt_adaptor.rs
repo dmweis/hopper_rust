@@ -38,8 +38,6 @@ impl MqttAdaptor {
                             mqtt_client.publish("hopper/telemetry/voltage", QoS::AtMostOnce, false, message)
                         {
                             error!("Failed to send MQTT message {}", error);
-                        } else {
-                            trace!("Sent new MQTT telemetry message");
                         }
                     }
                     Command::Exit => {
