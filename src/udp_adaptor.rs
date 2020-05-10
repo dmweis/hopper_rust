@@ -105,7 +105,7 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
                             socket.send_to(&json, addr).unwrap();
                         } else {
                             error!("Failed reading position");
-                            socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
+                            socket.send_to("{\"value\": \"error\"}".as_bytes(), addr).unwrap();
                         }
                     }
                 }

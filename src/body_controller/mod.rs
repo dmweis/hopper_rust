@@ -9,7 +9,6 @@ use log::*;
 use looprate;
 use std::sync::{Arc, Mutex, mpsc::{channel, Sender, Receiver}};
 use std::thread;
-use std::error::Error;
 
 
 enum BufferedCommand {
@@ -29,14 +28,14 @@ pub trait BodyController {
     fn set_compliance(&mut self, compliance: u8);
     fn set_speed(&mut self, speed: u16);
     fn set_torque(&mut self, torque: bool);
-    fn read_position(&mut self) -> Result<BodyMotorPositions, Box<dyn Error>>;
+    fn read_position(&mut self) -> Result<BodyMotorPositions, &str>;
 }
 
 pub struct AsyncBodyController {
     join_handle: Option<thread::JoinHandle<()>>,
     command: Arc<Mutex<Option<ImmediateCommand>>>,
     buffered_command_sender: Sender<BufferedCommand>,
-    position_receiver: Receiver<Option<BodyMotorPositions>>,
+    position_receiver: Receiver<Result<BodyMotorPositions, &'static str>>,
 }
 
 impl AsyncBodyController {
@@ -90,10 +89,10 @@ impl AsyncBodyController {
                         },
                         BufferedCommand::ReadPosition => {
                             match motor_controller.read_positions() {
-                                Ok(motor_positions) => position_tx.send(Some(motor_positions)).unwrap(),
+                                Ok(motor_positions) => position_tx.send(Ok(motor_positions)).unwrap(),
                                 Err(error) => {
                                     warn!("Failed reading motor positions {}", error);
-                                    position_tx.send(None).unwrap()
+                                    position_tx.send(Err("Failed to read position")).unwrap()
                                 }
                             }
                         },
@@ -134,11 +133,11 @@ impl BodyController for AsyncBodyController {
             .unwrap();
     }
 
-    fn read_position(&mut self) -> Result<BodyMotorPositions, Box<dyn Error>> {
+    fn read_position(&mut self) -> Result<BodyMotorPositions, &str> {
         self.buffered_command_sender
             .send(BufferedCommand::ReadPosition)
             .unwrap();
-        self.position_receiver.recv().unwrap().ok_or(Err("Positions couldn't be read")?)
+        self.position_receiver.recv().unwrap()
     }
 
     fn set_torque(&mut self, torque: bool) {
