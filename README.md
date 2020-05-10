@@ -1,5 +1,7 @@
 # Hopper Rust
 
+[![Build Status](https://travis-ci.org/dmweis/hopper_rust.svg?branch=master)](https://travis-ci.org/dmweis/hopper_rust)
+
 Rewrite of [Hopper's](https://github.com/dmweis/Hopper_ROS) body controller and kinematics unit in Rust
 
 ## [Click here for more images](https://davidweis.dev/robotics/2019/09/21/HopperGallery2019.html)  
