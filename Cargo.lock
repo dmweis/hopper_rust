@@ -321,7 +321,7 @@ checksum = "4358a9e11b9a09cf52383b451b49a169e8d797b68aa02301ff586d70d9661ea3"
 [[package]]
 name = "dynamixel_driver"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/dynamixel_driver#6e3f6e4c26e5a9a3c08b7d3629267dd8b5136c06"
+source = "git+https://github.com/dmweis/dynamixel_driver#d9715404870ca7fda1994614fcc1fd51bc065068"
 dependencies = [
  "log",
  "serialport",
