@@ -9,6 +9,7 @@ use clap::{App, Arg};
 use std::error::Error;
 use std::path::Path;
 use log::*;
+use looprate::shared_timers::SharedTimerFactory;
 
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -54,6 +55,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     utilities::start_loggers(matches.value_of("log_path"), matches.occurrences_of("v"))?;
     info!("Started main controller");
 
+    let mut timer_factory = SharedTimerFactory::new();
+
     let mqtt_host = matches.value_of("mqtt_host").unwrap_or("mqtt.local");
     let dynamixel_port = matches
         .value_of("dynamixel_port")
@@ -69,8 +72,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
 
+
     let body_controller =
-        body_controller::AsyncBodyController::new(&dynamixel_port, hopper_config.legs.clone(), mqtt);
+        body_controller::AsyncBodyController::new(
+            &dynamixel_port,
+            hopper_config.legs.clone(),
+            mqtt,
+            timer_factory.get_timer("Body controller timer".to_owned())
+        );
 
     let ik_controller = ik_controller::IkController::new(body_controller, hopper_config.clone());
 

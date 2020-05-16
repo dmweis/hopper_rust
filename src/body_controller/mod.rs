@@ -7,6 +7,7 @@ use crate::hopper_config::BodyConfig;
 use crate::mqtt_adaptor::MqttAdaptor;
 use log::*;
 use looprate;
+use looprate::shared_timers::SharedTimer;
 use std::sync::{Arc, Mutex, mpsc::{channel, Sender, Receiver}};
 use std::thread;
 
@@ -43,6 +44,7 @@ impl AsyncBodyController {
         port: &str,
         body_config: BodyConfig,
         telemetry_sender: MqttAdaptor,
+        mut monitor_timer: SharedTimer,
     ) -> Box<dyn BodyController> {
         let (command_tx, command_rx) = channel();
         let (position_tx, position_rx) = channel();
@@ -53,12 +55,13 @@ impl AsyncBodyController {
         let join_handle = thread::spawn(move || {
             let mut telemetry_rate = looprate::Rate::from_frequency(5.0);
 
-            let mut loop_rate = looprate::Rate::from_frequency(100.0);
+            let mut loop_rate = looprate::Rate::from_frequency(50.0);
 
             let mut motor_controller = MotorController::new(&port_name, body_config).unwrap();
 
             loop {
                 let command = command_copy.lock().unwrap().take();
+                monitor_timer.tick();
                 if let Some(command) = command {
                     match command {
                         ImmediateCommand::MoveToPosition(positions) => {
@@ -71,15 +74,16 @@ impl AsyncBodyController {
                 }
                 if telemetry_rate.check() {
                     match motor_controller.read_mean_voltage() {
-                        Ok(mean) => telemetry_sender.send(&format!("{}", mean)),
+                        Ok(mean) => telemetry_sender.send("voltage", &format!("{}", mean)),
                         Err(error) => warn!("Failed to read voltage {}", error),
                     }
+                    telemetry_sender.send("body_controller_rate", &monitor_timer.elapsed_hz().to_string())
                 }
                 if let Ok(buffered_command) = command_rx.try_recv() {
                     match buffered_command {
                         BufferedCommand::SetSpeed(speed) => {
                             if let Err(error) = motor_controller.set_speed(speed) {
-                                warn!("failed setting speed {}", error);
+                                warn!("Failed setting speed {}", error);
                             }
                         },
                         BufferedCommand::SetCompliance(compliance) => {

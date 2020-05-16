@@ -4,7 +4,7 @@ use std::sync::mpsc::{channel, Sender};
 use std::thread;
 
 enum Command {
-    SendMessage(String),
+    SendMessage(String, String),
     Exit,
 }
 
@@ -33,9 +33,9 @@ impl MqttAdaptor {
 
             for message in rx.iter() {
                 match message {
-                    Command::SendMessage(message) => {
+                    Command::SendMessage(topic, message) => {
                         if let Err(error) =
-                            mqtt_client.publish("hopper/telemetry/voltage", QoS::AtMostOnce, false, message)
+                            mqtt_client.publish(format!("hopper/telemetry/{}", topic), QoS::AtMostOnce, false, message)
                         {
                             error!("Failed to send MQTT message {}", error);
                         }
@@ -53,8 +53,8 @@ impl MqttAdaptor {
         }
     }
 
-    pub fn send(&self, message: &str) {
-        if let Err(error) = self.sender.send(Command::SendMessage(message.to_owned())) {
+    pub fn send(&self, topic: &str, message: &str) {
+        if let Err(error) = self.sender.send(Command::SendMessage(topic.to_owned(), message.to_owned())) {
             error!("Failed to load MQTT message to channel {}", error);
         }
     }
