@@ -222,6 +222,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam-channel"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cced8691919c02aac3cb0a1bc2e9b73d89e832bf9a06fc579d4e71b68a2da061"
+dependencies = [
+ "crossbeam-utils 0.7.2",
+ "maybe-uninit",
+]
+
+[[package]]
 name = "crossbeam-deque"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -541,7 +551,11 @@ dependencies = [
 [[package]]
 name = "looprate"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/looprate#106cfdbce782a851ed643912444705cedf5a3c59"
+source = "git+https://github.com/dmweis/looprate#ffd4ac37bfbd82aef759ffe36296d636ae744b44"
+dependencies = [
+ "crossbeam-channel 0.4.2",
+ "log",
+]
 
 [[package]]
 name = "mach"
@@ -1072,7 +1086,7 @@ dependencies = [
  "base64 0.10.1",
  "bytes",
  "chrono",
- "crossbeam-channel",
+ "crossbeam-channel 0.3.9",
  "derive_more",
  "failure",
  "futures",
