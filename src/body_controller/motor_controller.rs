@@ -3,11 +3,15 @@ use dynamixel_driver::*;
 use std::error::Error;
 use crate::hopper_config::{ BodyConfig, LegConfig };
 use super::motor_positions::*;
+use std::collections::VecDeque;
+use log::*;
 
 
 pub struct MotorController {
     driver: DynamixelDriver,
     body_config: BodyConfig,
+    last_read_voltage: usize,
+    last_voltages: VecDeque<f32>,
 }
 
 impl MotorController {
@@ -16,6 +20,8 @@ impl MotorController {
         Ok(MotorController {
             driver: dynamixel_driver,
             body_config: body_config,
+            last_read_voltage: 0,
+            last_voltages: VecDeque::new(),
         })
     }
 
@@ -62,13 +68,26 @@ impl MotorController {
     }
 
     pub fn read_mean_voltage(&mut self) -> Result<f32, Box<dyn Error>> {
-        let mut voltages = Vec::with_capacity(18);
-        for id in &self.body_config.get_ids() {
-            let voltage = self.driver.read_voltage(*id)?;
-            voltages.push(voltage);
+        let ids = self.body_config.get_ids();
+        // Load all on first call
+        if self.last_voltages.is_empty() {
+            info!("Read all voltages");
+            for id in &ids {
+                let voltage = self.driver.read_voltage(*id)?;
+                self.last_voltages.push_front(voltage);
+            }
+            self.last_read_voltage = ids.len() - 1;
         }
-        let sum: f32 = voltages.iter().sum();
-        let mean = sum / 18.0;
+        self.last_read_voltage += 1;
+        if self.last_read_voltage >= ids.len() {
+            self.last_read_voltage = 0;
+        }
+        let id = ids[self.last_read_voltage];
+        let voltage = self.driver.read_voltage(id)?;
+        self.last_voltages.push_front(voltage);
+        self.last_voltages.pop_back();
+        let sum: f32 = self.last_voltages.iter().sum();
+        let mean = sum / ids.len() as f32;
         Ok(mean)
     }
 
