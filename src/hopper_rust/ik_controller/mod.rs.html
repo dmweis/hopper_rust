@@ -392,7 +392,7 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">body_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">BodyController</span><span class="op">&gt;</span>,
         <span class="ident">body_configuration</span>: <span class="ident">HopperConfig</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControlable</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">IkController</span> {
             <span class="ident">body_controller</span>,
             <span class="ident">body_configuration</span>,
@@ -555,7 +555,7 @@
             <span class="string">&quot;Failed IK for leg: {} target: {}&quot;</span>,
             <span class="ident">leg_config</span>.<span class="ident">position</span>, <span class="kw-2">&amp;</span><span class="ident">target</span>
         );
-        <span class="prelude-val">Err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;sad math for {}&quot;</span>, <span class="ident">target_angle</span>))<span class="question-mark">?</span>
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;sad math for {}&quot;</span>, <span class="ident">target_angle</span>).<span class="ident">into</span>());
     }
     <span class="kw">let</span> <span class="ident">femur_angle</span> <span class="op">=</span> <span class="ident">angle_by_femur</span> <span class="op">+</span> <span class="ident">ground_target_angle</span>;
     <span class="kw">let</span> <span class="ident">corrected_femur</span> <span class="op">=</span>

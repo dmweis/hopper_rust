@@ -109,6 +109,15 @@
 <span id="106">106</span>
 <span id="107">107</span>
 <span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">motor_positions</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hopper_config</span>::{<span class="ident">BodyConfig</span>, <span class="ident">LegConfig</span>};
@@ -129,7 +138,7 @@
         <span class="kw">let</span> <span class="ident">dynamixel_driver</span> <span class="op">=</span> <span class="ident">DynamixelDriver</span>::<span class="ident">new</span>(<span class="ident">port_name</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">MotorController</span> {
             <span class="ident">driver</span>: <span class="ident">dynamixel_driver</span>,
-            <span class="ident">body_config</span>: <span class="ident">body_config</span>,
+            <span class="ident">body_config</span>,
             <span class="ident">last_read_voltage</span>: <span class="number">0</span>,
             <span class="ident">last_voltages</span>: <span class="ident">VecDeque</span>::<span class="ident">new</span>(),
         })
@@ -208,13 +217,22 @@
             <span class="kw">let</span> <span class="ident">tibia</span> <span class="op">=</span> <span class="ident">driver</span>.<span class="ident">read_position_rad</span>(<span class="ident">leg_config</span>.<span class="ident">tibia_id</span>).<span class="ident">await</span><span class="question-mark">?</span>;
             <span class="prelude-val">Ok</span>(<span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="ident">coxa</span>, <span class="ident">femur</span>, <span class="ident">tibia</span>))
         }
+        <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">left_front</span>).<span class="ident">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span>
+            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">left_middle</span>).<span class="ident">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">left_rear</span>).<span class="ident">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span>
+            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">right_front</span>).<span class="ident">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span>
+            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">right_middle</span>).<span class="ident">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">right_rear</span>).<span class="ident">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">BodyMotorPositions</span>::<span class="ident">new</span>(
-            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">left_front</span>).<span class="ident">await</span><span class="question-mark">?</span>,
-            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">left_middle</span>).<span class="ident">await</span><span class="question-mark">?</span>,
-            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">left_rear</span>).<span class="ident">await</span><span class="question-mark">?</span>,
-            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">right_front</span>).<span class="ident">await</span><span class="question-mark">?</span>,
-            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">right_middle</span>).<span class="ident">await</span><span class="question-mark">?</span>,
-            <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">driver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">right_rear</span>).<span class="ident">await</span><span class="question-mark">?</span>,
+            <span class="ident">left_front</span>,
+            <span class="ident">left_middle</span>,
+            <span class="ident">left_rear</span>,
+            <span class="ident">right_front</span>,
+            <span class="ident">right_middle</span>,
+            <span class="ident">right_rear</span>,
         ))
     }
 }

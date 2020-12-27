@@ -167,7 +167,7 @@
         <span class="ident">timer_factory</span>.<span class="ident">get_timer</span>(<span class="string">&quot;Body controller timer&quot;</span>.<span class="ident">to_owned</span>()),
     );
 
-    <span class="kw">let</span> <span class="ident">ik_controller</span> <span class="op">=</span> <span class="ident">ik_controller</span>::<span class="ident">IkController</span>::<span class="ident">new</span>(<span class="ident">body_controller</span>, <span class="ident">hopper_config</span>.<span class="ident">clone</span>());
+    <span class="kw">let</span> <span class="ident">ik_controller</span> <span class="op">=</span> <span class="ident">ik_controller</span>::<span class="ident">IkController</span>::<span class="ident">new</span>(<span class="ident">body_controller</span>, <span class="ident">hopper_config</span>);
 
     <span class="ident">udp_adaptor</span>::<span class="ident">udp_ik_commander</span>(<span class="ident">ik_controller</span>).<span class="ident">unwrap</span>();
     <span class="prelude-val">Ok</span>(())
