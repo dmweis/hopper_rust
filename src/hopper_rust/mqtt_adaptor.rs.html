@@ -80,6 +80,12 @@
 <span id="77">77</span>
 <span id="78">78</span>
 <span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">rumqtt</span>::{<span class="ident">MqttClient</span>, <span class="ident">MqttOptions</span>, <span class="ident">QoS</span>, <span class="ident">ReconnectOptions</span>};
@@ -107,7 +113,7 @@
                 <span class="prelude-val">Ok</span>(<span class="ident">client</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;MQTT adapter started&quot;</span>);
                     <span class="ident">client</span>
-                },
+                }
                 <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Failed to connect to MQTT host {}&quot;</span>, <span class="ident">error</span>);
                     <span class="kw">return</span>;
@@ -117,16 +123,19 @@
             <span class="kw">for</span> <span class="ident">message</span> <span class="kw">in</span> <span class="ident">rx</span>.<span class="ident">iter</span>() {
                 <span class="kw">match</span> <span class="ident">message</span> {
                     <span class="ident">Command</span>::<span class="ident">SendMessage</span>(<span class="ident">topic</span>, <span class="ident">message</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span>
-                            <span class="ident">mqtt_client</span>.<span class="ident">publish</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;hopper/telemetry/{}&quot;</span>, <span class="ident">topic</span>), <span class="ident">QoS</span>::<span class="ident">AtMostOnce</span>, <span class="bool-val">false</span>, <span class="ident">message</span>)
-                        {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="ident">mqtt_client</span>.<span class="ident">publish</span>(
+                            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;hopper/telemetry/{}&quot;</span>, <span class="ident">topic</span>),
+                            <span class="ident">QoS</span>::<span class="ident">AtMostOnce</span>,
+                            <span class="bool-val">false</span>,
+                            <span class="ident">message</span>,
+                        ) {
                             <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Failed to send MQTT message {}&quot;</span>, <span class="ident">error</span>);
                         }
                     }
                     <span class="ident">Command</span>::<span class="ident">Exit</span> <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;MQTT adapter signaled to exit&quot;</span>);
-                        <span class="kw">break</span>
-                    },
+                        <span class="kw">break</span>;
+                    }
                 }
             }
         });
@@ -137,7 +146,10 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">topic</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">send</span>(<span class="ident">Command</span>::<span class="ident">SendMessage</span>(<span class="ident">topic</span>.<span class="ident">to_owned</span>(), <span class="ident">message</span>.<span class="ident">to_owned</span>())) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">sender</span>
+            .<span class="ident">send</span>(<span class="ident">Command</span>::<span class="ident">SendMessage</span>(<span class="ident">topic</span>.<span class="ident">to_owned</span>(), <span class="ident">message</span>.<span class="ident">to_owned</span>()))
+        {
             <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Failed to load MQTT message to channel {}&quot;</span>, <span class="ident">error</span>);
         }
     }

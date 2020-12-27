@@ -142,15 +142,14 @@
 <span id="139">139</span>
 <span id="140">140</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">body_controller</span>::{ <span class="ident">BodyMotorPositions</span>, <span class="ident">BodyController</span> };
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">body_controller</span>::{<span class="ident">BodyController</span>, <span class="ident">BodyMotorPositions</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">leg_positions</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">IkControlable</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">net</span>::<span class="ident">UdpSocket</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">from_utf8</span>;
-<span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span>;
-
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>)]</span>
 <span class="kw">enum</span> <span class="ident">Command</span> {
@@ -183,19 +182,19 @@
                     <span class="ident">Command</span>::<span class="ident">MoveMotorsTo</span>(<span class="ident">position</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Moving to pos&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">move_motors_to</span>(<span class="ident">position</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">SetSpeed</span>(<span class="ident">speed</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Setting speed&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">set_speed</span>(<span class="ident">speed</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">SetCompliance</span>(<span class="ident">compliance</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Setting compliance&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">set_compliance</span>(<span class="ident">compliance</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">SetTorque</span>(<span class="ident">torque</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Setting torque&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">set_torque</span>(<span class="ident">torque</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">ReadMotorPosition</span> <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Reading position&quot;</span>);
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">positions</span>) <span class="op">=</span> <span class="ident">controller</span>.<span class="ident">read_motor_positions</span>() {
@@ -204,7 +203,7 @@
                         } <span class="kw">else</span> {
                             <span class="ident">socket</span>.<span class="ident">send_to</span>(<span class="string">&quot;FATAL ERROR&quot;</span>.<span class="ident">as_bytes</span>(), <span class="ident">addr</span>).<span class="ident">unwrap</span>();
                         }
-                    },
+                    }
                     <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Command not supported by body controller&quot;</span>);
                         <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Command not supported by body controller&quot;</span>);
@@ -214,12 +213,12 @@
                 <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Got malformed message&quot;</span>);
             }
         }
-        
     }
 }
 
-
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">udp_ik_commander</span>(<span class="kw-2">mut</span> <span class="ident">controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControlable</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">udp_ik_commander</span>(
+    <span class="kw-2">mut</span> <span class="ident">controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControlable</span><span class="op">&gt;</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">socket</span> <span class="op">=</span> <span class="ident">UdpSocket</span>::<span class="ident">bind</span>(<span class="string">&quot;0.0.0.0:6666&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buffer</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">1024</span>];
     <span class="kw">loop</span> {
@@ -234,11 +233,11 @@
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="ident">controller</span>.<span class="ident">move_to_positions</span>(<span class="ident">position</span>) {
                             <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Failed writing position {}&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">error</span>);
                         }
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">DisableMotors</span> <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Disabling motors&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">disable_motors</span>();
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">ReadLegPosition</span> <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Reading position&quot;</span>);
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">positions</span>) <span class="op">=</span> <span class="ident">controller</span>.<span class="ident">read_leg_positions</span>() {
@@ -246,25 +245,27 @@
                             <span class="ident">socket</span>.<span class="ident">send_to</span>(<span class="kw-2">&amp;</span><span class="ident">json</span>, <span class="ident">addr</span>).<span class="ident">unwrap</span>();
                         } <span class="kw">else</span> {
                             <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Failed reading position&quot;</span>);
-                            <span class="ident">socket</span>.<span class="ident">send_to</span>(<span class="string">&quot;{\&quot;value\&quot;: \&quot;error\&quot;}&quot;</span>.<span class="ident">as_bytes</span>(), <span class="ident">addr</span>).<span class="ident">unwrap</span>();
+                            <span class="ident">socket</span>
+                                .<span class="ident">send_to</span>(<span class="string">&quot;{\&quot;value\&quot;: \&quot;error\&quot;}&quot;</span>.<span class="ident">as_bytes</span>(), <span class="ident">addr</span>)
+                                .<span class="ident">unwrap</span>();
                         }
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">MoveMotorsTo</span>(<span class="ident">position</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Moving to pos&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">move_motors_to</span>(<span class="ident">position</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">SetSpeed</span>(<span class="ident">speed</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Setting speed&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">set_speed</span>(<span class="ident">speed</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">SetCompliance</span>(<span class="ident">compliance</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Setting compliance&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">set_compliance</span>(<span class="ident">compliance</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">SetTorque</span>(<span class="ident">torque</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Setting torque&quot;</span>);
                         <span class="ident">controller</span>.<span class="ident">set_torque</span>(<span class="ident">torque</span>);
-                    },
+                    }
                     <span class="ident">Command</span>::<span class="ident">ReadMotorPosition</span> <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Reading position&quot;</span>);
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">positions</span>) <span class="op">=</span> <span class="ident">controller</span>.<span class="ident">read_motor_positions</span>() {
@@ -273,13 +274,13 @@
                         } <span class="kw">else</span> {
                             <span class="ident">socket</span>.<span class="ident">send_to</span>(<span class="string">&quot;FATAL ERROR&quot;</span>.<span class="ident">as_bytes</span>(), <span class="ident">addr</span>).<span class="ident">unwrap</span>();
                         }
-                    },
+                    }
                 }
             } <span class="kw">else</span> {
                 <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Received malformed message {:?}&quot;</span>, <span class="ident">from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">received</span>));
             }
         }
-        
     }
-}</pre></div>
+}
+</pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "hopper_rust";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

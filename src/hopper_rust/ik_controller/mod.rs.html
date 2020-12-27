@@ -332,18 +332,52 @@
 <span id="329">329</span>
 <span id="330">330</span>
 <span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">leg_positions</span>;
 
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">body_controller</span>::{
+    <span class="ident">motor_positions</span>::{<span class="ident">BodyMotorPositions</span>, <span class="ident">LegMotorPositions</span>},
+    <span class="ident">BodyController</span>,
+};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hopper_config</span>::{<span class="ident">HopperConfig</span>, <span class="ident">LegConfig</span>};
 <span class="kw">use</span> <span class="ident">leg_positions</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">body_controller</span>::{ <span class="ident">motor_positions</span>::{<span class="ident">LegMotorPositions</span>, <span class="ident">BodyMotorPositions</span>}, <span class="ident">BodyController</span> };
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hopper_config</span>::{ <span class="ident">LegConfig</span>, <span class="ident">HopperConfig</span> };
+<span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">Point3</span>, <span class="ident">Vector3</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
-<span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 
-
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait</span> <span class="ident">IkControlable</span> : <span class="ident">BodyController</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait</span> <span class="ident">IkControlable</span>: <span class="ident">BodyController</span> {
     <span class="kw">fn</span> <span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">positions</span>: <span class="ident">LegPositions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
     <span class="kw">fn</span> <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LegPositions</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
     <span class="kw">fn</span> <span class="ident">disable_motors</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>);
@@ -357,11 +391,11 @@
 <span class="kw">impl</span> <span class="ident">IkController</span> {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">body_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">BodyController</span><span class="op">&gt;</span>,
-        <span class="ident">body_configuration</span>: <span class="ident">HopperConfig</span>
+        <span class="ident">body_configuration</span>: <span class="ident">HopperConfig</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControlable</span><span class="op">&gt;</span> {
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">IkController</span> {
             <span class="ident">body_controller</span>,
-            <span class="ident">body_configuration</span>
+            <span class="ident">body_configuration</span>,
         })
     }
 }
@@ -394,7 +428,7 @@
         <span class="self">self</span>.<span class="ident">body_controller</span>.<span class="ident">move_motors_to</span>(<span class="ident">motor_positions</span>);
         <span class="prelude-val">Ok</span>(())
     }
-    
+
     <span class="kw">fn</span> <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LegPositions</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">body_controller</span>.<span class="ident">read_motor_positions</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">leg_positions</span> <span class="op">=</span> <span class="ident">calculate_fk</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_configuration</span>);
@@ -408,41 +442,86 @@
 
 <span class="kw">fn</span> <span class="ident">calculate_ik</span>(
     <span class="ident">positions</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>,
-    <span class="ident">body_config</span>: <span class="kw-2">&amp;</span><span class="ident">HopperConfig</span>
+    <span class="ident">body_config</span>: <span class="kw-2">&amp;</span><span class="ident">HopperConfig</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BodyMotorPositions</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">left_front</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">right_front</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">left_middle</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_middle</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">right_middle</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_middle</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">left_rear</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_rear</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">right_rear</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_rear</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">left_front</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>,
+    )<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">right_front</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>,
+    )<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">left_middle</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_middle</span>,
+    )<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">right_middle</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_middle</span>,
+    )<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">left_rear</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_rear</span>,
+    )<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">positions</span>.<span class="ident">right_rear</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_rear</span>,
+    )<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">BodyMotorPositions</span>::<span class="ident">new</span>(
         <span class="ident">left_front</span>,
         <span class="ident">left_middle</span>,
         <span class="ident">left_rear</span>,
         <span class="ident">right_front</span>,
         <span class="ident">right_middle</span>,
-        <span class="ident">right_rear</span>
+        <span class="ident">right_rear</span>,
     ))
 }
 
-<span class="kw">fn</span> <span class="ident">calculate_fk</span>(
-    <span class="ident">motor_positions</span>: <span class="kw-2">&amp;</span><span class="ident">BodyMotorPositions</span>,
-    <span class="ident">body_config</span>: <span class="kw-2">&amp;</span><span class="ident">HopperConfig</span>
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
-    <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">left_front</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>);
-    <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">right_front</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>);
-    <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">left_middle</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_middle</span>);
-    <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">right_middle</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_middle</span>);
-    <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">left_rear</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_rear</span>);
-    <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">right_rear</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>, <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_rear</span>);
+<span class="kw">fn</span> <span class="ident">calculate_fk</span>(<span class="ident">motor_positions</span>: <span class="kw-2">&amp;</span><span class="ident">BodyMotorPositions</span>, <span class="ident">body_config</span>: <span class="kw-2">&amp;</span><span class="ident">HopperConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
+    <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">left_front</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>,
+    );
+    <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">right_front</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>,
+    );
+    <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">left_middle</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_middle</span>,
+    );
+    <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">right_middle</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_middle</span>,
+    );
+    <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">left_rear</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">left_rear</span>,
+    );
+    <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
+        <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>.<span class="ident">right_rear</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
+        <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_rear</span>,
+    );
     <span class="ident">LegPositions</span>::<span class="ident">new</span>(
         <span class="ident">left_front</span>,
         <span class="ident">left_middle</span>,
         <span class="ident">left_rear</span>,
         <span class="ident">right_front</span>,
         <span class="ident">right_middle</span>,
-        <span class="ident">right_rear</span>
+        <span class="ident">right_rear</span>,
     )
 }
 
@@ -454,12 +533,9 @@
     <span class="kw">let</span> <span class="ident">coxa_position</span> <span class="op">=</span> <span class="ident">leg_config</span>.<span class="ident">position</span>;
     <span class="kw">let</span> <span class="ident">relative_vector</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">target</span> <span class="op">-</span> <span class="ident">coxa_position</span>;
     <span class="kw">let</span> <span class="ident">target_angle</span> <span class="op">=</span> <span class="ident">relative_vector</span>.<span class="ident">y</span>.<span class="ident">atan2</span>(<span class="ident">relative_vector</span>.<span class="ident">x</span>) <span class="op">+</span> <span class="ident">leg_config</span>.<span class="ident">angle_offset</span>;
-    <span class="kw">let</span> <span class="ident">horizontal_distance</span> <span class="op">=</span> (
-        <span class="ident">relative_vector</span>.<span class="ident">x</span>.<span class="ident">powi</span>(<span class="number">2</span>) <span class="op">+</span> <span class="ident">relative_vector</span>.<span class="ident">y</span>.<span class="ident">powi</span>(<span class="number">2</span>)
-    ).<span class="ident">sqrt</span>() <span class="op">-</span> <span class="ident">body_config</span>.<span class="ident">coxa_length</span>;
-    <span class="kw">let</span> <span class="ident">distance</span> <span class="op">=</span> (
-        <span class="ident">horizontal_distance</span>.<span class="ident">powi</span>(<span class="number">2</span>) <span class="op">+</span> <span class="ident">relative_vector</span>.<span class="ident">z</span>.<span class="ident">powi</span>(<span class="number">2</span>)
-    ).<span class="ident">sqrt</span>();
+    <span class="kw">let</span> <span class="ident">horizontal_distance</span> <span class="op">=</span>
+        (<span class="ident">relative_vector</span>.<span class="ident">x</span>.<span class="ident">powi</span>(<span class="number">2</span>) <span class="op">+</span> <span class="ident">relative_vector</span>.<span class="ident">y</span>.<span class="ident">powi</span>(<span class="number">2</span>)).<span class="ident">sqrt</span>() <span class="op">-</span> <span class="ident">body_config</span>.<span class="ident">coxa_length</span>;
+    <span class="kw">let</span> <span class="ident">distance</span> <span class="op">=</span> (<span class="ident">horizontal_distance</span>.<span class="ident">powi</span>(<span class="number">2</span>) <span class="op">+</span> <span class="ident">relative_vector</span>.<span class="ident">z</span>.<span class="ident">powi</span>(<span class="number">2</span>)).<span class="ident">sqrt</span>();
     <span class="comment">// use sss triangle solution to calculate angles</span>
     <span class="comment">// use law of cosinus to get angles in two corners</span>
     <span class="kw">let</span> <span class="ident">angle_by_tibia</span> <span class="op">=</span> <span class="ident">get_alpha_angle</span>(
@@ -475,54 +551,54 @@
     <span class="comment">// we have angles of the SSS triangle. now we need angle for the servos</span>
     <span class="kw">let</span> <span class="ident">ground_target_angle</span> <span class="op">=</span> <span class="ident">horizontal_distance</span>.<span class="ident">atan2</span>(<span class="op">-</span><span class="ident">relative_vector</span>.<span class="ident">z</span>);
     <span class="kw">if</span> <span class="ident">target_angle</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">target_angle</span> <span class="op">&lt;</span><span class="op">=</span> (<span class="op">-</span><span class="number">90_f32</span>).<span class="ident">to_radians</span>() {
-        <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Failed IK for leg: {} target: {}&quot;</span>, <span class="ident">leg_config</span>.<span class="ident">position</span>, <span class="kw-2">&amp;</span><span class="ident">target</span>);
+        <span class="macro">warn</span><span class="macro">!</span>(
+            <span class="string">&quot;Failed IK for leg: {} target: {}&quot;</span>,
+            <span class="ident">leg_config</span>.<span class="ident">position</span>, <span class="kw-2">&amp;</span><span class="ident">target</span>
+        );
         <span class="prelude-val">Err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;sad math for {}&quot;</span>, <span class="ident">target_angle</span>))<span class="question-mark">?</span>
     }
     <span class="kw">let</span> <span class="ident">femur_angle</span> <span class="op">=</span> <span class="ident">angle_by_femur</span> <span class="op">+</span> <span class="ident">ground_target_angle</span>;
-    <span class="kw">let</span> <span class="ident">corrected_femur</span> <span class="op">=</span> (<span class="ident">leg_config</span>.<span class="ident">femur_correction</span> <span class="op">+</span> <span class="ident">body_config</span>.<span class="ident">femur_offset</span> <span class="op">+</span> <span class="ident">femur_angle</span>).<span class="ident">abs</span>();
-    <span class="kw">let</span> <span class="ident">corrected_tibia</span> <span class="op">=</span> (<span class="ident">leg_config</span>.<span class="ident">tibia_correction</span> <span class="op">+</span> <span class="ident">body_config</span>.<span class="ident">tibia_offset</span> <span class="op">+</span> <span class="ident">angle_by_tibia</span>).<span class="ident">abs</span>();
+    <span class="kw">let</span> <span class="ident">corrected_femur</span> <span class="op">=</span>
+        (<span class="ident">leg_config</span>.<span class="ident">femur_correction</span> <span class="op">+</span> <span class="ident">body_config</span>.<span class="ident">femur_offset</span> <span class="op">+</span> <span class="ident">femur_angle</span>).<span class="ident">abs</span>();
+    <span class="kw">let</span> <span class="ident">corrected_tibia</span> <span class="op">=</span>
+        (<span class="ident">leg_config</span>.<span class="ident">tibia_correction</span> <span class="op">+</span> <span class="ident">body_config</span>.<span class="ident">tibia_offset</span> <span class="op">+</span> <span class="ident">angle_by_tibia</span>).<span class="ident">abs</span>();
     <span class="kw">let</span> <span class="ident">corrected_coxa</span> <span class="op">=</span> <span class="number">150_f32</span>.<span class="ident">to_radians</span>() <span class="op">+</span> <span class="ident">target_angle</span>;
-    <span class="prelude-val">Ok</span>(<span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="ident">corrected_coxa</span>, <span class="ident">corrected_femur</span>, <span class="ident">corrected_tibia</span>))
+    <span class="prelude-val">Ok</span>(<span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(
+        <span class="ident">corrected_coxa</span>,
+        <span class="ident">corrected_femur</span>,
+        <span class="ident">corrected_tibia</span>,
+    ))
 }
 
 <span class="kw">fn</span> <span class="ident">calculate_fk_for_leg</span>(
     <span class="ident">motor_positions</span>: <span class="kw-2">&amp;</span><span class="ident">LegMotorPositions</span>,
     <span class="ident">body_config</span>: <span class="kw-2">&amp;</span><span class="ident">HopperConfig</span>,
-    <span class="ident">leg_config</span>: <span class="kw-2">&amp;</span><span class="ident">LegConfig</span>,) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Point3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">femur_angle</span> <span class="op">=</span> (
-            <span class="ident">motor_positions</span>.<span class="ident">femur</span>() <span class="op">-</span>
-            (
-                <span class="ident">leg_config</span>.<span class="ident">femur_correction</span> <span class="op">+</span>
-                <span class="ident">body_config</span>.<span class="ident">femur_offset</span>
-            ).<span class="ident">abs</span>()
-        ).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">tibia_angle</span> <span class="op">=</span> (
-            <span class="ident">motor_positions</span>.<span class="ident">tibia</span>() <span class="op">-</span>
-            (
-                <span class="ident">leg_config</span>.<span class="ident">tibia_correction</span> <span class="op">+</span>
-                <span class="ident">body_config</span>.<span class="ident">tibia_offset</span>
-            ).<span class="ident">abs</span>()
-        ).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">coxa_angle</span> <span class="op">=</span>
-            <span class="ident">motor_positions</span>.<span class="ident">coxa</span>() <span class="op">-</span>
-            <span class="number">150_f32</span>.<span class="ident">to_radians</span>() <span class="op">-</span>
-            <span class="ident">leg_config</span>.<span class="ident">angle_offset</span>;
-        <span class="kw">let</span> <span class="ident">base_x</span> <span class="op">=</span> <span class="ident">coxa_angle</span>.<span class="ident">cos</span>();
-        <span class="kw">let</span> <span class="ident">base_y</span> <span class="op">=</span> <span class="ident">coxa_angle</span>.<span class="ident">sin</span>();
-        <span class="kw">let</span> <span class="ident">coxa_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span>, <span class="ident">base_y</span>, <span class="number">0.0</span>) <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">coxa_length</span>;
-        <span class="kw">let</span> <span class="ident">femur_x</span> <span class="op">=</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()).<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">femur_length</span>;
-        <span class="kw">let</span> <span class="ident">femur_y</span> <span class="op">=</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()).<span class="ident">cos</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">femur_length</span>;
-        <span class="kw">let</span> <span class="ident">femur_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">femur_x</span>);
-        <span class="comment">// to calculate tibia we need angle between tibia and a vertical line</span>
-        <span class="comment">// we get this by calculating the angles formed by a horizontal line from femur</span>
-        <span class="comment">// femur and part of tibia by knowing that the sum of angles is 180</span>
-        <span class="comment">// than we just remove this from teh tibia angle and done</span>
-        <span class="kw">let</span> <span class="ident">angle_tibia_vector</span> <span class="op">=</span> <span class="ident">tibia_angle</span> <span class="op">-</span> (<span class="number">90_f32</span>.<span class="ident">to_radians</span>() <span class="op">-</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()));
-        <span class="kw">let</span> <span class="ident">tibia_x</span> <span class="op">=</span> <span class="ident">angle_tibia_vector</span>.<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">tibia_length</span>;
-        <span class="kw">let</span> <span class="ident">tibia_y</span> <span class="op">=</span> <span class="ident">angle_tibia_vector</span>.<span class="ident">cos</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">tibia_length</span>;
-        <span class="kw">let</span> <span class="ident">tibia_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="op">-</span><span class="ident">tibia_y</span>);
-        <span class="kw">let</span> <span class="ident">coxa_position</span> <span class="op">=</span> <span class="ident">leg_config</span>.<span class="ident">position</span>;
-        <span class="ident">coxa_position</span> <span class="op">+</span> <span class="ident">coxa_vector</span> <span class="op">+</span> <span class="ident">femur_vector</span> <span class="op">+</span> <span class="ident">tibia_vector</span>
+    <span class="ident">leg_config</span>: <span class="kw-2">&amp;</span><span class="ident">LegConfig</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Point3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">femur_angle</span> <span class="op">=</span> (<span class="ident">motor_positions</span>.<span class="ident">femur</span>()
+        <span class="op">-</span> (<span class="ident">leg_config</span>.<span class="ident">femur_correction</span> <span class="op">+</span> <span class="ident">body_config</span>.<span class="ident">femur_offset</span>).<span class="ident">abs</span>())
+    .<span class="ident">abs</span>();
+    <span class="kw">let</span> <span class="ident">tibia_angle</span> <span class="op">=</span> (<span class="ident">motor_positions</span>.<span class="ident">tibia</span>()
+        <span class="op">-</span> (<span class="ident">leg_config</span>.<span class="ident">tibia_correction</span> <span class="op">+</span> <span class="ident">body_config</span>.<span class="ident">tibia_offset</span>).<span class="ident">abs</span>())
+    .<span class="ident">abs</span>();
+    <span class="kw">let</span> <span class="ident">coxa_angle</span> <span class="op">=</span> <span class="ident">motor_positions</span>.<span class="ident">coxa</span>() <span class="op">-</span> <span class="number">150_f32</span>.<span class="ident">to_radians</span>() <span class="op">-</span> <span class="ident">leg_config</span>.<span class="ident">angle_offset</span>;
+    <span class="kw">let</span> <span class="ident">base_x</span> <span class="op">=</span> <span class="ident">coxa_angle</span>.<span class="ident">cos</span>();
+    <span class="kw">let</span> <span class="ident">base_y</span> <span class="op">=</span> <span class="ident">coxa_angle</span>.<span class="ident">sin</span>();
+    <span class="kw">let</span> <span class="ident">coxa_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span>, <span class="ident">base_y</span>, <span class="number">0.0</span>) <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">coxa_length</span>;
+    <span class="kw">let</span> <span class="ident">femur_x</span> <span class="op">=</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()).<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">femur_length</span>;
+    <span class="kw">let</span> <span class="ident">femur_y</span> <span class="op">=</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()).<span class="ident">cos</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">femur_length</span>;
+    <span class="kw">let</span> <span class="ident">femur_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">femur_x</span>);
+    <span class="comment">// to calculate tibia we need angle between tibia and a vertical line</span>
+    <span class="comment">// we get this by calculating the angles formed by a horizontal line from femur</span>
+    <span class="comment">// femur and part of tibia by knowing that the sum of angles is 180</span>
+    <span class="comment">// than we just remove this from teh tibia angle and done</span>
+    <span class="kw">let</span> <span class="ident">angle_tibia_vector</span> <span class="op">=</span>
+        <span class="ident">tibia_angle</span> <span class="op">-</span> (<span class="number">90_f32</span>.<span class="ident">to_radians</span>() <span class="op">-</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()));
+    <span class="kw">let</span> <span class="ident">tibia_x</span> <span class="op">=</span> <span class="ident">angle_tibia_vector</span>.<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">tibia_length</span>;
+    <span class="kw">let</span> <span class="ident">tibia_y</span> <span class="op">=</span> <span class="ident">angle_tibia_vector</span>.<span class="ident">cos</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">tibia_length</span>;
+    <span class="kw">let</span> <span class="ident">tibia_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="op">-</span><span class="ident">tibia_y</span>);
+    <span class="kw">let</span> <span class="ident">coxa_position</span> <span class="op">=</span> <span class="ident">leg_config</span>.<span class="ident">position</span>;
+    <span class="ident">coxa_position</span> <span class="op">+</span> <span class="ident">coxa_vector</span> <span class="op">+</span> <span class="ident">femur_vector</span> <span class="op">+</span> <span class="ident">tibia_vector</span>
 }
 
 <span class="kw">fn</span> <span class="ident">get_alpha_angle</span>(<span class="ident">a</span>: <span class="kw-2">&amp;</span><span class="ident">f32</span>, <span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="ident">f32</span>, <span class="ident">c</span>: <span class="kw-2">&amp;</span><span class="ident">f32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f32</span> {
@@ -557,11 +633,8 @@
     <span class="kw">fn</span> <span class="ident">basic_ik_left_front</span>() {
         <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
-        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
-            <span class="kw-2">&amp;</span><span class="ident">target</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>
-        ).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
+            <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>).<span class="ident">unwrap</span>();
         <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">coxa</span>().<span class="ident">to_degrees</span>(), <span class="number">113.28124</span>);
         <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">femur</span>().<span class="ident">to_degrees</span>(), <span class="number">112.15929</span>);
         <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">tibia</span>().<span class="ident">to_degrees</span>(), <span class="number">196.29994</span>);
@@ -571,11 +644,8 @@
     <span class="kw">fn</span> <span class="ident">basic_ik_right_front</span>() {
         <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
-        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
-            <span class="kw-2">&amp;</span><span class="ident">target</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>
-        ).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
+            <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>).<span class="ident">unwrap</span>();
         <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">coxa</span>().<span class="ident">to_degrees</span>(), <span class="number">186.71875</span>);
         <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">femur</span>().<span class="ident">to_degrees</span>(), <span class="number">188.0706</span>);
         <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">tibia</span>().<span class="ident">to_degrees</span>(), <span class="number">103.929955</span>);
@@ -608,36 +678,30 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_fk_against_ik_left_front</span>(){
+    <span class="kw">fn</span> <span class="ident">test_fk_against_ik_left_front</span>() {
         <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
-        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
-            <span class="kw-2">&amp;</span><span class="ident">target</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>
-        ).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
+            <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">fk_calculated</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
-            <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>, 
+            <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>,
             <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>
+            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>,
         );
         <span class="kw">let</span> <span class="ident">result_distance</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">fk_calculated</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">result_distance</span> <span class="op">&lt;</span> <span class="number">0.0000001</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_fk_against_ik_right_front</span>(){
+    <span class="kw">fn</span> <span class="ident">test_fk_against_ik_right_front</span>() {
         <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
-        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="ident">calculate_ik_for_leg</span>(
-            <span class="kw-2">&amp;</span><span class="ident">target</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>
-        ).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
+            <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">fk_calculated</span> <span class="op">=</span> <span class="ident">calculate_fk_for_leg</span>(
-            <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>, 
+            <span class="kw-2">&amp;</span><span class="ident">motor_positions</span>,
             <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
-            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>
+            <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>,
         );
         <span class="kw">let</span> <span class="ident">result_distance</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">fk_calculated</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">result_distance</span> <span class="op">&lt;</span> <span class="number">0.0000001</span>);
