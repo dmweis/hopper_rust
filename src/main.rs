@@ -1,16 +1,15 @@
 mod body_controller;
-mod ik_controller;
 mod hopper_config;
+mod ik_controller;
 mod mqtt_adaptor;
-mod utilities;
 mod udp_adaptor;
+mod utilities;
 
 use clap::{App, Arg};
-use std::error::Error;
-use std::path::Path;
 use log::*;
 use looprate::shared_timers::SharedTimerFactory;
-
+use std::error::Error;
+use std::path::Path;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Hopper body controller")
@@ -49,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Arg::with_name("v")
                 .short("v")
                 .multiple(true)
-                .help("Sets the level of verbosity")
+                .help("Sets the level of verbosity"),
         )
         .get_matches();
     utilities::start_loggers(matches.value_of("log_path"), matches.occurrences_of("v"))?;
@@ -63,23 +62,21 @@ fn main() -> Result<(), Box<dyn Error>> {
         .expect("Dynamixel port has to be provided");
 
     let hopper_config = match matches.value_of("body_config") {
-        Some(path) =>  {
+        Some(path) => {
             let path = Path::new(path);
             hopper_config::HopperConfig::load(path)?
-        },
-        None => hopper_config::HopperConfig::default()
+        }
+        None => hopper_config::HopperConfig::default(),
     };
 
     let mqtt = mqtt_adaptor::MqttAdaptor::new(&mqtt_host);
 
-
-    let body_controller =
-        body_controller::AsyncBodyController::new(
-            &dynamixel_port,
-            hopper_config.legs.clone(),
-            mqtt,
-            timer_factory.get_timer("Body controller timer".to_owned())
-        );
+    let body_controller = body_controller::AsyncBodyController::new(
+        &dynamixel_port,
+        hopper_config.legs.clone(),
+        mqtt,
+        timer_factory.get_timer("Body controller timer".to_owned()),
+    );
 
     let ik_controller = ik_controller::IkController::new(body_controller, hopper_config.clone());
 

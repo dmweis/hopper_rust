@@ -1,12 +1,11 @@
-use crate::body_controller::{ BodyMotorPositions, BodyController };
+use crate::body_controller::{BodyController, BodyMotorPositions};
 use crate::ik_controller::leg_positions::*;
 use crate::ik_controller::IkControlable;
 use log::*;
+use serde::Deserialize;
 use std::error::Error;
 use std::net::UdpSocket;
 use std::str::from_utf8;
-use serde::Deserialize;
-
 
 #[derive(Deserialize)]
 enum Command {
@@ -39,19 +38,19 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
                     Command::MoveMotorsTo(position) => {
                         trace!("Moving to pos");
                         controller.move_motors_to(position);
-                    },
+                    }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
                         controller.set_speed(speed);
-                    },
+                    }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
                         controller.set_compliance(compliance);
-                    },
+                    }
                     Command::SetTorque(torque) => {
                         trace!("Setting torque");
                         controller.set_torque(torque);
-                    },
+                    }
                     Command::ReadMotorPosition => {
                         trace!("Reading position");
                         if let Ok(positions) = controller.read_motor_positions() {
@@ -60,7 +59,7 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
                         } else {
                             socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
                         }
-                    },
+                    }
                     _ => {
                         error!("Command not supported by body controller");
                         panic!("Command not supported by body controller");
@@ -70,12 +69,12 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
                 error!("Got malformed message");
             }
         }
-        
     }
 }
 
-
-pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<(), Box<dyn Error>> {
+pub(crate) fn udp_ik_commander(
+    mut controller: Box<dyn IkControlable>,
+) -> Result<(), Box<dyn Error>> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {
@@ -90,11 +89,11 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
                         if let Err(error) = controller.move_to_positions(position) {
                             warn!("Failed writing position {}", &error);
                         }
-                    },
+                    }
                     Command::DisableMotors => {
                         trace!("Disabling motors");
                         controller.disable_motors();
-                    },
+                    }
                     Command::ReadLegPosition => {
                         trace!("Reading position");
                         if let Ok(positions) = controller.read_leg_positions() {
@@ -102,25 +101,27 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
                             socket.send_to(&json, addr).unwrap();
                         } else {
                             error!("Failed reading position");
-                            socket.send_to("{\"value\": \"error\"}".as_bytes(), addr).unwrap();
+                            socket
+                                .send_to("{\"value\": \"error\"}".as_bytes(), addr)
+                                .unwrap();
                         }
-                    },
+                    }
                     Command::MoveMotorsTo(position) => {
                         trace!("Moving to pos");
                         controller.move_motors_to(position);
-                    },
+                    }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
                         controller.set_speed(speed);
-                    },
+                    }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
                         controller.set_compliance(compliance);
-                    },
+                    }
                     Command::SetTorque(torque) => {
                         trace!("Setting torque");
                         controller.set_torque(torque);
-                    },
+                    }
                     Command::ReadMotorPosition => {
                         trace!("Reading position");
                         if let Ok(positions) = controller.read_motor_positions() {
@@ -129,12 +130,11 @@ pub(crate) fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result
                         } else {
                             socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
                         }
-                    },
+                    }
                 }
             } else {
                 error!("Received malformed message {:?}", from_utf8(&received));
             }
         }
-        
     }
 }

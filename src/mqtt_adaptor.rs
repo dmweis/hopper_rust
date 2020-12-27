@@ -24,7 +24,7 @@ impl MqttAdaptor {
                 Ok(client) => {
                     info!("MQTT adapter started");
                     client
-                },
+                }
                 Err(error) => {
                     error!("Failed to connect to MQTT host {}", error);
                     return;
@@ -34,16 +34,19 @@ impl MqttAdaptor {
             for message in rx.iter() {
                 match message {
                     Command::SendMessage(topic, message) => {
-                        if let Err(error) =
-                            mqtt_client.publish(format!("hopper/telemetry/{}", topic), QoS::AtMostOnce, false, message)
-                        {
+                        if let Err(error) = mqtt_client.publish(
+                            format!("hopper/telemetry/{}", topic),
+                            QoS::AtMostOnce,
+                            false,
+                            message,
+                        ) {
                             error!("Failed to send MQTT message {}", error);
                         }
                     }
                     Command::Exit => {
                         info!("MQTT adapter signaled to exit");
-                        break
-                    },
+                        break;
+                    }
                 }
             }
         });
@@ -54,7 +57,10 @@ impl MqttAdaptor {
     }
 
     pub fn send(&self, topic: &str, message: &str) {
-        if let Err(error) = self.sender.send(Command::SendMessage(topic.to_owned(), message.to_owned())) {
+        if let Err(error) = self
+            .sender
+            .send(Command::SendMessage(topic.to_owned(), message.to_owned()))
+        {
             error!("Failed to load MQTT message to channel {}", error);
         }
     }

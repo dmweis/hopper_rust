@@ -1,10 +1,9 @@
+use nalgebra::Point3;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use nalgebra::Point3;
-
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct LegConfig {
@@ -70,7 +69,6 @@ impl HopperConfig {
         Ok(deserialized_config)
     }
 }
-
 
 impl Default for HopperConfig {
     fn default() -> Self {

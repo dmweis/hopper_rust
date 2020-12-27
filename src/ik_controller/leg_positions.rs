@@ -1,6 +1,6 @@
+use nalgebra::{distance, Point3};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
-use nalgebra::{ Point3, distance };
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub(crate) struct LegPositions {
@@ -48,7 +48,7 @@ impl MoveTowards for Point3<f32> {
         let distance = distance(self, target);
         if &distance <= max_move {
             // TODO: Think about if this should be true or false
-            return (target.clone(), true)
+            return (target.clone(), true);
         }
         let vector = target - self;
         (self + vector.normalize() * *max_move, true)
@@ -63,7 +63,9 @@ impl MoveTowards for LegPositions {
         let (left_middle, lm_moved) = self.left_middle.move_towards(&target.left_middle, max_move);
         let (left_rear, lr_moved) = self.left_rear.move_towards(&target.left_rear, max_move);
         let (right_front, rf_moved) = self.right_front.move_towards(&target.right_front, max_move);
-        let (right_middle, rm_moved) = self.right_middle.move_towards(&target.right_middle, max_move);
+        let (right_middle, rm_moved) = self
+            .right_middle
+            .move_towards(&target.right_middle, max_move);
         let (right_rear, rr_moved) = self.right_rear.move_towards(&target.right_rear, max_move);
         let leg_positions = LegPositions::new(
             left_front,
@@ -71,7 +73,7 @@ impl MoveTowards for LegPositions {
             left_rear,
             right_front,
             right_middle,
-            right_rear
+            right_rear,
         );
         let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
         (leg_positions, moved)
@@ -123,7 +125,6 @@ impl OptionalLegPositions {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,7 +142,7 @@ mod tests {
     fn move_point_towards_half() {
         let start = Point3::new(0_f32, 0_f32, 0_f32);
         let target = Point3::new(1_f32, 0_f32, 0_f32);
-        let (new, moved) = start.move_towards(&target, &(distance(&start, &target)/2.0));
+        let (new, moved) = start.move_towards(&target, &(distance(&start, &target) / 2.0));
         assert!(moved);
         assert_eq!(new, Point3::new(0.5, 0.0, 0.0));
     }
@@ -230,7 +231,7 @@ mod tests {
             Point3::new(0.0, 0.0, 0.0),
             Point3::new(0.0, 0.0, 0.0),
         );
-        
+
         let target = LegPositions::new(
             Point3::new(1.0, 0.0, 0.0),
             Point3::new(2.0, 0.0, 0.0),
