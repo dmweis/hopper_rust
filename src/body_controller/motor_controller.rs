@@ -17,7 +17,7 @@ impl MotorController {
         let dynamixel_driver = DynamixelDriver::new(port_name)?;
         Ok(MotorController {
             driver: dynamixel_driver,
-            body_config: body_config,
+            body_config,
             last_read_voltage: 0,
             last_voltages: VecDeque::new(),
         })
@@ -96,13 +96,22 @@ impl MotorController {
             let tibia = driver.read_position_rad(leg_config.tibia_id).await?;
             Ok(LegMotorPositions::new(coxa, femur, tibia))
         }
+        let left_front = read_leg_positions(&mut self.driver, &self.body_config.left_front).await?;
+        let left_middle =
+            read_leg_positions(&mut self.driver, &self.body_config.left_middle).await?;
+        let left_rear = read_leg_positions(&mut self.driver, &self.body_config.left_rear).await?;
+        let right_front =
+            read_leg_positions(&mut self.driver, &self.body_config.right_front).await?;
+        let right_middle =
+            read_leg_positions(&mut self.driver, &self.body_config.right_middle).await?;
+        let right_rear = read_leg_positions(&mut self.driver, &self.body_config.right_rear).await?;
         Ok(BodyMotorPositions::new(
-            read_leg_positions(&mut self.driver, &self.body_config.left_front).await?,
-            read_leg_positions(&mut self.driver, &self.body_config.left_middle).await?,
-            read_leg_positions(&mut self.driver, &self.body_config.left_rear).await?,
-            read_leg_positions(&mut self.driver, &self.body_config.right_front).await?,
-            read_leg_positions(&mut self.driver, &self.body_config.right_middle).await?,
-            read_leg_positions(&mut self.driver, &self.body_config.right_rear).await?,
+            left_front,
+            left_middle,
+            left_rear,
+            right_front,
+            right_middle,
+            right_rear,
         ))
     }
 }

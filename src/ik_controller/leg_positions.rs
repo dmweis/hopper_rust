@@ -43,12 +43,12 @@ impl MoveTowards for Point3<f32> {
 
     fn move_towards(&self, target: &Point3<f32>, max_move: &f32) -> (Point3<f32>, bool) {
         if self == target {
-            return (target.clone(), false);
+            return (*target, false);
         }
         let distance = distance(self, target);
         if &distance <= max_move {
             // TODO: Think about if this should be true or false
-            return (target.clone(), true);
+            return (*target, true);
         }
         let vector = target - self;
         (self + vector.normalize() * *max_move, true)
@@ -159,23 +159,9 @@ mod tests {
     #[test]
     fn move_legs_towards_full_step() {
         let a = Point3::new(0.0, 0.0, 0.0);
-        let from = LegPositions::new(
-            a.clone(),
-            a.clone(),
-            a.clone(),
-            a.clone(),
-            a.clone(),
-            a.clone(),
-        );
+        let from = LegPositions::new(a, a, a, a, a, a);
         let b = Point3::new(1.0, 0.0, 0.0);
-        let to = LegPositions::new(
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-        );
+        let to = LegPositions::new(b, b, b, b, b, b);
         let (new, moved) = from.move_towards(&to, &1.0);
         assert!(moved);
         assert_eq!(to, new);
@@ -186,30 +172,9 @@ mod tests {
         let a = Point3::new(0.0, 0.0, 0.0);
         let b = Point3::new(1.0, 0.0, 0.0);
         let c = Point3::new(2.0, 0.0, 0.0);
-        let start = LegPositions::new(
-            a.clone(),
-            a.clone(),
-            a.clone(),
-            a.clone(),
-            a.clone(),
-            a.clone(),
-        );
-        let middle = LegPositions::new(
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-        );
-        let target = LegPositions::new(
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            b.clone(),
-            c.clone(),
-        );
+        let start = LegPositions::new(a, a, a, a, a, a);
+        let middle = LegPositions::new(b, b, b, b, b, b);
+        let target = LegPositions::new(b, b, b, b, b, c);
         let (new, moved) = start.move_towards(&target, &1.0);
         assert!(moved);
         assert_eq!(middle, new);

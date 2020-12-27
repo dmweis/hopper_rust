@@ -25,7 +25,7 @@ impl IkController {
     pub(crate) fn new(
         body_controller: Box<dyn BodyController>,
         body_configuration: HopperConfig,
-    ) -> Box<dyn IkControlable> {
+    ) -> Box<Self> {
         Box::new(IkController {
             body_controller,
             body_configuration,
@@ -188,7 +188,7 @@ fn calculate_ik_for_leg(
             "Failed IK for leg: {} target: {}",
             leg_config.position, &target
         );
-        Err(format!("sad math for {}", target_angle))?
+        return Err(format!("sad math for {}", target_angle).into());
     }
     let femur_angle = angle_by_femur + ground_target_angle;
     let corrected_femur =

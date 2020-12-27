@@ -78,7 +78,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         timer_factory.get_timer("Body controller timer".to_owned()),
     );
 
-    let ik_controller = ik_controller::IkController::new(body_controller, hopper_config.clone());
+    let ik_controller = ik_controller::IkController::new(body_controller, hopper_config);
 
     udp_adaptor::udp_ik_commander(ik_controller).unwrap();
     Ok(())

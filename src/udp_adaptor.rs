@@ -57,7 +57,7 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {
-                            socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
+                            socket.send_to(b"FATAL ERROR", addr).unwrap();
                         }
                     }
                     _ => {
@@ -101,9 +101,7 @@ pub(crate) fn udp_ik_commander(
                             socket.send_to(&json, addr).unwrap();
                         } else {
                             error!("Failed reading position");
-                            socket
-                                .send_to("{\"value\": \"error\"}".as_bytes(), addr)
-                                .unwrap();
+                            socket.send_to(b"{\"value\": \"error\"}", addr).unwrap();
                         }
                     }
                     Command::MoveMotorsTo(position) => {
@@ -128,7 +126,7 @@ pub(crate) fn udp_ik_commander(
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {
-                            socket.send_to("FATAL ERROR".as_bytes(), addr).unwrap();
+                            socket.send_to(b"FATAL ERROR", addr).unwrap();
                         }
                     }
                 }

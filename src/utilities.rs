@@ -32,7 +32,7 @@ pub fn start_loggers(log_file: Option<&str>, verbosity_level: u64) -> Result<(),
     match TermLogger::new(filter, config.clone(), TerminalMode::Mixed) {
         Some(logger) => loggers.push(logger as Box<dyn SharedLogger>),
         None => {
-            loggers.push(SimpleLogger::new(filter, config.clone()));
+            loggers.push(SimpleLogger::new(filter, config));
             warn!("Failed to create Term logger, creating simple logger instead");
         }
     }
