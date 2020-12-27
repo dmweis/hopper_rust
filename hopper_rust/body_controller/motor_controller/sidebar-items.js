@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["MotorController",""]]});
+initSidebarItems({"struct":[["AsyncBodyController",""]],"trait":[["BodyController",""]]});
