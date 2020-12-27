@@ -87,32 +87,32 @@ fn calculate_ik(
     body_config: &HopperConfig,
 ) -> Result<BodyMotorPositions> {
     let left_front = calculate_ik_for_leg(
-        &positions.left_front,
+        &positions.left_front(),
         &body_config,
         &body_config.legs.left_front,
     )?;
     let right_front = calculate_ik_for_leg(
-        &positions.right_front,
+        &positions.right_front(),
         &body_config,
         &body_config.legs.right_front,
     )?;
     let left_middle = calculate_ik_for_leg(
-        &positions.left_middle,
+        &positions.left_middle(),
         &body_config,
         &body_config.legs.left_middle,
     )?;
     let right_middle = calculate_ik_for_leg(
-        &positions.right_middle,
+        &positions.right_middle(),
         &body_config,
         &body_config.legs.right_middle,
     )?;
     let left_rear = calculate_ik_for_leg(
-        &positions.left_rear,
+        &positions.left_rear(),
         &body_config,
         &body_config.legs.left_rear,
     )?;
     let right_rear = calculate_ik_for_leg(
-        &positions.right_rear,
+        &positions.right_rear(),
         &body_config,
         &body_config.legs.right_rear,
     )?;
@@ -362,11 +362,11 @@ mod tests {
         );
         let motor_positions = calculate_ik(&origin, &hopper_config).unwrap();
         let result = calculate_fk(&motor_positions, &hopper_config);
-        assert!(distance(&origin.left_front, &result.left_front) < 0.0000001);
-        assert!(distance(&origin.left_middle, &result.left_middle) < 0.0000001);
-        assert!(distance(&origin.left_rear, &result.left_rear) < 0.0000001);
-        assert!(distance(&origin.right_front, &result.right_front) < 0.0000001);
-        assert!(distance(&origin.right_middle, &result.right_middle) < 0.0000001);
-        assert!(distance(&origin.right_rear, &result.right_rear) < 0.0000001);
+        assert!(distance(origin.left_front(), result.left_front()) < 0.0000001);
+        assert!(distance(origin.left_middle(), result.left_middle()) < 0.0000001);
+        assert!(distance(origin.left_rear(), result.left_rear()) < 0.0000001);
+        assert!(distance(origin.right_front(), result.right_front()) < 0.0000001);
+        assert!(distance(origin.right_middle(), result.right_middle()) < 0.0000001);
+        assert!(distance(origin.right_rear(), result.right_rear()) < 0.0000001);
     }
 }

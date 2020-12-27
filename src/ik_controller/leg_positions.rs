@@ -4,12 +4,12 @@ use std::error::Error;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub(crate) struct LegPositions {
-    pub left_front: Point3<f32>,
-    pub left_middle: Point3<f32>,
-    pub left_rear: Point3<f32>,
-    pub right_front: Point3<f32>,
-    pub right_middle: Point3<f32>,
-    pub right_rear: Point3<f32>,
+    left_front: Point3<f32>,
+    left_middle: Point3<f32>,
+    left_rear: Point3<f32>,
+    right_front: Point3<f32>,
+    right_middle: Point3<f32>,
+    right_rear: Point3<f32>,
 }
 
 impl LegPositions {
@@ -29,6 +29,30 @@ impl LegPositions {
             right_middle,
             right_rear,
         }
+    }
+
+    pub fn left_front(&self) -> &Point3<f32> {
+        &self.left_front
+    }
+
+    pub fn left_middle(&self) -> &Point3<f32> {
+        &self.left_middle
+    }
+
+    pub fn left_rear(&self) -> &Point3<f32> {
+        &self.left_rear
+    }
+
+    pub fn right_front(&self) -> &Point3<f32> {
+        &self.right_front
+    }
+
+    pub fn right_middle(&self) -> &Point3<f32> {
+        &self.right_middle
+    }
+
+    pub fn right_rear(&self) -> &Point3<f32> {
+        &self.right_rear
     }
 }
 
