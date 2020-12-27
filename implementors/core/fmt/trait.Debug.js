@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["hopper_rust"] = [{"text":"impl Debug for LegMotorPositions","synthetic":false,"types":[]},{"text":"impl Debug for BodyMotorPositions","synthetic":false,"types":[]},{"text":"impl Debug for LegPositions","synthetic":false,"types":[]},{"text":"impl Debug for OptionalLegPositions","synthetic":false,"types":[]},{"text":"impl Debug for LegConfig","synthetic":false,"types":[]},{"text":"impl Debug for BodyConfig","synthetic":false,"types":[]},{"text":"impl Debug for HopperConfig","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
