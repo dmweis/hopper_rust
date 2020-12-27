@@ -10,6 +10,7 @@ use log::*;
 use std::path::Path;
 
 /// Hopper body controller
+///
 /// Controls body of Hopper
 #[derive(Clap)]
 #[clap(version = "0.0.2", author = "David Weis <dweis7@gmail.com>")]
