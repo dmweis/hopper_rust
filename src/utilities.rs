@@ -14,7 +14,7 @@ use std::fs::OpenOptions;
 /// # Arguments
 ///
 /// * `log_file` - Path to the optional file to log into
-pub fn start_loggers(log_file: Option<&str>, verbosity_level: u64) -> Result<()> {
+pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> Result<()> {
     let config = ConfigBuilder::new()
         .add_filter_allow_str("hopper_rust")
         .add_filter_allow_str("dynamixel_driver")
