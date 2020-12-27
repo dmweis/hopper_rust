@@ -29,13 +29,7 @@ pub fn start_loggers(log_file: Option<&str>, verbosity_level: u64) -> Result<()>
         let file_logger = WriteLogger::new(filter, config.clone(), log_file);
         loggers.push(file_logger);
     }
-    match TermLogger::new(filter, config.clone(), TerminalMode::Mixed) {
-        Some(logger) => loggers.push(logger as Box<dyn SharedLogger>),
-        None => {
-            loggers.push(SimpleLogger::new(filter, config));
-            warn!("Failed to create Term logger, creating simple logger instead");
-        }
-    }
+    loggers.push(TermLogger::new(filter, config, TerminalMode::Mixed));
     CombinedLogger::init(loggers)?;
     Ok(())
 }
