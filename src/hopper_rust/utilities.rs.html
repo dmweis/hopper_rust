@@ -36,12 +36,6 @@
 <span id="33">33</span>
 <span id="34">34</span>
 <span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
-<span id="39">39</span>
-<span id="40">40</span>
-<span id="41">41</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
@@ -74,13 +68,7 @@
         <span class="kw">let</span> <span class="ident">file_logger</span> <span class="op">=</span> <span class="ident">WriteLogger</span>::<span class="ident">new</span>(<span class="ident">filter</span>, <span class="ident">config</span>.<span class="ident">clone</span>(), <span class="ident">log_file</span>);
         <span class="ident">loggers</span>.<span class="ident">push</span>(<span class="ident">file_logger</span>);
     }
-    <span class="kw">match</span> <span class="ident">TermLogger</span>::<span class="ident">new</span>(<span class="ident">filter</span>, <span class="ident">config</span>.<span class="ident">clone</span>(), <span class="ident">TerminalMode</span>::<span class="ident">Mixed</span>) {
-        <span class="prelude-val">Some</span>(<span class="ident">logger</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">loggers</span>.<span class="ident">push</span>(<span class="ident">logger</span> <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">SharedLogger</span><span class="op">&gt;</span>),
-        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="ident">loggers</span>.<span class="ident">push</span>(<span class="ident">SimpleLogger</span>::<span class="ident">new</span>(<span class="ident">filter</span>, <span class="ident">config</span>));
-            <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Failed to create Term logger, creating simple logger instead&quot;</span>);
-        }
-    }
+    <span class="ident">loggers</span>.<span class="ident">push</span>(<span class="ident">TermLogger</span>::<span class="ident">new</span>(<span class="ident">filter</span>, <span class="ident">config</span>, <span class="ident">TerminalMode</span>::<span class="ident">Mixed</span>));
     <span class="ident">CombinedLogger</span>::<span class="ident">init</span>(<span class="ident">loggers</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
 }
