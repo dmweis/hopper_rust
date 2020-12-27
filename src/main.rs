@@ -10,8 +10,6 @@ use log::*;
 use std::path::Path;
 
 /// Hopper body controller
-///
-/// Controls body of Hopper
 #[derive(Clap)]
 #[clap(version = "0.0.2", author = "David Weis <dweis7@gmail.com>")]
 struct Args {
@@ -37,13 +35,10 @@ async fn main() -> Result<()> {
     utilities::start_loggers(args.log_path, args.verbose)?;
     info!("Started main controller");
 
-    let hopper_config = match args.body_config {
-        Some(path) => {
-            let path = Path::new(&path);
-            hopper_config::HopperConfig::load(path)?
-        }
-        None => hopper_config::HopperConfig::default(),
-    };
+    let hopper_config = args
+        .body_config
+        .map(|path| hopper_config::HopperConfig::load(Path::new(&path)))
+        .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
 
     let body_controller =
         body_controller::AsyncBodyController::new(&args.dynamixel_port, hopper_config.legs.clone())
