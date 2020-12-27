@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["main",""]],"mod":[["body_controller",""],["hopper_config",""],["ik_controller",""],["udp_adaptor",""],["utilities",""]]});
+initSidebarItems({"fn":[["main",""]],"mod":[["body_controller",""],["hopper_config",""],["ik_controller",""],["udp_adaptor",""],["utilities",""]],"struct":[["Args","Hopper body controller Controls body of Hopper"]]});

@@ -53,7 +53,7 @@
 <span class="doccomment">/// # Arguments</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// * `log_file` - Path to the optional file to log into</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">start_loggers</span>(<span class="ident">log_file</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>, <span class="ident">verbosity_level</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">start_loggers</span>(<span class="ident">log_file</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">verbosity_level</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ConfigBuilder</span>::<span class="ident">new</span>()
         .<span class="ident">add_filter_allow_str</span>(<span class="string">&quot;hopper_rust&quot;</span>)
         .<span class="ident">add_filter_allow_str</span>(<span class="string">&quot;dynamixel_driver&quot;</span>)
