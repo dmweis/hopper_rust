@@ -1,9 +1,9 @@
 use crate::body_controller::{BodyController, BodyMotorPositions};
 use crate::ik_controller::leg_positions::*;
 use crate::ik_controller::IkControlable;
+use anyhow::Result;
 use log::*;
 use serde::Deserialize;
-use std::error::Error;
 use std::net::UdpSocket;
 use std::str::from_utf8;
 
@@ -25,7 +25,7 @@ struct Message {
 }
 
 #[allow(dead_code)]
-pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<(), Box<dyn Error>> {
+pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {
@@ -37,23 +37,23 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
                 match message.command {
                     Command::MoveMotorsTo(position) => {
                         trace!("Moving to pos");
-                        controller.move_motors_to(position);
+                        controller.move_motors_to(position).await?;
                     }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
-                        controller.set_speed(speed);
+                        controller.set_speed(speed).await?;
                     }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
-                        controller.set_compliance(compliance);
+                        controller.set_compliance(compliance).await?;
                     }
                     Command::SetTorque(torque) => {
                         trace!("Setting torque");
-                        controller.set_torque(torque);
+                        controller.set_torque(torque).await?;
                     }
                     Command::ReadMotorPosition => {
                         trace!("Reading position");
-                        if let Ok(positions) = controller.read_motor_positions() {
+                        if let Ok(positions) = controller.read_motor_positions().await {
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {
@@ -72,9 +72,7 @@ pub fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()
     }
 }
 
-pub(crate) fn udp_ik_commander(
-    mut controller: Box<dyn IkControlable>,
-) -> Result<(), Box<dyn Error>> {
+pub(crate) async fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {
@@ -86,17 +84,17 @@ pub(crate) fn udp_ik_commander(
                 match message.command {
                     Command::MoveLegsTo(position) => {
                         trace!("Moving to pos");
-                        if let Err(error) = controller.move_to_positions(position) {
+                        if let Err(error) = controller.move_to_positions(position).await {
                             warn!("Failed writing position {}", &error);
                         }
                     }
                     Command::DisableMotors => {
                         trace!("Disabling motors");
-                        controller.disable_motors();
+                        controller.disable_motors().await?;
                     }
                     Command::ReadLegPosition => {
                         trace!("Reading position");
-                        if let Ok(positions) = controller.read_leg_positions() {
+                        if let Ok(positions) = controller.read_leg_positions().await {
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {
@@ -106,23 +104,23 @@ pub(crate) fn udp_ik_commander(
                     }
                     Command::MoveMotorsTo(position) => {
                         trace!("Moving to pos");
-                        controller.move_motors_to(position);
+                        controller.move_motors_to(position).await?;
                     }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
-                        controller.set_speed(speed);
+                        controller.set_speed(speed).await?;
                     }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
-                        controller.set_compliance(compliance);
+                        controller.set_compliance(compliance).await?;
                     }
                     Command::SetTorque(torque) => {
                         trace!("Setting torque");
-                        controller.set_torque(torque);
+                        controller.set_torque(torque).await?;
                     }
                     Command::ReadMotorPosition => {
                         trace!("Reading position");
-                        if let Ok(positions) = controller.read_motor_positions() {
+                        if let Ok(positions) = controller.read_motor_positions().await {
                             let json = serde_json::to_vec(&positions)?;
                             socket.send_to(&json, addr).unwrap();
                         } else {

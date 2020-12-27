@@ -1,6 +1,6 @@
+use anyhow::Result;
 use log::*;
 use simplelog::*;
-use std::error::Error;
 use std::fs::OpenOptions;
 
 /// Initializes loggers
@@ -14,7 +14,7 @@ use std::fs::OpenOptions;
 /// # Arguments
 ///
 /// * `log_file` - Path to the optional file to log into
-pub fn start_loggers(log_file: Option<&str>, verbosity_level: u64) -> Result<(), Box<dyn Error>> {
+pub fn start_loggers(log_file: Option<&str>, verbosity_level: u64) -> Result<()> {
     let config = ConfigBuilder::new()
         .add_filter_allow_str("hopper_rust")
         .add_filter_allow_str("dynamixel_driver")

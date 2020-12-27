@@ -1,6 +1,6 @@
+use anyhow::Result;
 use nalgebra::Point3;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -62,7 +62,7 @@ pub struct HopperConfig {
 }
 
 impl HopperConfig {
-    pub fn load(path: &Path) -> Result<HopperConfig, Box<dyn Error>> {
+    pub fn load(path: &Path) -> Result<HopperConfig> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
         let deserialized_config: HopperConfig = serde_yaml::from_reader(reader)?;

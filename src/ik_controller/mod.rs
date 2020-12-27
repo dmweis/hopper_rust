@@ -5,15 +5,17 @@ use crate::body_controller::{
     BodyController,
 };
 use crate::hopper_config::{HopperConfig, LegConfig};
+use anyhow::{anyhow, Result};
+use async_trait::async_trait;
 use leg_positions::*;
 use log::*;
 use nalgebra::{Point3, Vector3};
-use std::error::Error;
 
+#[async_trait]
 pub(crate) trait IkControlable: BodyController {
-    fn move_to_positions(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>>;
-    fn read_leg_positions(&mut self) -> Result<LegPositions, Box<dyn Error>>;
-    fn disable_motors(&mut self);
+    async fn move_to_positions(&mut self, positions: LegPositions) -> Result<()>;
+    async fn read_leg_positions(&mut self) -> Result<LegPositions>;
+    async fn disable_motors(&mut self) -> Result<()>;
 }
 
 pub(crate) struct IkController {
@@ -33,50 +35,57 @@ impl IkController {
     }
 }
 
+#[async_trait]
 impl BodyController for IkController {
-    fn move_motors_to(&mut self, positions: BodyMotorPositions) {
-        self.body_controller.move_motors_to(positions);
+    async fn move_motors_to(&mut self, positions: BodyMotorPositions) -> Result<()> {
+        self.body_controller.move_motors_to(positions).await
     }
 
-    fn set_compliance(&mut self, compliance: u8) {
-        self.body_controller.set_compliance(compliance);
+    async fn set_compliance(&mut self, compliance: u8) -> Result<()> {
+        self.body_controller.set_compliance(compliance).await
     }
 
-    fn set_speed(&mut self, speed: u16) {
-        self.body_controller.set_speed(speed);
+    async fn set_speed(&mut self, speed: u16) -> Result<()> {
+        self.body_controller.set_speed(speed).await
     }
 
-    fn set_torque(&mut self, torque: bool) {
-        self.body_controller.set_torque(torque);
+    async fn set_torque(&mut self, torque: bool) -> Result<()> {
+        self.body_controller.set_torque(torque).await
     }
 
-    fn read_motor_positions(&mut self) -> Result<BodyMotorPositions, &str> {
-        self.body_controller.read_motor_positions()
+    async fn read_motor_positions(&mut self) -> Result<BodyMotorPositions> {
+        self.body_controller.read_motor_positions().await
+    }
+
+    async fn read_mean_voltage(&mut self) -> Result<f32> {
+        self.body_controller.read_mean_voltage().await
     }
 }
 
+#[async_trait]
 impl IkControlable for IkController {
-    fn move_to_positions(&mut self, positions: LegPositions) -> Result<(), Box<dyn Error>> {
+    async fn move_to_positions(&mut self, positions: LegPositions) -> Result<()> {
         let motor_positions = calculate_ik(&positions, &self.body_configuration)?;
-        self.body_controller.move_motors_to(motor_positions);
+        self.body_controller.move_motors_to(motor_positions).await?;
         Ok(())
     }
 
-    fn read_leg_positions(&mut self) -> Result<LegPositions, Box<dyn Error>> {
-        let motor_positions = self.body_controller.read_motor_positions()?;
+    async fn read_leg_positions(&mut self) -> Result<LegPositions> {
+        let motor_positions = self.body_controller.read_motor_positions().await?;
         let leg_positions = calculate_fk(&motor_positions, &self.body_configuration);
         Ok(leg_positions)
     }
 
-    fn disable_motors(&mut self) {
-        self.body_controller.set_torque(false);
+    async fn disable_motors(&mut self) -> Result<()> {
+        self.body_controller.set_torque(false).await?;
+        Ok(())
     }
 }
 
 fn calculate_ik(
     positions: &LegPositions,
     body_config: &HopperConfig,
-) -> Result<BodyMotorPositions, Box<dyn Error>> {
+) -> Result<BodyMotorPositions> {
     let left_front = calculate_ik_for_leg(
         &positions.left_front,
         &body_config,
@@ -162,7 +171,7 @@ fn calculate_ik_for_leg(
     target: &Point3<f32>,
     body_config: &HopperConfig,
     leg_config: &LegConfig,
-) -> Result<LegMotorPositions, Box<dyn Error>> {
+) -> Result<LegMotorPositions> {
     let coxa_position = leg_config.position;
     let relative_vector: Vector3<f32> = target - coxa_position;
     let target_angle = relative_vector.y.atan2(relative_vector.x) + leg_config.angle_offset;
@@ -188,7 +197,7 @@ fn calculate_ik_for_leg(
             "Failed IK for leg: {} target: {}",
             leg_config.position, &target
         );
-        return Err(format!("sad math for {}", target_angle).into());
+        return Err(anyhow!("sad math for {}", target_angle));
     }
     let femur_angle = angle_by_femur + ground_target_angle;
     let corrected_femur =

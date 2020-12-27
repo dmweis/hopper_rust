@@ -1,35 +1,49 @@
 use super::motor_positions::*;
 use crate::hopper_config::{BodyConfig, LegConfig};
 use anyhow::Result;
+use async_trait::async_trait;
 use dynamixel_driver::*;
 use log::*;
 use std::collections::VecDeque;
 
-pub struct MotorController {
+#[async_trait]
+pub trait BodyController: Send + Sync {
+    async fn move_motors_to(&mut self, positions: BodyMotorPositions) -> Result<()>;
+    async fn set_compliance(&mut self, compliance: u8) -> Result<()>;
+    async fn set_speed(&mut self, speed: u16) -> Result<()>;
+    async fn set_torque(&mut self, torque: bool) -> Result<()>;
+    async fn read_motor_positions(&mut self) -> Result<BodyMotorPositions>;
+    async fn read_mean_voltage(&mut self) -> Result<f32>;
+}
+
+pub struct AsyncBodyController {
     driver: DynamixelDriver,
     body_config: BodyConfig,
     last_read_voltage: usize,
     last_voltages: VecDeque<f32>,
 }
 
-impl MotorController {
-    pub fn new(port_name: &str, body_config: BodyConfig) -> Result<MotorController> {
+impl AsyncBodyController {
+    pub fn new(port_name: &str, body_config: BodyConfig) -> Result<Self> {
         let dynamixel_driver = DynamixelDriver::new(port_name)?;
-        Ok(MotorController {
+        Ok(Self {
             driver: dynamixel_driver,
             body_config,
             last_read_voltage: 0,
             last_voltages: VecDeque::new(),
         })
     }
+}
 
-    pub async fn move_to_position(&mut self, positions: BodyMotorPositions) -> Result<()> {
+#[async_trait]
+impl BodyController for AsyncBodyController {
+    async fn move_motors_to(&mut self, positions: BodyMotorPositions) -> Result<()> {
         let commands = create_commands_for_body(&self.body_config, &positions);
         self.driver.sync_write_position_rad(commands).await?;
         Ok(())
     }
 
-    pub async fn set_speed(&mut self, speed: u16) -> Result<()> {
+    async fn set_speed(&mut self, speed: u16) -> Result<()> {
         let commands = self
             .body_config
             .get_ids()
@@ -40,7 +54,7 @@ impl MotorController {
         Ok(())
     }
 
-    pub async fn set_compliance(&mut self, compliance: u8) -> Result<()> {
+    async fn set_compliance(&mut self, compliance: u8) -> Result<()> {
         let commands = self
             .body_config
             .get_ids()
@@ -51,7 +65,7 @@ impl MotorController {
         Ok(())
     }
 
-    pub async fn set_torque(&mut self, torque: bool) -> Result<()> {
+    async fn set_torque(&mut self, torque: bool) -> Result<()> {
         let commands = self
             .body_config
             .get_ids()
@@ -62,7 +76,7 @@ impl MotorController {
         Ok(())
     }
 
-    pub async fn read_mean_voltage(&mut self) -> Result<f32> {
+    async fn read_mean_voltage(&mut self) -> Result<f32> {
         let ids = self.body_config.get_ids();
         // Load all on first call
         if self.last_voltages.is_empty() {
@@ -86,7 +100,7 @@ impl MotorController {
         Ok(mean)
     }
 
-    pub async fn read_positions(&mut self) -> Result<BodyMotorPositions> {
+    async fn read_motor_positions(&mut self) -> Result<BodyMotorPositions> {
         async fn read_leg_positions(
             driver: &mut DynamixelDriver,
             leg_config: &LegConfig,
