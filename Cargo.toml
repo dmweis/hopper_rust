@@ -6,11 +6,24 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "hopper"
+path = "src/hopper.rs"
+
+[[bin]]
+name = "visualizer"
+path = "src/body_visualizer.rs"
+required-features = ["visualizer"]
+
+[features]
+default = ["visualizer"]
+visualizer = ["kiss3d"]
+
 [dependencies]
 dynamixel-driver = { branch = "main", git = "https://github.com/dmweis/dynamixel-driver" }
 serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.8"
 serde_json = "1.0"
+toml = "0.5.8"
 clap = "3.0.0-beta.2"
 simplelog = "0.9"
 log = "0.4"
@@ -19,6 +32,8 @@ nalgebra = { version = "0.23", features = ["serde-serialize"] }
 anyhow = "1.0"
 tokio = { version = "0.2", features = ["macros", "rt-threaded", "time"], default-features = false }
 async-trait = "0.1"
+kiss3d = { optional = true, version = "0.28" }
+lazy_static = "1.4"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"

@@ -1,8 +1,7 @@
 use anyhow::Result;
 use nalgebra::Point3;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::BufReader;
+use std::fs;
 use std::path::Path;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -63,16 +62,20 @@ pub struct HopperConfig {
 
 impl HopperConfig {
     pub fn load(path: &Path) -> Result<HopperConfig> {
-        let file = File::open(path)?;
-        let reader = BufReader::new(file);
-        let deserialized_config: HopperConfig = serde_yaml::from_reader(reader)?;
+        let text = fs::read_to_string(path)?;
+        let deserialized_config: HopperConfig = toml::from_str(&text)?;
         Ok(deserialized_config)
+    }
+
+    pub fn save_as_toml(&self, path: &Path) -> Result<()> {
+        fs::write(path, toml::to_string_pretty(&self)?)?;
+        Ok(())
     }
 }
 
 impl Default for HopperConfig {
     fn default() -> Self {
-        serde_yaml::from_slice(include_bytes!("../config/hopper.yaml")).unwrap()
+        toml::from_slice(include_bytes!("../../config/hopper.toml")).unwrap()
     }
 }
 
@@ -83,19 +86,5 @@ mod tests {
     #[test]
     fn default_hopper_config_loads() {
         let _ = HopperConfig::default();
-    }
-
-    #[test]
-    fn serialize_point() {
-        let point = Point3::new(1.0, 1.0, 1.0);
-        let yaml = serde_yaml::to_string(&point).unwrap();
-        assert_eq!(yaml, "---\n- 1.0\n- 1.0\n- 1.0");
-    }
-
-    #[test]
-    fn deserialize_point() {
-        let yaml = "--- [1, 1, 1]";
-        let point: Point3<f32> = serde_yaml::from_str(&yaml).unwrap();
-        assert_eq!(point, Point3::new(1.0, 1.0, 1.0));
     }
 }

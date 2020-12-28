@@ -1,6 +1,9 @@
+#![allow(dead_code)]
+
 mod body_controller;
 mod hopper_config;
 mod ik_controller;
+mod motion_controller;
 mod udp_adaptor;
 mod utilities;
 

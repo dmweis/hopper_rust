@@ -82,7 +82,7 @@ impl IkControlable for IkController {
     }
 }
 
-fn calculate_ik(
+pub(crate) fn calculate_ik(
     positions: &LegPositions,
     body_config: &HopperConfig,
 ) -> Result<BodyMotorPositions> {
@@ -126,7 +126,10 @@ fn calculate_ik(
     ))
 }
 
-fn calculate_fk(motor_positions: &BodyMotorPositions, body_config: &HopperConfig) -> LegPositions {
+pub(crate) fn calculate_fk(
+    motor_positions: &BodyMotorPositions,
+    body_config: &HopperConfig,
+) -> LegPositions {
     let left_front = calculate_fk_for_leg(
         &motor_positions.left_front,
         &body_config,
