@@ -1,0 +1,4 @@
+(function() {var implementors = {};
+implementors["hopper"] = [{"text":"impl Deref for RELAXED","synthetic":false,"types":[]},{"text":"impl Deref for GROUNDED","synthetic":false,"types":[]},{"text":"impl Deref for RELAXED_WIDE","synthetic":false,"types":[]}];
+implementors["visualizer"] = [{"text":"impl Deref for RELAXED","synthetic":false,"types":[]},{"text":"impl Deref for GROUNDED","synthetic":false,"types":[]},{"text":"impl Deref for RELAXED_WIDE","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

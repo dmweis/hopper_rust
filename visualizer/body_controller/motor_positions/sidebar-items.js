@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["create_commands_for_body",""],["create_commands_for_leg",""]],"struct":[["BodyMotorPositions",""],["LegMotorPositions",""]]});
