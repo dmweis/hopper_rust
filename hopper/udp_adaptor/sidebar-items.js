@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["Command",""]],"fn":[["udp_ik_commander",""],["udp_motor_commander",""]],"struct":[["Message",""]]});

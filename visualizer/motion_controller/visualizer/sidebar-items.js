@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["visualizer_loop",""]],"struct":[["HopperVisualizer",""],["LegVisualizer",""]]});

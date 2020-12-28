@@ -1,1 +1,0 @@
-initSidebarItems({"constant":[["GROUND_LEG_HEIGHT",""],["LEG_DISTANCE_LATERAL",""],["LEG_DISTANCE_LONGITUDAL",""],["LEG_HEIGHT",""],["MIDDLE_LEG_LONGITUDAL_OFFSET",""],["OFFSET_DISTANCE",""]],"fn":[["save_basic",""]],"struct":[["GROUNDED",""],["RELAXED",""],["RELAXED_WIDE",""]]});
