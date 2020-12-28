@@ -94,7 +94,7 @@ lazy_static! {
     );
 }
 
-pub(crate) fn save_basic() -> Result<()> {
+pub fn save_basic() -> Result<()> {
     fs::write(
         "config/stance/relaxed.toml",
         toml::to_string_pretty(&*RELAXED)?,

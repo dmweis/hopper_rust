@@ -1,16 +1,9 @@
-#![allow(dead_code)]
-
-mod body_controller;
-mod hopper_config;
-mod ik_controller;
-mod motion_controller;
-mod udp_adaptor;
-mod utilities;
-
 use anyhow::Result;
 use clap::Clap;
 use log::*;
 use std::path::Path;
+
+use hopper_rust::{body_controller, hopper_config, ik_controller, udp_adaptor, utilities};
 
 /// Hopper body controller
 #[derive(Clap)]

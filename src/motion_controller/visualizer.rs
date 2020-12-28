@@ -26,8 +26,8 @@ pub struct HopperVisualizer {
     leg_positions: Arc<Mutex<LegPositions>>,
 }
 
-impl HopperVisualizer {
-    pub(crate) fn new() -> Self {
+impl Default for HopperVisualizer {
+    fn default() -> Self {
         let initial_position = (*stance::RELAXED).clone();
         let leg_positions = Arc::new(Mutex::new(initial_position));
         let keep_running = Arc::new(AtomicBool::new(true));

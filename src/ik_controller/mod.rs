@@ -12,19 +12,19 @@ use log::*;
 use nalgebra::{Point3, Vector3};
 
 #[async_trait]
-pub(crate) trait IkControlable: BodyController {
+pub trait IkControlable: BodyController {
     async fn move_to_positions(&mut self, positions: LegPositions) -> Result<()>;
     async fn read_leg_positions(&mut self) -> Result<LegPositions>;
     async fn disable_motors(&mut self) -> Result<()>;
 }
 
-pub(crate) struct IkController {
+pub struct IkController {
     body_controller: Box<dyn BodyController>,
     body_configuration: HopperConfig,
 }
 
 impl IkController {
-    pub(crate) fn new(
+    pub fn new(
         body_controller: Box<dyn BodyController>,
         body_configuration: HopperConfig,
     ) -> Box<Self> {

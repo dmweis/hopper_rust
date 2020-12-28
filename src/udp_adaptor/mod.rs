@@ -72,7 +72,7 @@ pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Res
     }
 }
 
-pub(crate) async fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<()> {
+pub async fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {

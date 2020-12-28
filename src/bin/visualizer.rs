@@ -1,16 +1,9 @@
-#![allow(dead_code)]
-
-mod body_controller;
-mod hopper_config;
-mod ik_controller;
-mod motion_controller;
-mod udp_adaptor;
-mod utilities;
-
 use anyhow::Result;
 use clap::Clap;
 use log::*;
 use std::io::{self, Read};
+
+use hopper_rust::{motion_controller, utilities};
 
 /// Visualize Hopper
 #[derive(Clap)]
@@ -19,7 +12,7 @@ struct Args {
     /// Sets path to body config file (.yaml)
     /// If unset uses default value.
     #[clap(long)]
-    body_config: Option<String>,
+    _body_config: Option<String>,
 }
 
 #[tokio::main]
@@ -33,7 +26,7 @@ async fn main() -> Result<()> {
     //     .map(|path| hopper_config::HopperConfig::load(Path::new(&path)))
     //     .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
 
-    let _visualizer = motion_controller::visualizer::HopperVisualizer::new();
+    let _visualizer = motion_controller::visualizer::HopperVisualizer::default();
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer)?;
     Ok(())

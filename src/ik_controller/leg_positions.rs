@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub(crate) struct LegPositions {
+pub struct LegPositions {
     left_front: Point3<f32>,
     left_middle: Point3<f32>,
     left_rear: Point3<f32>,

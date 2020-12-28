@@ -8,11 +8,9 @@ edition = "2018"
 
 [[bin]]
 name = "hopper"
-path = "src/hopper.rs"
 
 [[bin]]
 name = "visualizer"
-path = "src/body_visualizer.rs"
 required-features = ["visualizer"]
 
 [features]
