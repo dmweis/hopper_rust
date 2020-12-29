@@ -34,16 +34,11 @@ impl MotionController {
         let mut interval = time::interval(Duration::from_millis(1000 / 50));
         let mut last_written_pose = stance::grounded_stance().clone();
         for stance in std::iter::repeat(stances).flatten() {
-            loop {
-                let (new_pose, moved) = last_written_pose.move_towards(stance, &0.001);
-                if moved {
-                    self.ik_controller
-                        .move_to_positions(new_pose.clone())
-                        .await?;
-                    last_written_pose = new_pose;
-                } else {
-                    break;
-                }
+            for new_pose in last_written_pose.to_move_towards_iter(stance, 0.001) {
+                self.ik_controller
+                    .move_to_positions(new_pose.clone())
+                    .await?;
+                last_written_pose = new_pose;
                 interval.tick().await;
             }
         }
