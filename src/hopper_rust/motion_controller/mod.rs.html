@@ -48,11 +48,6 @@
 <span id="45">45</span>
 <span id="46">46</span>
 <span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::{<span class="ident">leg_positions</span>::<span class="ident">MoveTowards</span>, <span class="ident">IkControlable</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
@@ -90,16 +85,11 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">interval</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">1000</span> <span class="op">/</span> <span class="number">50</span>));
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">stance</span>::<span class="ident">grounded_stance</span>().<span class="ident">clone</span>();
         <span class="kw">for</span> <span class="ident">stance</span> <span class="kw">in</span> <span class="ident">std</span>::<span class="ident">iter</span>::<span class="ident">repeat</span>(<span class="ident">stances</span>).<span class="ident">flatten</span>() {
-            <span class="kw">loop</span> {
-                <span class="kw">let</span> (<span class="ident">new_pose</span>, <span class="ident">moved</span>) <span class="op">=</span> <span class="ident">last_written_pose</span>.<span class="ident">move_towards</span>(<span class="ident">stance</span>, <span class="kw-2">&amp;</span><span class="number">0.001</span>);
-                <span class="kw">if</span> <span class="ident">moved</span> {
-                    <span class="self">self</span>.<span class="ident">ik_controller</span>
-                        .<span class="ident">move_to_positions</span>(<span class="ident">new_pose</span>.<span class="ident">clone</span>())
-                        .<span class="ident">await</span><span class="question-mark">?</span>;
-                    <span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">new_pose</span>;
-                } <span class="kw">else</span> {
-                    <span class="kw">break</span>;
-                }
+            <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">last_written_pose</span>.<span class="ident">to_move_towards_iter</span>(<span class="ident">stance</span>, <span class="number">0.001</span>) {
+                <span class="self">self</span>.<span class="ident">ik_controller</span>
+                    .<span class="ident">move_to_positions</span>(<span class="ident">new_pose</span>.<span class="ident">clone</span>())
+                    .<span class="ident">await</span><span class="question-mark">?</span>;
+                <span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">new_pose</span>;
                 <span class="ident">interval</span>.<span class="ident">tick</span>().<span class="ident">await</span>;
             }
         }
