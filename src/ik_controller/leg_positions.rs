@@ -56,10 +56,64 @@ impl LegPositions {
     }
 }
 
+pub struct MovingTowardsIterator<T> {
+    target: T,
+    max_move: f32,
+    last_state: T,
+}
+
+impl Iterator for MovingTowardsIterator<Point3<f32>> {
+    type Item = Point3<f32>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.last_state == self.target {
+            return None;
+        }
+        let distance = distance(&self.last_state, &self.target);
+        if distance <= self.max_move {
+            return Some(self.target);
+        }
+        let vector = self.target - self.last_state;
+        let new_state = self.last_state + vector.normalize() * self.max_move;
+        self.last_state = new_state;
+        Some(self.last_state)
+    }
+}
+
+// impl Iterator for MovingTowardsIterator<LegPositions> {
+//     type Item = LegPositions;
+
+//     fn next(&mut self) -> Option<Self::Item> {
+//         let (left_front, lf_moved) = self.left_front.move_towards(&target.left_front, max_move);
+//         let (left_middle, lm_moved) = self.left_middle.move_towards(&target.left_middle, max_move);
+//         let (left_rear, lr_moved) = self.left_rear.move_towards(&target.left_rear, max_move);
+//         let (right_front, rf_moved) = self.right_front.move_towards(&target.right_front, max_move);
+//         let (right_middle, rm_moved) = self
+//             .right_middle
+//             .move_towards(&target.right_middle, max_move);
+//         let (right_rear, rr_moved) = self.right_rear.move_towards(&target.right_rear, max_move);
+//         let leg_positions = LegPositions::new(
+//             left_front,
+//             left_middle,
+//             left_rear,
+//             right_front,
+//             right_middle,
+//             right_rear,
+//         );
+//         let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
+//         (leg_positions, moved)
+//     }
+// }
+
 pub trait MoveTowards {
     type Item;
 
     fn move_towards(&self, target: &Self, max_move: &f32) -> (Self::Item, bool);
+    fn to_move_towards_iter(
+        &self,
+        target: &Self,
+        max_move: f32,
+    ) -> MovingTowardsIterator<Self::Item>;
 }
 
 impl MoveTowards for Point3<f32> {
@@ -76,6 +130,18 @@ impl MoveTowards for Point3<f32> {
         }
         let vector = target - self;
         (self + vector.normalize() * *max_move, true)
+    }
+
+    fn to_move_towards_iter(
+        &self,
+        target: &Self,
+        max_move: f32,
+    ) -> MovingTowardsIterator<Self::Item> {
+        MovingTowardsIterator::<Point3<f32>> {
+            target: *target,
+            max_move,
+            last_state: *self,
+        }
     }
 }
 
@@ -101,6 +167,14 @@ impl MoveTowards for LegPositions {
         );
         let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
         (leg_positions, moved)
+    }
+
+    fn to_move_towards_iter(
+        &self,
+        _target: &Self,
+        _max_move: f32,
+    ) -> MovingTowardsIterator<Self::Item> {
+        unimplemented!("Not yet");
     }
 }
 
@@ -163,11 +237,33 @@ mod tests {
     }
 
     #[test]
+    fn move_point_towards_full_step_iter() {
+        let start = Point3::new(0_f32, 0_f32, 0_f32);
+        let target = Point3::new(1_f32, 1_f32, 1_f32);
+        let new = start
+            .to_move_towards_iter(&target, distance(&start, &target))
+            .next()
+            .unwrap();
+        assert_eq!(new, target);
+    }
+
+    #[test]
     fn move_point_towards_half() {
         let start = Point3::new(0_f32, 0_f32, 0_f32);
         let target = Point3::new(1_f32, 0_f32, 0_f32);
         let (new, moved) = start.move_towards(&target, &(distance(&start, &target) / 2.0));
         assert!(moved);
+        assert_eq!(new, Point3::new(0.5, 0.0, 0.0));
+    }
+
+    #[test]
+    fn move_point_towards_half_iter() {
+        let start = Point3::new(0_f32, 0_f32, 0_f32);
+        let target = Point3::new(1_f32, 0_f32, 0_f32);
+        let new = start
+            .to_move_towards_iter(&target, distance(&start, &target) / 2.0)
+            .next()
+            .unwrap();
         assert_eq!(new, Point3::new(0.5, 0.0, 0.0));
     }
 
@@ -178,6 +274,13 @@ mod tests {
         let (new, moved) = start.move_towards(&target, &10.0);
         assert!(!moved);
         assert_eq!(new, target);
+    }
+
+    #[test]
+    fn move_point_towards_not_move_iter() {
+        let start = Point3::new(1_f32, 0_f32, 0_f32);
+        let target = Point3::new(1_f32, 0_f32, 0_f32);
+        assert!(start.to_move_towards_iter(&target, 10.0).next().is_none())
     }
 
     #[test]
