@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 
 #[async_trait]
 pub trait BodyController: Send + Sync {
-    async fn move_motors_to(&mut self, positions: BodyMotorPositions) -> Result<()>;
+    async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> Result<()>;
     async fn set_compliance(&mut self, compliance: u8) -> Result<()>;
     async fn set_speed(&mut self, speed: u16) -> Result<()>;
     async fn set_torque(&mut self, torque: bool) -> Result<()>;
@@ -37,8 +37,8 @@ impl AsyncBodyController {
 
 #[async_trait]
 impl BodyController for AsyncBodyController {
-    async fn move_motors_to(&mut self, positions: BodyMotorPositions) -> Result<()> {
-        let commands = create_commands_for_body(&self.body_config, &positions);
+    async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> Result<()> {
+        let commands = create_commands_for_body(&self.body_config, positions);
         self.driver.sync_write_position_rad(commands).await?;
         Ok(())
     }

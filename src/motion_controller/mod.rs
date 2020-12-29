@@ -35,9 +35,7 @@ impl MotionController {
         let mut last_written_pose = stance::grounded_stance().clone();
         for stance in std::iter::repeat(stances).flatten() {
             for new_pose in last_written_pose.to_move_towards_iter(stance, 0.001) {
-                self.ik_controller
-                    .move_to_positions(new_pose.clone())
-                    .await?;
+                self.ik_controller.move_to_positions(&new_pose).await?;
                 last_written_pose = new_pose;
                 interval.tick().await;
             }

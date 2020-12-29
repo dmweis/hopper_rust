@@ -47,7 +47,7 @@ impl Default for HopperVisualizer {
 
 #[async_trait]
 impl BodyController for HopperVisualizer {
-    async fn move_motors_to(&mut self, _positions: BodyMotorPositions) -> Result<()> {
+    async fn move_motors_to(&mut self, _positions: &BodyMotorPositions) -> Result<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 
@@ -74,9 +74,9 @@ impl BodyController for HopperVisualizer {
 
 #[async_trait]
 impl IkControlable for HopperVisualizer {
-    async fn move_to_positions(&mut self, positions: LegPositions) -> Result<()> {
+    async fn move_to_positions(&mut self, positions: &LegPositions) -> Result<()> {
         let mut guard = self.leg_positions.lock().unwrap();
-        *guard = positions;
+        *guard = positions.clone();
         Ok(())
     }
 

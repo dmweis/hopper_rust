@@ -37,7 +37,7 @@ pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Res
                 match message.command {
                     Command::MoveMotorsTo(position) => {
                         trace!("Moving to pos");
-                        controller.move_motors_to(position).await?;
+                        controller.move_motors_to(&position).await?;
                     }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
@@ -84,7 +84,7 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<
                 match message.command {
                     Command::MoveLegsTo(position) => {
                         trace!("Moving to pos");
-                        if let Err(error) = controller.move_to_positions(position).await {
+                        if let Err(error) = controller.move_to_positions(&position).await {
                             warn!("Failed writing position {}", &error);
                         }
                     }
@@ -104,7 +104,7 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<
                     }
                     Command::MoveMotorsTo(position) => {
                         trace!("Moving to pos");
-                        controller.move_motors_to(position).await?;
+                        controller.move_motors_to(&position).await?;
                     }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
