@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["hopper_rust"] = [{"text":"impl Iterator for MovingTowardsIterator&lt;Point3&lt;f32&gt;&gt;","synthetic":false,"types":[]},{"text":"impl Iterator for MovingTowardsIterator&lt;LegPositions&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

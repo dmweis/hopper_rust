@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["LegPositions",""]],"trait":[["MoveTowards",""]]});
+initSidebarItems({"struct":[["LegPositions",""],["MovingTowardsIterator",""]],"trait":[["MoveTowards",""]]});
