@@ -80,30 +80,52 @@ impl Iterator for MovingTowardsIterator<Point3<f32>> {
     }
 }
 
-// impl Iterator for MovingTowardsIterator<LegPositions> {
-//     type Item = LegPositions;
+impl Iterator for MovingTowardsIterator<LegPositions> {
+    type Item = LegPositions;
 
-//     fn next(&mut self) -> Option<Self::Item> {
-//         let (left_front, lf_moved) = self.left_front.move_towards(&target.left_front, max_move);
-//         let (left_middle, lm_moved) = self.left_middle.move_towards(&target.left_middle, max_move);
-//         let (left_rear, lr_moved) = self.left_rear.move_towards(&target.left_rear, max_move);
-//         let (right_front, rf_moved) = self.right_front.move_towards(&target.right_front, max_move);
-//         let (right_middle, rm_moved) = self
-//             .right_middle
-//             .move_towards(&target.right_middle, max_move);
-//         let (right_rear, rr_moved) = self.right_rear.move_towards(&target.right_rear, max_move);
-//         let leg_positions = LegPositions::new(
-//             left_front,
-//             left_middle,
-//             left_rear,
-//             right_front,
-//             right_middle,
-//             right_rear,
-//         );
-//         let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
-//         (leg_positions, moved)
-//     }
-// }
+    fn next(&mut self) -> Option<Self::Item> {
+        let (left_front, lf_moved) = self
+            .last_state
+            .left_front
+            .move_towards(&self.target.left_front, &self.max_move);
+        let (left_middle, lm_moved) = self
+            .last_state
+            .left_middle
+            .move_towards(&self.target.left_middle, &self.max_move);
+        let (left_rear, lr_moved) = self
+            .last_state
+            .left_rear
+            .move_towards(&self.target.left_rear, &self.max_move);
+        let (right_front, rf_moved) = self
+            .last_state
+            .right_front
+            .move_towards(&self.target.right_front, &self.max_move);
+        let (right_middle, rm_moved) = self
+            .last_state
+            .right_middle
+            .move_towards(&self.target.right_middle, &self.max_move);
+        let (right_rear, rr_moved) = self
+            .last_state
+            .right_rear
+            .move_towards(&self.target.right_rear, &self.max_move);
+
+        let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
+        if moved {
+            let leg_positions = LegPositions::new(
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            );
+            self.last_state = leg_positions.clone();
+            Some(leg_positions)
+        } else {
+            None
+        }
+    }
+}
 
 pub trait MoveTowards {
     type Item;
@@ -125,7 +147,6 @@ impl MoveTowards for Point3<f32> {
         }
         let distance = distance(self, target);
         if &distance <= max_move {
-            // TODO: Think about if this should be true or false
             return (*target, true);
         }
         let vector = target - self;
@@ -171,10 +192,14 @@ impl MoveTowards for LegPositions {
 
     fn to_move_towards_iter(
         &self,
-        _target: &Self,
-        _max_move: f32,
+        target: &Self,
+        max_move: f32,
     ) -> MovingTowardsIterator<Self::Item> {
-        unimplemented!("Not yet");
+        MovingTowardsIterator::<LegPositions> {
+            target: target.clone(),
+            max_move,
+            last_state: self.clone(),
+        }
     }
 }
 
@@ -314,6 +339,22 @@ mod tests {
     }
 
     #[test]
+    fn move_legs_towards_multiple_steps_iter() {
+        let a = Point3::new(0.0, 0.0, 0.0);
+        let b = Point3::new(1.0, 0.0, 0.0);
+        let c = Point3::new(2.0, 0.0, 0.0);
+        let start = LegPositions::new(a, a, a, a, a, a);
+        let middle = LegPositions::new(b, b, b, b, b, b);
+        let target = LegPositions::new(b, b, b, b, b, c);
+        let mut iterator = start.to_move_towards_iter(&target, 1.0);
+        let new = iterator.next().unwrap();
+        assert_eq!(middle, new);
+        let new = iterator.next().unwrap();
+        assert_eq!(target, new);
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
     fn move_legs_towards_moves_correct_legs() {
         let start = LegPositions::new(
             Point3::new(0.0, 0.0, 0.0),
@@ -342,6 +383,35 @@ mod tests {
             counter += 1;
         }
         assert_eq!(counter, 7);
+        assert_eq!(target, step);
+    }
+
+    #[test]
+    fn move_legs_towards_moves_correct_legs_iter() {
+        let start = LegPositions::new(
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 0.0),
+        );
+
+        let target = LegPositions::new(
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(2.0, 0.0, 0.0),
+            Point3::new(3.0, 0.0, 0.0),
+            Point3::new(4.0, 0.0, 0.0),
+            Point3::new(5.0, 0.0, 0.0),
+            Point3::new(6.0, 0.0, 0.0),
+        );
+        let mut step = start;
+        let mut counter = 0;
+        for new in step.to_move_towards_iter(&target, 1.0) {
+            step = new;
+            counter += 1;
+        }
+        assert_eq!(counter, 6);
         assert_eq!(target, step);
     }
 
