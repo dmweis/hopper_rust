@@ -112,6 +112,18 @@
 <span id="109">109</span>
 <span id="110">110</span>
 <span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">leg_positions</span>::<span class="ident">LegPositions</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
@@ -127,7 +139,7 @@
 <span class="kw">const</span> <span class="ident">GROUND_LEG_HEIGHT</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="op">-</span><span class="number">0.03</span>;
 
 <span class="macro">lazy_static</span><span class="macro">!</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">RELAXED</span>: <span class="ident">LegPositions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">RELAXED</span>: <span class="ident">LegPositions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
         <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="ident">LEG_DISTANCE_LATERAL</span>, <span class="ident">LEG_DISTANCE_LONGITUDAL</span>, <span class="ident">LEG_HEIGHT</span>),
         <span class="ident">Point3</span>::<span class="ident">new</span>(
             <span class="number">0.0</span>,
@@ -143,7 +155,7 @@
         ),
         <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="ident">LEG_DISTANCE_LATERAL</span>, <span class="op">-</span><span class="ident">LEG_DISTANCE_LONGITUDAL</span>, <span class="ident">LEG_HEIGHT</span>),
     );
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">GROUNDED</span>: <span class="ident">LegPositions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">GROUNDED</span>: <span class="ident">LegPositions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
         <span class="ident">Point3</span>::<span class="ident">new</span>(
             <span class="ident">LEG_DISTANCE_LATERAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span>,
             <span class="ident">LEG_DISTANCE_LONGITUDAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span>,
@@ -175,7 +187,7 @@
             <span class="ident">GROUND_LEG_HEIGHT</span>,
         ),
     );
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">RELAXED_WIDE</span>: <span class="ident">LegPositions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">RELAXED_WIDE</span>: <span class="ident">LegPositions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
         <span class="ident">Point3</span>::<span class="ident">new</span>(
             <span class="ident">LEG_DISTANCE_LATERAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span>,
             <span class="ident">LEG_DISTANCE_LONGITUDAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span>,
@@ -207,6 +219,18 @@
             <span class="ident">LEG_HEIGHT</span>,
         ),
     );
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">relaxed_stance</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">LegPositions</span> {
+    <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">RELAXED</span>
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">grounded_stance</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">LegPositions</span> {
+    <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GROUNDED</span>
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">relaxed_wide_stance</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">LegPositions</span> {
+    <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">RELAXED_WIDE</span>
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">save_basic</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

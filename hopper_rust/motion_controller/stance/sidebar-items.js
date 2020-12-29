@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["save_basic",""]]});
+initSidebarItems({"fn":[["grounded_stance",""],["relaxed_stance",""],["relaxed_wide_stance",""],["save_basic",""]]});
