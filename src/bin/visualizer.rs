@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Clap;
 use log::*;
-use std::io::{self, Read};
+use std::io;
 
 use hopper_rust::{motion_controller, utilities};
 
@@ -26,8 +26,11 @@ async fn main() -> Result<()> {
     //     .map(|path| hopper_config::HopperConfig::load(Path::new(&path)))
     //     .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
 
-    let _visualizer = motion_controller::visualizer::HopperVisualizer::default();
+    let visualizer = motion_controller::visualizer::HopperVisualizer::default();
+    let _motion_controller =
+        motion_controller::MotionController::start_as_task(Box::new(visualizer));
+    println!("Press enter to exit");
     let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer)?;
+    io::stdin().read_line(&mut buffer)?;
     Ok(())
 }

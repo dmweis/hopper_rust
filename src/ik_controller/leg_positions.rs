@@ -56,7 +56,7 @@ impl LegPositions {
     }
 }
 
-trait MoveTowards {
+pub trait MoveTowards {
     type Item;
 
     fn move_towards(&self, target: &Self, max_move: &f32) -> (Self::Item, bool);

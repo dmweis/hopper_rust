@@ -12,7 +12,7 @@ const OFFSET_DISTANCE: f32 = 0.015;
 const GROUND_LEG_HEIGHT: f32 = -0.03;
 
 lazy_static! {
-    pub(crate) static ref RELAXED: LegPositions = LegPositions::new(
+    static ref RELAXED: LegPositions = LegPositions::new(
         Point3::new(LEG_DISTANCE_LATERAL, LEG_DISTANCE_LONGITUDAL, LEG_HEIGHT),
         Point3::new(
             0.0,
@@ -28,7 +28,7 @@ lazy_static! {
         ),
         Point3::new(-LEG_DISTANCE_LATERAL, -LEG_DISTANCE_LONGITUDAL, LEG_HEIGHT),
     );
-    pub(crate) static ref GROUNDED: LegPositions = LegPositions::new(
+    static ref GROUNDED: LegPositions = LegPositions::new(
         Point3::new(
             LEG_DISTANCE_LATERAL + OFFSET_DISTANCE,
             LEG_DISTANCE_LONGITUDAL + OFFSET_DISTANCE,
@@ -60,7 +60,7 @@ lazy_static! {
             GROUND_LEG_HEIGHT,
         ),
     );
-    pub(crate) static ref RELAXED_WIDE: LegPositions = LegPositions::new(
+    static ref RELAXED_WIDE: LegPositions = LegPositions::new(
         Point3::new(
             LEG_DISTANCE_LATERAL + OFFSET_DISTANCE,
             LEG_DISTANCE_LONGITUDAL + OFFSET_DISTANCE,
@@ -92,6 +92,18 @@ lazy_static! {
             LEG_HEIGHT,
         ),
     );
+}
+
+pub fn relaxed_stance() -> &'static LegPositions {
+    &*RELAXED
+}
+
+pub fn grounded_stance() -> &'static LegPositions {
+    &*GROUNDED
+}
+
+pub fn relaxed_wide_stance() -> &'static LegPositions {
+    &*RELAXED_WIDE
 }
 
 pub fn save_basic() -> Result<()> {
