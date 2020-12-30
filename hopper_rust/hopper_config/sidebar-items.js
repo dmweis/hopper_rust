@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["BodyConfig",""],["HopperConfig",""],["LegConfig",""]]});
+initSidebarItems({"struct":[["HopperConfig",""],["LegConfig",""]],"type":[["BodyConfig",""]]});
