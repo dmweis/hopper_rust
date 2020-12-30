@@ -403,3 +403,53 @@ fn step_with_relaxed_transformation(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stepping_with_relaxed() {
+        let relaxed_point = Point3::new(0.0, 0.0, 0.0);
+        let relaxed = LegPositions::new(
+            relaxed_point,
+            relaxed_point,
+            relaxed_point,
+            relaxed_point,
+            relaxed_point,
+            relaxed_point,
+        );
+
+        let start_point = Point3::new(-1.0, 0.0, 0.0);
+        let start = LegPositions::new(
+            start_point,
+            start_point,
+            start_point,
+            start_point,
+            start_point,
+            start_point,
+        );
+
+        let after_step = step_with_relaxed_transformation(
+            &start,
+            &relaxed,
+            &Tripod::LRL,
+            Vector2::new(1.0, 0.0),
+        );
+
+        // this is equality checking some floats
+        // it should work now because we return points by identity
+        // if it breaks you can test it by using distance(a, b) < epsilon
+        let expected_lifted_point = Point3::new(1.0, 0.0, 0.0);
+        // lifted
+        assert_eq!(after_step.left_front(), &expected_lifted_point);
+        assert_eq!(after_step.right_middle(), &expected_lifted_point);
+        assert_eq!(after_step.left_rear(), &expected_lifted_point);
+
+        let expected_grounded_point = Point3::new(-2.0, 0.0, 0.0);
+        // grounded
+        assert_eq!(after_step.right_front(), &expected_grounded_point);
+        assert_eq!(after_step.left_middle(), &expected_grounded_point);
+        assert_eq!(after_step.right_rear(), &expected_grounded_point);
+    }
+}
