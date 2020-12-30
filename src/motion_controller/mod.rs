@@ -468,6 +468,43 @@ mod tests {
     }
 
     #[test]
+    fn stepping_direct() {
+        let start_point = Point3::new(0.0, 0.0, 0.0);
+        let start = LegPositions::new(
+            start_point,
+            start_point,
+            start_point,
+            start_point,
+            start_point,
+            start_point,
+        );
+
+        let after_step_lrl = step_transformation(&start, &Tripod::LRL, Vector2::new(1.0, 0.0));
+        let after_step_rlr = step_transformation(&start, &Tripod::RLR, Vector2::new(1.0, 0.0));
+
+        // this is equality checking some floats
+        // it should work now because we return points by identity
+        // if it breaks you can test it by using distance(a, b) < epsilon
+        let expected_lifted_point = Point3::new(1.0, 0.0, 0.0);
+        // lifted
+        assert_eq!(after_step_lrl.left_front(), &expected_lifted_point);
+        assert_eq!(after_step_lrl.right_middle(), &expected_lifted_point);
+        assert_eq!(after_step_lrl.left_rear(), &expected_lifted_point);
+        assert_eq!(after_step_rlr.right_front(), &expected_lifted_point);
+        assert_eq!(after_step_rlr.left_middle(), &expected_lifted_point);
+        assert_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
+
+        let expected_grounded_point = Point3::new(-1.0, 0.0, 0.0);
+        // grounded
+        assert_eq!(after_step_lrl.right_front(), &expected_grounded_point);
+        assert_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
+        assert_eq!(after_step_lrl.right_rear(), &expected_grounded_point);
+        assert_eq!(after_step_rlr.left_front(), &expected_grounded_point);
+        assert_eq!(after_step_rlr.right_middle(), &expected_grounded_point);
+        assert_eq!(after_step_rlr.left_rear(), &expected_grounded_point);
+    }
+
+    #[test]
     fn step_iterator_lifts_correct_legs_rlr() {
         let start_point = Point3::new(0.0, 0.0, 0.0);
         let start = LegPositions::new(
