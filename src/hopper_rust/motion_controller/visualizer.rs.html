@@ -242,7 +242,7 @@
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">HopperVisualizer</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">initial_position</span> <span class="op">=</span> <span class="ident">stance</span>::<span class="ident">relaxed_stance</span>().<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">initial_position</span> <span class="op">=</span> <span class="ident">stance</span>::<span class="ident">grounded_stance</span>().<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">leg_positions</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">initial_position</span>));
         <span class="kw">let</span> <span class="ident">keep_running</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">AtomicBool</span>::<span class="ident">new</span>(<span class="bool-val">true</span>));
 
@@ -333,13 +333,13 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">root</span>.<span class="ident">add_sphere</span>(<span class="ident">FOOT_SPHERE_SIZE</span>);
         <span class="ident">left_front</span>.<span class="ident">set_color</span>(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">root</span>.<span class="ident">add_sphere</span>(<span class="ident">FOOT_SPHERE_SIZE</span>);
-        <span class="ident">left_middle</span>.<span class="ident">set_color</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
+        <span class="ident">left_middle</span>.<span class="ident">set_color</span>(<span class="number">1.0</span>, <span class="number">0.5</span>, <span class="number">0.8</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">root</span>.<span class="ident">add_sphere</span>(<span class="ident">FOOT_SPHERE_SIZE</span>);
         <span class="ident">left_rear</span>.<span class="ident">set_color</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">root</span>.<span class="ident">add_sphere</span>(<span class="ident">FOOT_SPHERE_SIZE</span>);
         <span class="ident">right_front</span>.<span class="ident">set_color</span>(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">root</span>.<span class="ident">add_sphere</span>(<span class="ident">FOOT_SPHERE_SIZE</span>);
-        <span class="ident">right_middle</span>.<span class="ident">set_color</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
+        <span class="ident">right_middle</span>.<span class="ident">set_color</span>(<span class="number">1.0</span>, <span class="number">0.5</span>, <span class="number">0.8</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">root</span>.<span class="ident">add_sphere</span>(<span class="ident">FOOT_SPHERE_SIZE</span>);
         <span class="ident">right_rear</span>.<span class="ident">set_color</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
         <span class="self">Self</span> {
