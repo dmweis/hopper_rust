@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["leg_positions",""]],"struct":[["IkController",""]],"trait":[["IkControlable",""]]});
+initSidebarItems({"mod":[["leg_positions",""]],"struct":[["IkController",""]],"trait":[["IkControllable",""]]});

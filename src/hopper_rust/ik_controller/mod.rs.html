@@ -397,7 +397,7 @@
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">Point3</span>, <span class="ident">Vector3</span>};
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">IkControlable</span>: <span class="ident">BodyController</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">IkControllable</span>: <span class="ident">BodyController</span> {
     <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">positions</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
     <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LegPositions</span><span class="op">&gt;</span>;
     <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">disable_motors</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
@@ -448,7 +448,7 @@
 }
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">IkControlable</span> <span class="kw">for</span> <span class="ident">IkController</span> {
+<span class="kw">impl</span> <span class="ident">IkControllable</span> <span class="kw">for</span> <span class="ident">IkController</span> {
     <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">positions</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="ident">calculate_ik</span>(<span class="kw-2">&amp;</span><span class="ident">positions</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_configuration</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">body_controller</span>

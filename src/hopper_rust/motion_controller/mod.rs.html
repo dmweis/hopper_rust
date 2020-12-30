@@ -511,7 +511,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hexapod</span>::<span class="ident">LegFlags</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::{
     <span class="ident">leg_positions</span>::{<span class="ident">LegPositions</span>, <span class="ident">MoveTowards</span>},
-    <span class="ident">IkControlable</span>,
+    <span class="ident">IkControllable</span>,
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">distance</span>, <span class="ident">Point3</span>, <span class="ident">Vector2</span>};
@@ -525,12 +525,12 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">visualizer</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MotionController</span> {
-    <span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControlable</span><span class="op">&gt;</span>,
+    <span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControllable</span><span class="op">&gt;</span>,
     <span class="ident">last_tripod</span>: <span class="ident">Tripod</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">MotionController</span> {
-    <span class="kw">pub</span> <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControlable</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControllable</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">MotionController</span> {
             <span class="ident">ik_controller</span>,
             <span class="ident">last_tripod</span>: <span class="ident">Tripod</span>::<span class="ident">LRL</span>,
@@ -539,7 +539,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">start_as_task</span>(<span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControlable</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">start_as_task</span>(<span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">IkControllable</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">MotionController</span> {
             <span class="ident">ik_controller</span>,
             <span class="ident">last_tripod</span>: <span class="ident">Tripod</span>::<span class="ident">LRL</span>,
