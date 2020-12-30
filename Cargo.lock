@@ -852,6 +852,7 @@ dependencies = [
  "anyhow",
  "assert_approx_eq",
  "async-trait",
+ "bitflags",
  "clap",
  "dynamixel-driver",
  "kiss3d",

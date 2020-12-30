@@ -32,6 +32,7 @@ tokio = { version = "0.2", features = ["macros", "rt-threaded", "time"], default
 async-trait = "0.1"
 kiss3d = { optional = true, version = "0.28" }
 lazy_static = "1.4"
+bitflags = "1.2"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"

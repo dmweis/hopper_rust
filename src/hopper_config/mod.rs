@@ -1,3 +1,4 @@
+use crate::hexapod::HexapodTypes;
 use anyhow::Result;
 use nalgebra::Point3;
 use serde::{Deserialize, Serialize};
@@ -15,37 +16,29 @@ pub struct LegConfig {
     pub tibia_correction: f32,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
-pub struct BodyConfig {
-    pub left_front: LegConfig,
-    pub left_middle: LegConfig,
-    pub left_rear: LegConfig,
-    pub right_front: LegConfig,
-    pub right_middle: LegConfig,
-    pub right_rear: LegConfig,
-}
+pub type BodyConfig = HexapodTypes<LegConfig>;
 
 impl BodyConfig {
     pub fn get_ids(&self) -> [u8; 18] {
         [
-            self.left_front.coxa_id,
-            self.left_front.femur_id,
-            self.left_front.tibia_id,
-            self.left_middle.coxa_id,
-            self.left_middle.femur_id,
-            self.left_middle.tibia_id,
-            self.left_rear.coxa_id,
-            self.left_rear.femur_id,
-            self.left_rear.tibia_id,
-            self.right_front.coxa_id,
-            self.right_front.femur_id,
-            self.right_front.tibia_id,
-            self.right_middle.coxa_id,
-            self.right_middle.femur_id,
-            self.right_middle.tibia_id,
-            self.right_rear.coxa_id,
-            self.right_rear.femur_id,
-            self.right_rear.tibia_id,
+            self.left_front().coxa_id,
+            self.left_front().femur_id,
+            self.left_front().tibia_id,
+            self.left_middle().coxa_id,
+            self.left_middle().femur_id,
+            self.left_middle().tibia_id,
+            self.left_rear().coxa_id,
+            self.left_rear().femur_id,
+            self.left_rear().tibia_id,
+            self.right_front().coxa_id,
+            self.right_front().femur_id,
+            self.right_front().tibia_id,
+            self.right_middle().coxa_id,
+            self.right_middle().femur_id,
+            self.right_middle().tibia_id,
+            self.right_rear().coxa_id,
+            self.right_rear().femur_id,
+            self.right_rear().tibia_id,
         ]
     }
 }

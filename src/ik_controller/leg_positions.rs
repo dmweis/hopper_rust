@@ -1,60 +1,9 @@
+use crate::hexapod::HexapodTypes;
 use nalgebra::{distance, Point3};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct LegPositions {
-    left_front: Point3<f32>,
-    left_middle: Point3<f32>,
-    left_rear: Point3<f32>,
-    right_front: Point3<f32>,
-    right_middle: Point3<f32>,
-    right_rear: Point3<f32>,
-}
-
-impl LegPositions {
-    pub(crate) fn new(
-        left_front: Point3<f32>,
-        left_middle: Point3<f32>,
-        left_rear: Point3<f32>,
-        right_front: Point3<f32>,
-        right_middle: Point3<f32>,
-        right_rear: Point3<f32>,
-    ) -> LegPositions {
-        LegPositions {
-            left_front,
-            left_middle,
-            left_rear,
-            right_front,
-            right_middle,
-            right_rear,
-        }
-    }
-
-    pub fn left_front(&self) -> &Point3<f32> {
-        &self.left_front
-    }
-
-    pub fn left_middle(&self) -> &Point3<f32> {
-        &self.left_middle
-    }
-
-    pub fn left_rear(&self) -> &Point3<f32> {
-        &self.left_rear
-    }
-
-    pub fn right_front(&self) -> &Point3<f32> {
-        &self.right_front
-    }
-
-    pub fn right_middle(&self) -> &Point3<f32> {
-        &self.right_middle
-    }
-
-    pub fn right_rear(&self) -> &Point3<f32> {
-        &self.right_rear
-    }
-}
+pub type LegPositions = HexapodTypes<Point3<f32>>;
 
 pub struct MovingTowardsIterator<T> {
     target: T,
@@ -86,28 +35,28 @@ impl Iterator for MovingTowardsIterator<LegPositions> {
     fn next(&mut self) -> Option<Self::Item> {
         let (left_front, lf_moved) = self
             .last_state
-            .left_front
-            .move_towards(&self.target.left_front, &self.max_move);
+            .left_front()
+            .move_towards(&self.target.left_front(), &self.max_move);
         let (left_middle, lm_moved) = self
             .last_state
-            .left_middle
-            .move_towards(&self.target.left_middle, &self.max_move);
+            .left_middle()
+            .move_towards(&self.target.left_middle(), &self.max_move);
         let (left_rear, lr_moved) = self
             .last_state
-            .left_rear
-            .move_towards(&self.target.left_rear, &self.max_move);
+            .left_rear()
+            .move_towards(&self.target.left_rear(), &self.max_move);
         let (right_front, rf_moved) = self
             .last_state
-            .right_front
-            .move_towards(&self.target.right_front, &self.max_move);
+            .right_front()
+            .move_towards(&self.target.right_front(), &self.max_move);
         let (right_middle, rm_moved) = self
             .last_state
-            .right_middle
-            .move_towards(&self.target.right_middle, &self.max_move);
+            .right_middle()
+            .move_towards(&self.target.right_middle(), &self.max_move);
         let (right_rear, rr_moved) = self
             .last_state
-            .right_rear
-            .move_towards(&self.target.right_rear, &self.max_move);
+            .right_rear()
+            .move_towards(&self.target.right_rear(), &self.max_move);
 
         let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
         if moved {
@@ -170,14 +119,22 @@ impl MoveTowards for LegPositions {
     type Item = LegPositions;
 
     fn move_towards(&self, target: &LegPositions, max_move: &f32) -> (LegPositions, bool) {
-        let (left_front, lf_moved) = self.left_front.move_towards(&target.left_front, max_move);
-        let (left_middle, lm_moved) = self.left_middle.move_towards(&target.left_middle, max_move);
-        let (left_rear, lr_moved) = self.left_rear.move_towards(&target.left_rear, max_move);
-        let (right_front, rf_moved) = self.right_front.move_towards(&target.right_front, max_move);
+        let (left_front, lf_moved) = self
+            .left_front()
+            .move_towards(&target.left_front(), max_move);
+        let (left_middle, lm_moved) = self
+            .left_middle()
+            .move_towards(&target.left_middle(), max_move);
+        let (left_rear, lr_moved) = self.left_rear().move_towards(&target.left_rear(), max_move);
+        let (right_front, rf_moved) = self
+            .right_front()
+            .move_towards(&target.right_front(), max_move);
         let (right_middle, rm_moved) = self
-            .right_middle
-            .move_towards(&target.right_middle, max_move);
-        let (right_rear, rr_moved) = self.right_rear.move_towards(&target.right_rear, max_move);
+            .right_middle()
+            .move_towards(&target.right_middle(), max_move);
+        let (right_rear, rr_moved) = self
+            .right_rear()
+            .move_towards(&target.right_rear(), max_move);
         let leg_positions = LegPositions::new(
             left_front,
             left_middle,

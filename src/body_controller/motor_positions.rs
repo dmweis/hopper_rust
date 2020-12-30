@@ -1,4 +1,7 @@
-use crate::hopper_config::{BodyConfig, LegConfig};
+use crate::{
+    hexapod::HexapodTypes,
+    hopper_config::{BodyConfig, LegConfig},
+};
 use dynamixel_driver::*;
 use serde::{Deserialize, Serialize};
 
@@ -27,35 +30,7 @@ impl LegMotorPositions {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
-pub struct BodyMotorPositions {
-    pub left_front: LegMotorPositions,
-    pub left_middle: LegMotorPositions,
-    pub left_rear: LegMotorPositions,
-    pub right_front: LegMotorPositions,
-    pub right_middle: LegMotorPositions,
-    pub right_rear: LegMotorPositions,
-}
-
-impl BodyMotorPositions {
-    pub fn new(
-        left_front: LegMotorPositions,
-        left_middle: LegMotorPositions,
-        left_rear: LegMotorPositions,
-        right_front: LegMotorPositions,
-        right_middle: LegMotorPositions,
-        right_rear: LegMotorPositions,
-    ) -> BodyMotorPositions {
-        BodyMotorPositions {
-            left_front,
-            left_middle,
-            left_rear,
-            right_front,
-            right_middle,
-            right_rear,
-        }
-    }
-}
+pub type BodyMotorPositions = HexapodTypes<LegMotorPositions>;
 
 fn create_commands_for_leg(
     config: &LegConfig,
@@ -74,28 +49,28 @@ pub fn create_commands_for_body(
 ) -> Vec<SyncCommandFloat> {
     let mut commands = Vec::with_capacity(18);
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.left_front,
-        &positions.left_front,
+        &config.left_front(),
+        &positions.left_front(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.right_front,
-        &positions.right_front,
+        &config.right_front(),
+        &positions.right_front(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.left_middle,
-        &positions.left_middle,
+        &config.left_middle(),
+        &positions.left_middle(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.right_middle,
-        &positions.right_middle,
+        &config.right_middle(),
+        &positions.right_middle(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.left_rear,
-        &positions.left_rear,
+        &config.left_rear(),
+        &positions.left_rear(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.right_rear,
-        &positions.right_rear,
+        &config.right_rear(),
+        &positions.right_rear(),
     ));
     commands
 }

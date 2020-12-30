@@ -91,32 +91,32 @@ pub(crate) fn calculate_ik(
     let left_front = calculate_ik_for_leg(
         &positions.left_front(),
         &body_config,
-        &body_config.legs.left_front,
+        &body_config.legs.left_front(),
     )?;
     let right_front = calculate_ik_for_leg(
         &positions.right_front(),
         &body_config,
-        &body_config.legs.right_front,
+        &body_config.legs.right_front(),
     )?;
     let left_middle = calculate_ik_for_leg(
         &positions.left_middle(),
         &body_config,
-        &body_config.legs.left_middle,
+        &body_config.legs.left_middle(),
     )?;
     let right_middle = calculate_ik_for_leg(
         &positions.right_middle(),
         &body_config,
-        &body_config.legs.right_middle,
+        &body_config.legs.right_middle(),
     )?;
     let left_rear = calculate_ik_for_leg(
         &positions.left_rear(),
         &body_config,
-        &body_config.legs.left_rear,
+        &body_config.legs.left_rear(),
     )?;
     let right_rear = calculate_ik_for_leg(
         &positions.right_rear(),
         &body_config,
-        &body_config.legs.right_rear,
+        &body_config.legs.right_rear(),
     )?;
     Ok(BodyMotorPositions::new(
         left_front,
@@ -133,34 +133,34 @@ pub(crate) fn calculate_fk(
     body_config: &HopperConfig,
 ) -> LegPositions {
     let left_front = calculate_fk_for_leg(
-        &motor_positions.left_front,
+        &motor_positions.left_front(),
         &body_config,
-        &body_config.legs.left_front,
+        &body_config.legs.left_front(),
     );
     let right_front = calculate_fk_for_leg(
-        &motor_positions.right_front,
+        &motor_positions.right_front(),
         &body_config,
-        &body_config.legs.right_front,
+        &body_config.legs.right_front(),
     );
     let left_middle = calculate_fk_for_leg(
-        &motor_positions.left_middle,
+        &motor_positions.left_middle(),
         &body_config,
-        &body_config.legs.left_middle,
+        &body_config.legs.left_middle(),
     );
     let right_middle = calculate_fk_for_leg(
-        &motor_positions.right_middle,
+        &motor_positions.right_middle(),
         &body_config,
-        &body_config.legs.right_middle,
+        &body_config.legs.right_middle(),
     );
     let left_rear = calculate_fk_for_leg(
-        &motor_positions.left_rear,
+        &motor_positions.left_rear(),
         &body_config,
-        &body_config.legs.left_rear,
+        &body_config.legs.left_rear(),
     );
     let right_rear = calculate_fk_for_leg(
-        &motor_positions.right_rear,
+        &motor_positions.right_rear(),
         &body_config,
-        &body_config.legs.right_rear,
+        &body_config.legs.right_rear(),
     );
     LegPositions::new(
         left_front,
@@ -281,7 +281,8 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.left_front).unwrap();
+            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.left_front())
+                .unwrap();
         assert_approx_eq!(motor_positions.coxa().to_degrees(), 113.28124);
         assert_approx_eq!(motor_positions.femur().to_degrees(), 112.15929);
         assert_approx_eq!(motor_positions.tibia().to_degrees(), 196.29994);
@@ -292,7 +293,8 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, -0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.right_front).unwrap();
+            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.right_front())
+                .unwrap();
         assert_approx_eq!(motor_positions.coxa().to_degrees(), 186.71875);
         assert_approx_eq!(motor_positions.femur().to_degrees(), 188.0706);
         assert_approx_eq!(motor_positions.tibia().to_degrees(), 103.929955);
@@ -329,11 +331,12 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.left_front).unwrap();
+            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.left_front())
+                .unwrap();
         let fk_calculated = calculate_fk_for_leg(
             &motor_positions,
             &hopper_config,
-            &hopper_config.legs.left_front,
+            &hopper_config.legs.left_front(),
         );
         let result_distance = distance(&target, &fk_calculated);
         assert!(result_distance < 0.0000001);
@@ -344,11 +347,12 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, -0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.right_front).unwrap();
+            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.right_front())
+                .unwrap();
         let fk_calculated = calculate_fk_for_leg(
             &motor_positions,
             &hopper_config,
-            &hopper_config.legs.right_front,
+            &hopper_config.legs.right_front(),
         );
         let result_distance = distance(&target, &fk_calculated);
         assert!(result_distance < 0.0000001);
