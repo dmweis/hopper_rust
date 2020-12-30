@@ -119,13 +119,13 @@ impl LegVisualizer {
         let mut body = root.add_cube(0.05, 0.05, 0.15);
         body.set_color(1.0, 0.0, 0.0);
         let mut left_front = root.add_sphere(FOOT_SPHERE_SIZE);
-        left_front.set_color(1.0, 0.0, 0.0);
+        left_front.set_color(0.0, 1.0, 0.0);
         let mut left_middle = root.add_sphere(FOOT_SPHERE_SIZE);
         left_middle.set_color(1.0, 0.0, 0.0);
         let mut left_rear = root.add_sphere(FOOT_SPHERE_SIZE);
         left_rear.set_color(1.0, 0.0, 0.0);
         let mut right_front = root.add_sphere(FOOT_SPHERE_SIZE);
-        right_front.set_color(1.0, 0.0, 0.0);
+        right_front.set_color(0.0, 1.0, 0.0);
         let mut right_middle = root.add_sphere(FOOT_SPHERE_SIZE);
         right_middle.set_color(1.0, 0.0, 0.0);
         let mut right_rear = root.add_sphere(FOOT_SPHERE_SIZE);
