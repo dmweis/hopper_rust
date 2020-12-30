@@ -410,4 +410,34 @@ mod tests {
         );
         assert_eq!(expected, positions);
     }
+
+    #[test]
+    fn merging_leg_positions() {
+        let point_a = Point3::new(0.0, 0.0, 0.0);
+        let a = LegPositions::new(point_a, point_a, point_a, point_a, point_a, point_a);
+        let point_b = Point3::new(1.0, 1.0, 1.0);
+        let b = LegPositions::new(point_b, point_b, point_b, point_b, point_b, point_b);
+        let merged = a.merge_with(&b, LegFlags::LEFT_FRONT);
+        assert_eq!(merged.left_front(), b.left_front());
+        assert_eq!(merged.left_middle(), a.left_middle());
+        assert_eq!(merged.left_rear(), a.left_rear());
+        assert_eq!(merged.right_front(), a.right_front());
+        assert_eq!(merged.right_middle(), a.right_middle());
+        assert_eq!(merged.right_rear(), a.right_rear());
+    }
+
+    #[test]
+    fn merging_leg_positions_tripod() {
+        let point_a = Point3::new(0.0, 0.0, 0.0);
+        let a = LegPositions::new(point_a, point_a, point_a, point_a, point_a, point_a);
+        let point_b = Point3::new(1.0, 1.0, 1.0);
+        let b = LegPositions::new(point_b, point_b, point_b, point_b, point_b, point_b);
+        let merged = a.merge_with(&b, LegFlags::LRL_TRIPOD);
+        assert_eq!(merged.left_front(), b.left_front());
+        assert_eq!(merged.right_middle(), b.right_middle());
+        assert_eq!(merged.left_rear(), b.left_rear());
+        assert_eq!(merged.right_front(), a.right_front());
+        assert_eq!(merged.left_middle(), a.left_middle());
+        assert_eq!(merged.right_rear(), a.right_rear());
+    }
 }
