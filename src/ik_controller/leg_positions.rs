@@ -393,7 +393,7 @@ mod tests {
             None,
         );
         let json = positions.to_json().unwrap();
-        assert_eq!(json, "{\"left_front\":[0.15,0.15,0.15]}");
+        assert_eq!(json, "{\"left_front\":[0.15,0.15,0.15],\"left_middle\":null,\"left_rear\":null,\"right_front\":null,\"right_middle\":null,\"right_rear\":null}");
     }
 
     #[test]
