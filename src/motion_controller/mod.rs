@@ -1,3 +1,4 @@
+use crate::hexapod::LegFlags;
 use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
     IkControlable,
@@ -50,10 +51,24 @@ impl MotionController {
         }
         for stance in std::iter::repeat(stances).flatten() {
             self.last_tripod.invert();
+            let step = last_written_pose.merge_with(stance, self.last_tripod.as_flag());
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),
-                stance.clone(),
-                0.0002,
+                step.clone(),
+                0.0008,
+                0.03,
+                self.last_tripod.clone(),
+            ) {
+                self.ik_controller.move_to_positions(&new_pose).await?;
+                last_written_pose = new_pose;
+                interval.tick().await;
+            }
+            self.last_tripod.invert();
+            let step = last_written_pose.merge_with(stance, self.last_tripod.as_flag());
+            for new_pose in StepIterator::step(
+                last_written_pose.clone(),
+                step.clone(),
+                0.0008,
                 0.03,
                 self.last_tripod.clone(),
             ) {
@@ -78,6 +93,13 @@ impl Tripod {
             Tripod::LRL => Tripod::RLR,
             Tripod::RLR => Tripod::LRL,
         };
+    }
+
+    fn as_flag(&self) -> LegFlags {
+        match self {
+            Tripod::LRL => LegFlags::LRL_TRIPOD,
+            Tripod::RLR => LegFlags::RLR_TRIPOD,
+        }
     }
 }
 

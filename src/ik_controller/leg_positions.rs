@@ -1,9 +1,51 @@
-use crate::hexapod::HexapodTypes;
+use crate::hexapod::{HexapodTypes, LegFlags};
 use nalgebra::{distance, Point3};
-use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 pub type LegPositions = HexapodTypes<Point3<f32>>;
+
+impl LegPositions {
+    pub fn merge_with(&self, other: &LegPositions, legs: LegFlags) -> LegPositions {
+        let left_front = if LegFlags::LEFT_FRONT & legs == LegFlags::LEFT_FRONT {
+            other.left_front()
+        } else {
+            self.left_front()
+        };
+        let left_middle = if LegFlags::LEFT_MIDDLE & legs == LegFlags::LEFT_MIDDLE {
+            other.left_middle()
+        } else {
+            self.left_middle()
+        };
+        let left_rear = if LegFlags::LEFT_REAR & legs == LegFlags::LEFT_REAR {
+            other.left_rear()
+        } else {
+            self.left_rear()
+        };
+        let right_front = if LegFlags::RIGHT_FRONT & legs == LegFlags::RIGHT_FRONT {
+            other.right_front()
+        } else {
+            self.right_front()
+        };
+        let right_middle = if LegFlags::RIGHT_MIDDLE & legs == LegFlags::RIGHT_MIDDLE {
+            other.right_middle()
+        } else {
+            self.right_middle()
+        };
+        let right_rear = if LegFlags::RIGHT_REAR & legs == LegFlags::RIGHT_REAR {
+            other.right_rear()
+        } else {
+            self.right_rear()
+        };
+        LegPositions::new(
+            *left_front,
+            *left_middle,
+            *left_rear,
+            *right_front,
+            *right_middle,
+            *right_rear,
+        )
+    }
+}
 
 pub struct MovingTowardsIterator<T> {
     target: T,
@@ -160,42 +202,10 @@ impl MoveTowards for LegPositions {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub(crate) struct OptionalLegPositions {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub left_front: Option<Point3<f32>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub left_middle: Option<Point3<f32>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub left_rear: Option<Point3<f32>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub right_front: Option<Point3<f32>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub right_middle: Option<Point3<f32>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub right_rear: Option<Point3<f32>>,
-}
+pub type OptionalLegPositions = HexapodTypes<Option<Point3<f32>>>;
 
 #[allow(dead_code)]
 impl OptionalLegPositions {
-    fn new(
-        left_front: Option<Point3<f32>>,
-        left_middle: Option<Point3<f32>>,
-        left_rear: Option<Point3<f32>>,
-        right_front: Option<Point3<f32>>,
-        right_middle: Option<Point3<f32>>,
-        right_rear: Option<Point3<f32>>,
-    ) -> OptionalLegPositions {
-        OptionalLegPositions {
-            left_front,
-            left_middle,
-            left_rear,
-            right_front,
-            right_middle,
-            right_rear,
-        }
-    }
-
     fn to_json(&self) -> Result<String, Box<dyn Error>> {
         Ok(serde_json::to_string(self)?)
     }

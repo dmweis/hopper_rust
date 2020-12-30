@@ -56,7 +56,7 @@ impl<T> HexapodTypes<T> {
 }
 
 bitflags! {
-    struct Legs: u32 {
+    pub struct LegFlags: u32 {
         const LEFT_FRONT = 0b00000001;
         const LEFT_MIDDLE = 0b00000010;
         const LEFT_REAR = 0b00000100;

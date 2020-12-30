@@ -30,7 +30,7 @@ pub struct HopperVisualizer {
 
 impl Default for HopperVisualizer {
     fn default() -> Self {
-        let initial_position = stance::relaxed_stance().clone();
+        let initial_position = stance::grounded_stance().clone();
         let leg_positions = Arc::new(Mutex::new(initial_position));
         let keep_running = Arc::new(AtomicBool::new(true));
 
@@ -121,13 +121,13 @@ impl LegVisualizer {
         let mut left_front = root.add_sphere(FOOT_SPHERE_SIZE);
         left_front.set_color(0.0, 1.0, 0.0);
         let mut left_middle = root.add_sphere(FOOT_SPHERE_SIZE);
-        left_middle.set_color(1.0, 0.0, 0.0);
+        left_middle.set_color(1.0, 0.5, 0.8);
         let mut left_rear = root.add_sphere(FOOT_SPHERE_SIZE);
         left_rear.set_color(1.0, 0.0, 0.0);
         let mut right_front = root.add_sphere(FOOT_SPHERE_SIZE);
         right_front.set_color(0.0, 1.0, 0.0);
         let mut right_middle = root.add_sphere(FOOT_SPHERE_SIZE);
-        right_middle.set_color(1.0, 0.0, 0.0);
+        right_middle.set_color(1.0, 0.5, 0.8);
         let mut right_rear = root.add_sphere(FOOT_SPHERE_SIZE);
         right_rear.set_color(1.0, 0.0, 0.0);
         Self {
