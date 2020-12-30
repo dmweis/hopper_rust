@@ -1,7 +1,7 @@
 use crate::hexapod::LegFlags;
 use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
-    IkControlable,
+    IkControllable,
 };
 use anyhow::Result;
 use nalgebra::{distance, Point3, Vector2};
@@ -15,12 +15,12 @@ pub mod stance;
 pub mod visualizer;
 
 pub struct MotionController {
-    ik_controller: Box<dyn IkControlable>,
+    ik_controller: Box<dyn IkControllable>,
     last_tripod: Tripod,
 }
 
 impl MotionController {
-    pub async fn run(ik_controller: Box<dyn IkControlable>) -> Result<()> {
+    pub async fn run(ik_controller: Box<dyn IkControllable>) -> Result<()> {
         let controller = MotionController {
             ik_controller,
             last_tripod: Tripod::LRL,
@@ -29,7 +29,7 @@ impl MotionController {
         Ok(())
     }
 
-    pub fn start_as_task(ik_controller: Box<dyn IkControlable>) -> JoinHandle<Result<()>> {
+    pub fn start_as_task(ik_controller: Box<dyn IkControllable>) -> JoinHandle<Result<()>> {
         let controller = MotionController {
             ik_controller,
             last_tripod: Tripod::LRL,

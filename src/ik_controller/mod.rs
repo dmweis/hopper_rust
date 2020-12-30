@@ -12,7 +12,7 @@ use log::*;
 use nalgebra::{Point3, Vector3};
 
 #[async_trait]
-pub trait IkControlable: BodyController {
+pub trait IkControllable: BodyController {
     async fn move_to_positions(&mut self, positions: &LegPositions) -> Result<()>;
     async fn read_leg_positions(&mut self) -> Result<LegPositions>;
     async fn disable_motors(&mut self) -> Result<()>;
@@ -63,7 +63,7 @@ impl BodyController for IkController {
 }
 
 #[async_trait]
-impl IkControlable for IkController {
+impl IkControllable for IkController {
     async fn move_to_positions(&mut self, positions: &LegPositions) -> Result<()> {
         let motor_positions = calculate_ik(&positions, &self.body_configuration)?;
         self.body_controller

@@ -1,6 +1,6 @@
 use crate::body_controller::{BodyController, BodyMotorPositions};
 use crate::ik_controller::leg_positions::*;
-use crate::ik_controller::IkControlable;
+use crate::ik_controller::IkControllable;
 use anyhow::Result;
 use log::*;
 use serde::Deserialize;
@@ -72,7 +72,7 @@ pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Res
     }
 }
 
-pub async fn udp_ik_commander(mut controller: Box<dyn IkControlable>) -> Result<()> {
+pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {

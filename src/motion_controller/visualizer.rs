@@ -19,7 +19,7 @@ use std::{
 use kiss3d::light::Light;
 use kiss3d::window::Window;
 
-use crate::ik_controller::IkControlable;
+use crate::ik_controller::IkControllable;
 
 use super::stance;
 
@@ -94,7 +94,7 @@ impl BodyController for HopperVisualizer {
 }
 
 #[async_trait]
-impl IkControlable for HopperVisualizer {
+impl IkControllable for HopperVisualizer {
     async fn move_to_positions(&mut self, positions: &LegPositions) -> Result<()> {
         let mut guard = self.leg_positions.lock().unwrap();
         *guard = positions.clone();
