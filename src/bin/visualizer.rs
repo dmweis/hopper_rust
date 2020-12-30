@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
     let visualizer = motion_controller::visualizer::HopperVisualizer::default();
     let _motion_controller =
         motion_controller::MotionController::start_as_task(Box::new(visualizer));
-    println!("Press enter to exit");
+    info!("Press enter to exit");
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
     Ok(())
