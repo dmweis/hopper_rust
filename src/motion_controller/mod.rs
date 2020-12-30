@@ -4,7 +4,7 @@ use crate::ik_controller::{
     IkControlable,
 };
 use anyhow::Result;
-use nalgebra::{distance, Point3};
+use nalgebra::{distance, Point3, Vector2};
 use std::f32;
 use std::time::Duration;
 use tokio::time;
@@ -38,7 +38,6 @@ impl MotionController {
     }
 
     async fn control_loop(mut self) -> Result<()> {
-        let stances = vec![stance::relaxed_wide_stance(), stance::relaxed_stance()];
         let mut interval = time::interval(Duration::from_millis(1000 / 50));
         let mut last_written_pose = stance::grounded_stance().clone();
         // stand up
@@ -49,7 +48,7 @@ impl MotionController {
                 interval.tick().await;
             }
         }
-        for stance in std::iter::repeat(stances).flatten() {
+        for stance in &[stance::relaxed_wide_stance(), stance::relaxed_stance()] {
             self.last_tripod.invert();
             let step = last_written_pose.merge_with(stance, self.last_tripod.as_flag());
             for new_pose in StepIterator::step(
@@ -77,7 +76,44 @@ impl MotionController {
                 interval.tick().await;
             }
         }
-        Ok(())
+        // first step
+        self.last_tripod.invert();
+        let step = step_transformation(
+            last_written_pose.clone(),
+            self.last_tripod.clone(),
+            Vector2::new(0.025, 0.0),
+        );
+        for new_pose in StepIterator::step(
+            last_written_pose.clone(),
+            step.clone(),
+            0.0008,
+            0.03,
+            self.last_tripod.clone(),
+        ) {
+            self.ik_controller.move_to_positions(&new_pose).await?;
+            last_written_pose = new_pose;
+            interval.tick().await;
+        }
+        // step loop
+        loop {
+            self.last_tripod.invert();
+            let step = step_transformation(
+                last_written_pose.clone(),
+                self.last_tripod.clone(),
+                Vector2::new(0.05, 0.0),
+            );
+            for new_pose in StepIterator::step(
+                last_written_pose.clone(),
+                step.clone(),
+                0.0008,
+                0.03,
+                self.last_tripod.clone(),
+            ) {
+                self.ik_controller.move_to_positions(&new_pose).await?;
+                last_written_pose = new_pose;
+                interval.tick().await;
+            }
+        }
     }
 }
 
@@ -290,4 +326,50 @@ fn step_grounded_leg(
     let full_translation = target - start;
     let new_position = last_written + full_translation.normalize() * max_move;
     (new_position, true)
+}
+
+fn step_transformation(
+    start: LegPositions,
+    lifted_tripod: Tripod,
+    motion: Vector2<f32>,
+) -> LegPositions {
+    let linear_motion = motion.to_homogeneous();
+    match lifted_tripod {
+        Tripod::LRL => {
+            // lifted
+            let left_front = start.left_front() + linear_motion;
+            let right_middle = start.right_middle() + linear_motion;
+            let left_rear = start.left_rear() + linear_motion;
+            // grounded
+            let left_middle = start.left_middle() - linear_motion;
+            let right_front = start.right_front() - linear_motion;
+            let right_rear = start.right_rear() - linear_motion;
+            LegPositions::new(
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            )
+        }
+        Tripod::RLR => {
+            // lifted
+            let right_front = start.right_front() + linear_motion;
+            let left_middle = start.left_middle() + linear_motion;
+            let right_rear = start.right_rear() + linear_motion;
+            // grounded
+            let left_front = start.left_front() - linear_motion;
+            let left_rear = start.left_rear() - linear_motion;
+            let right_middle = start.right_middle() - linear_motion;
+            LegPositions::new(
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            )
+        }
+    }
 }
