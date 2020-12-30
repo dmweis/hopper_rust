@@ -37,11 +37,16 @@
 <span id="34">34</span>
 <span id="35">35</span>
 <span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
 <span class="kw">use</span> <span class="ident">hopper_rust</span>::{<span class="ident">hopper_config</span>, <span class="ident">motion_controller</span>, <span class="ident">utilities</span>};
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">motion_controller</span>::<span class="ident">visualizer</span>::<span class="ident">GroundType</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">Path</span>;
 
@@ -53,6 +58,9 @@
     <span class="doccomment">/// If unset uses default value.</span>
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span>)]</span>
     <span class="ident">body_config</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// type of floor to draw in visualizer</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;ChessBoard&quot;</span>)]</span>
+    <span class="ident">ground</span>: <span class="ident">GroundType</span>,
 }
 
 <span class="attribute">#[<span class="ident">tokio</span>::<span class="ident">main</span>]</span>
@@ -66,7 +74,7 @@
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">path</span><span class="op">|</span> <span class="ident">hopper_config</span>::<span class="ident">HopperConfig</span>::<span class="ident">load</span>(<span class="ident">Path</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>)))
         .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">hopper_config</span>::<span class="ident">HopperConfig</span>::<span class="ident">default</span>()))<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">visualizer</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">visualizer</span>::<span class="ident">HopperVisualizer</span>::<span class="ident">default</span>();
+    <span class="kw">let</span> <span class="ident">visualizer</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">visualizer</span>::<span class="ident">HopperVisualizer</span>::<span class="ident">new</span>(<span class="ident">args</span>.<span class="ident">ground</span>);
     <span class="kw">let</span> <span class="ident">_motion_controller</span> <span class="op">=</span>
         <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">start_as_task</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">visualizer</span>));
     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Press enter to exit&quot;</span>);

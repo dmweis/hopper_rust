@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["HopperVisualizer",""]]});
+initSidebarItems({"enum":[["GroundType",""]],"struct":[["HopperVisualizer",""]]});
