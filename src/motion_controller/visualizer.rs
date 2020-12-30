@@ -2,11 +2,12 @@ use crate::{
     body_controller::{BodyController, BodyMotorPositions},
     ik_controller::leg_positions::*,
 };
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use kiss3d::{self, scene::SceneNode};
 use nalgebra::{Isometry3, Point2, Point3, Translation3, UnitQuaternion, Vector3};
 use std::{
+    str::FromStr,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
@@ -28,15 +29,35 @@ pub struct HopperVisualizer {
     leg_positions: Arc<Mutex<LegPositions>>,
 }
 
-impl Default for HopperVisualizer {
-    fn default() -> Self {
+impl HopperVisualizer {
+    pub fn new(ground_type: GroundType) -> Self {
         let initial_position = stance::grounded_stance().clone();
         let leg_positions = Arc::new(Mutex::new(initial_position));
         let keep_running = Arc::new(AtomicBool::new(true));
 
         let leg_positions_clone = leg_positions.clone();
         let keep_running_clone = keep_running.clone();
-        let handle = spawn(move || visualizer_loop(keep_running_clone, leg_positions_clone));
+        let handle =
+            spawn(move || visualizer_loop(keep_running_clone, leg_positions_clone, &ground_type));
+        Self {
+            keep_running,
+            thread_handle: Some(handle),
+            leg_positions,
+        }
+    }
+}
+
+impl Default for HopperVisualizer {
+    fn default() -> Self {
+        let initial_position = stance::grounded_stance().clone();
+        let leg_positions = Arc::new(Mutex::new(initial_position));
+        let keep_running = Arc::new(AtomicBool::new(true));
+        let ground_type = GroundType::Circles;
+
+        let leg_positions_clone = leg_positions.clone();
+        let keep_running_clone = keep_running.clone();
+        let handle =
+            spawn(move || visualizer_loop(keep_running_clone, leg_positions_clone, &ground_type));
         Self {
             keep_running,
             thread_handle: Some(handle),
@@ -156,15 +177,55 @@ impl LegVisualizer {
         self.right_rear
             .set_local_translation(leg_positions.right_rear().coords.yzx().into());
     }
+
+    fn draw_tripod_lines(&self, leg_positions: &LegPositions, window: &mut Window) {
+        let purple = Point3::new(1.0, 0.5, 1.0);
+        let greenish = Point3::new(0.0, 0.5, 0.5);
+        window.draw_line(
+            &(leg_positions.left_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.right_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &purple,
+        );
+        window.draw_line(
+            &(leg_positions.left_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.right_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &purple,
+        );
+        window.draw_line(
+            &(leg_positions.left_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.left_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &purple,
+        );
+
+        window.draw_line(
+            &(leg_positions.right_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.left_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &greenish,
+        );
+        window.draw_line(
+            &(leg_positions.right_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.left_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &greenish,
+        );
+        window.draw_line(
+            &(leg_positions.right_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.right_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &greenish,
+        );
+    }
 }
 
-fn visualizer_loop(keep_running: Arc<AtomicBool>, leg_positions: Arc<Mutex<LegPositions>>) {
+fn visualizer_loop(
+    keep_running: Arc<AtomicBool>,
+    leg_positions: Arc<Mutex<LegPositions>>,
+    ground_type: &GroundType,
+) {
     let white = Point3::new(1.0, 1.0, 1.0);
     let mut frame_counter = Instant::now();
 
     let mut window = Window::new("Hopper visualizer");
     window.set_background_color(0.5, 0.5, 0.5);
-    add_ground_plane(&mut window);
+    draw_floor(&mut window, ground_type);
     let mut leg_visualizer = LegVisualizer::new(&mut window);
 
     window.set_light(Light::StickToCamera);
@@ -172,6 +233,7 @@ fn visualizer_loop(keep_running: Arc<AtomicBool>, leg_positions: Arc<Mutex<LegPo
     while keep_running.load(Ordering::Acquire) && window.render() {
         let guard = leg_positions.lock().unwrap();
         leg_visualizer.update_positions(&guard);
+        leg_visualizer.draw_tripod_lines(&guard, &mut window);
         window.draw_text(
             &format!("frame time: {}ms", frame_counter.elapsed().as_millis(),),
             &Point2::new(1.0, 1.0),
@@ -180,6 +242,36 @@ fn visualizer_loop(keep_running: Arc<AtomicBool>, leg_positions: Arc<Mutex<LegPo
             &white,
         );
         frame_counter = Instant::now();
+    }
+}
+
+pub enum GroundType {
+    ChessBoard,
+    Circles,
+    Squares,
+}
+
+impl FromStr for GroundType {
+    type Err = anyhow::Error;
+
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        match text.trim().to_lowercase().as_ref() {
+            "chessboard" => Ok(GroundType::ChessBoard),
+            "circles" => Ok(GroundType::Circles),
+            "squares" => Ok(GroundType::Squares),
+            _ => Err(anyhow!(
+                "Failed to parse {} to GroundType. Options are: chessboard, circles, or squares",
+                text
+            )),
+        }
+    }
+}
+
+fn draw_floor(window: &mut Window, ground_type: &GroundType) {
+    match ground_type {
+        GroundType::ChessBoard => add_ground_plane(window),
+        GroundType::Circles => add_circles(window),
+        GroundType::Squares => add_squares(window),
     }
 }
 
@@ -204,5 +296,31 @@ fn add_ground_plane(window: &mut Window) {
             );
             cube.set_local_transformation(trans);
         }
+    }
+}
+
+fn add_circles(window: &mut Window) {
+    const CIRCLES: usize = 20;
+    for i in 0..CIRCLES {
+        let mut cylinder = window.add_cylinder(i as f32 * 0.04, 0.001);
+        if i % 2 == 0 {
+            cylinder.set_color(0.0, 0.0, 0.0);
+        } else {
+            cylinder.set_color(1.0, 1.0, 1.0);
+        }
+        cylinder.set_local_translation(Translation3::new(0.0, -0.00001 * i as f32, 0.0));
+    }
+}
+
+fn add_squares(window: &mut Window) {
+    const SQUARES: usize = 20;
+    for i in 0..SQUARES {
+        let mut rectangle = window.add_cube(i as f32 * 0.04, 0.001, i as f32 * 0.04);
+        if i % 2 == 0 {
+            rectangle.set_color(0.0, 0.0, 0.0);
+        } else {
+            rectangle.set_color(1.0, 1.0, 1.0);
+        }
+        rectangle.set_local_translation(Translation3::new(0.0, -0.00001 * i as f32, 0.0));
     }
 }

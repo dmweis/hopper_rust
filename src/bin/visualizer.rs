@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::Clap;
 use hopper_rust::{hopper_config, motion_controller, utilities};
 use log::*;
+use motion_controller::visualizer::GroundType;
 use std::io;
 use std::path::Path;
 
@@ -13,6 +14,9 @@ struct Args {
     /// If unset uses default value.
     #[clap(long)]
     body_config: Option<String>,
+    /// type of floor to draw in visualizer
+    #[clap(short, long, default_value = "ChessBoard")]
+    ground: GroundType,
 }
 
 #[tokio::main]
@@ -26,7 +30,7 @@ async fn main() -> Result<()> {
         .map(|path| hopper_config::HopperConfig::load(Path::new(&path)))
         .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
 
-    let visualizer = motion_controller::visualizer::HopperVisualizer::default();
+    let visualizer = motion_controller::visualizer::HopperVisualizer::new(args.ground);
     let _motion_controller =
         motion_controller::MotionController::start_as_task(Box::new(visualizer));
     info!("Press enter to exit");

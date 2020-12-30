@@ -76,30 +76,12 @@ impl MotionController {
                 interval.tick().await;
             }
         }
-        // first step
-        self.last_tripod.invert();
-        let step = step_transformation(
-            last_written_pose.clone(),
-            self.last_tripod.clone(),
-            Vector2::new(0.025, 0.0),
-        );
-        for new_pose in StepIterator::step(
-            last_written_pose.clone(),
-            step.clone(),
-            0.0008,
-            0.03,
-            self.last_tripod.clone(),
-        ) {
-            self.ik_controller.move_to_positions(&new_pose).await?;
-            last_written_pose = new_pose;
-            interval.tick().await;
-        }
-        // step loop
         loop {
             self.last_tripod.invert();
-            let step = step_transformation(
-                last_written_pose.clone(),
-                self.last_tripod.clone(),
+            let step = step_with_relaxed_transformation(
+                &last_written_pose,
+                stance::relaxed_stance(),
+                &self.last_tripod,
                 Vector2::new(0.05, 0.0),
             );
             for new_pose in StepIterator::step(
@@ -328,9 +310,10 @@ fn step_grounded_leg(
     (new_position, true)
 }
 
+#[allow(dead_code)]
 fn step_transformation(
-    start: LegPositions,
-    lifted_tripod: Tripod,
+    start: &LegPositions,
+    lifted_tripod: &Tripod,
     motion: Vector2<f32>,
 ) -> LegPositions {
     let linear_motion = motion.to_homogeneous();
@@ -358,6 +341,53 @@ fn step_transformation(
             let right_front = start.right_front() + linear_motion;
             let left_middle = start.left_middle() + linear_motion;
             let right_rear = start.right_rear() + linear_motion;
+            // grounded
+            let left_front = start.left_front() - linear_motion;
+            let left_rear = start.left_rear() - linear_motion;
+            let right_middle = start.right_middle() - linear_motion;
+            LegPositions::new(
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            )
+        }
+    }
+}
+
+fn step_with_relaxed_transformation(
+    start: &LegPositions,
+    relaxed: &LegPositions,
+    lifted_tripod: &Tripod,
+    motion: Vector2<f32>,
+) -> LegPositions {
+    let linear_motion = motion.to_homogeneous();
+    match lifted_tripod {
+        Tripod::LRL => {
+            // lifted
+            let left_front = relaxed.left_front() + linear_motion;
+            let right_middle = relaxed.right_middle() + linear_motion;
+            let left_rear = relaxed.left_rear() + linear_motion;
+            // grounded
+            let left_middle = start.left_middle() - linear_motion;
+            let right_front = start.right_front() - linear_motion;
+            let right_rear = start.right_rear() - linear_motion;
+            LegPositions::new(
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            )
+        }
+        Tripod::RLR => {
+            // lifted
+            let right_front = relaxed.right_front() + linear_motion;
+            let left_middle = relaxed.left_middle() + linear_motion;
+            let right_rear = relaxed.right_rear() + linear_motion;
             // grounded
             let left_front = start.left_front() - linear_motion;
             let left_rear = start.left_rear() - linear_motion;
