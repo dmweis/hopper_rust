@@ -81,6 +81,14 @@ impl Iterator for StepIterator {
     type Item = LegPositions;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let full_distance = max_horizontal_distance(&self.start, &self.target);
+        let current_distance = (max_horizontal_distance(&self.current, &self.start)
+            + self.max_move)
+            .min(full_distance);
+        let mut progress = current_distance / full_distance;
+        if !progress.is_finite() {
+            progress = 0.0;
+        }
         let (positions, moved) = match self.tripod {
             Tripod::LRL => {
                 // lifted
@@ -88,41 +96,41 @@ impl Iterator for StepIterator {
                     self.start.left_front(),
                     self.current.left_front(),
                     self.target.left_front(),
-                    self.max_move,
                     self.step_height,
+                    progress,
                 );
                 let (right_middle, rm_moved) = step_lifted_leg(
                     self.start.right_middle(),
                     self.current.right_middle(),
                     self.target.right_middle(),
-                    self.max_move,
                     self.step_height,
+                    progress,
                 );
                 let (left_rear, lr_moved) = step_lifted_leg(
                     self.start.left_rear(),
                     self.current.left_rear(),
                     self.target.left_rear(),
-                    self.max_move,
                     self.step_height,
+                    progress,
                 );
                 // grounded
                 let (right_front, rf_moved) = step_grounded_leg(
                     self.start.right_front(),
                     self.current.right_front(),
                     self.target.right_front(),
-                    self.max_move,
+                    progress,
                 );
                 let (left_middle, lm_moved) = step_grounded_leg(
                     self.start.left_middle(),
                     self.current.left_middle(),
                     self.target.left_middle(),
-                    self.max_move,
+                    progress,
                 );
                 let (right_rear, rr_moved) = step_grounded_leg(
                     self.start.right_rear(),
                     self.current.right_rear(),
                     self.target.right_rear(),
-                    self.max_move,
+                    progress,
                 );
                 let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
                 let positions = LegPositions::new(
@@ -141,41 +149,41 @@ impl Iterator for StepIterator {
                     self.start.left_front(),
                     self.current.left_front(),
                     self.target.left_front(),
-                    self.max_move,
+                    progress,
                 );
                 let (right_middle, rm_moved) = step_grounded_leg(
                     self.start.right_middle(),
                     self.current.right_middle(),
                     self.target.right_middle(),
-                    self.max_move,
+                    progress,
                 );
                 let (left_rear, lr_moved) = step_grounded_leg(
                     self.start.left_rear(),
                     self.current.left_rear(),
                     self.target.left_rear(),
-                    self.max_move,
+                    progress,
                 );
                 // lifted
                 let (right_front, rf_moved) = step_lifted_leg(
                     self.start.right_front(),
                     self.current.right_front(),
                     self.target.right_front(),
-                    self.max_move,
                     self.step_height,
+                    progress,
                 );
                 let (left_middle, lm_moved) = step_lifted_leg(
                     self.start.left_middle(),
                     self.current.left_middle(),
                     self.target.left_middle(),
-                    self.max_move,
                     self.step_height,
+                    progress,
                 );
                 let (right_rear, rr_moved) = step_lifted_leg(
                     self.start.right_rear(),
                     self.current.right_rear(),
                     self.target.right_rear(),
-                    self.max_move,
                     self.step_height,
+                    progress,
                 );
                 let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
                 let positions = LegPositions::new(
@@ -202,22 +210,19 @@ pub(crate) fn step_lifted_leg(
     start: &Point3<f32>,
     last_written: &Point3<f32>,
     target: &Point3<f32>,
-    max_move: f32,
     step_height: f32,
+    progress: f32,
 ) -> (Point3<f32>, bool) {
     if last_written == target {
         return (*target, false);
     }
-    if distance(&last_written.xy(), &target.xy()) <= max_move {
+    if progress >= 1.0 {
         return (*target, true);
     }
     let full_ground_translation = target.xy() - start.xy();
-    let current_translation =
-        (last_written.xy() - start.xy()) + full_ground_translation.normalize() * max_move;
-    let ground_position = start.xy() + current_translation;
-    let progress = distance(&ground_position, &target.xy()) / distance(&start.xy(), &target.xy());
+    let current_translation = start.xy() + full_ground_translation * progress;
     let height = (progress * f32::consts::PI).sin() * step_height + start.z;
-    let new_position = Point3::new(ground_position.x, ground_position.y, height);
+    let new_position = Point3::new(current_translation.x, current_translation.y, height);
     (new_position, true)
 }
 
@@ -225,16 +230,16 @@ pub(crate) fn step_grounded_leg(
     start: &Point3<f32>,
     last_written: &Point3<f32>,
     target: &Point3<f32>,
-    max_move: f32,
+    progress: f32,
 ) -> (Point3<f32>, bool) {
     if last_written == target {
         return (*target, false);
     }
-    if distance(&last_written.xy(), &target.xy()) <= max_move {
+    if progress >= 1.0 {
         return (*target, true);
     }
     let full_translation = target - start;
-    let new_position = last_written + full_translation.normalize() * max_move;
+    let new_position = start + full_translation * progress;
     (new_position, true)
 }
 
@@ -335,14 +340,13 @@ pub(crate) fn step_with_relaxed_transformation(
     }
 }
 
-#[allow(dead_code)]
-fn max_distance(a: &LegPositions, b: &LegPositions) -> f32 {
-    let left_front = distance(a.left_front(), b.left_front());
-    let left_middle = distance(a.left_middle(), b.left_middle());
-    let left_rear = distance(a.left_rear(), b.left_rear());
-    let right_front = distance(a.right_front(), b.right_front());
-    let right_middle = distance(a.right_middle(), b.right_middle());
-    let right_rear = distance(a.right_rear(), b.right_rear());
+fn max_horizontal_distance(a: &LegPositions, b: &LegPositions) -> f32 {
+    let left_front = distance(&a.left_front().xy(), &b.left_front().xy());
+    let left_middle = distance(&a.left_middle().xy(), &b.left_middle().xy());
+    let left_rear = distance(&a.left_rear().xy(), &b.left_rear().xy());
+    let right_front = distance(&a.right_front().xy(), &b.right_front().xy());
+    let right_middle = distance(&a.right_middle().xy(), &b.right_middle().xy());
+    let right_rear = distance(&a.right_rear().xy(), &b.right_rear().xy());
 
     left_front
         .max(left_middle)
@@ -564,7 +568,7 @@ mod tests {
             Point3::origin(),
         );
 
-        let max = max_distance(&a, &b);
+        let max = max_horizontal_distance(&a, &b);
 
         assert_relative_eq!(max, 1.0);
     }
