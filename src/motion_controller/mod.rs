@@ -35,11 +35,13 @@ impl MotionController {
     }
 
     async fn control_loop(mut self) -> Result<()> {
+        const MAX_MOVE: f32 = 0.001;
+        const STEP_HEIGHT: f32 = 0.03;
         let mut interval = time::interval(Duration::from_millis(1000 / 50));
         let mut last_written_pose = stance::grounded_stance().clone();
         // stand up
         for pose in &[stance::grounded_stance(), stance::relaxed_wide_stance()] {
-            for new_pose in last_written_pose.to_move_towards_iter(pose, 0.001) {
+            for new_pose in last_written_pose.to_move_towards_iter(pose, MAX_MOVE) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
                 last_written_pose = new_pose;
                 interval.tick().await;
@@ -51,8 +53,8 @@ impl MotionController {
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),
                 step.clone(),
-                0.0008,
-                0.03,
+                MAX_MOVE,
+                STEP_HEIGHT,
                 self.last_tripod.clone(),
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
@@ -64,8 +66,8 @@ impl MotionController {
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),
                 step.clone(),
-                0.0008,
-                0.03,
+                MAX_MOVE,
+                STEP_HEIGHT,
                 self.last_tripod.clone(),
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
@@ -79,13 +81,13 @@ impl MotionController {
                 &last_written_pose,
                 stance::relaxed_stance(),
                 &self.last_tripod,
-                Vector2::new(0.05, 0.0),
+                Vector2::new(0.07, 0.0),
             );
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),
                 step.clone(),
-                0.0008,
-                0.03,
+                MAX_MOVE,
+                STEP_HEIGHT,
                 self.last_tripod.clone(),
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
