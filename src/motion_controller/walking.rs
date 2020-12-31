@@ -360,6 +360,8 @@ fn max_horizontal_distance(a: &LegPositions, b: &LegPositions) -> f32 {
 mod tests {
     use approx::assert_relative_eq;
 
+    use crate::motion_controller::stance::relaxed_stance;
+
     use super::*;
 
     #[test]
@@ -571,5 +573,104 @@ mod tests {
         let max = max_horizontal_distance(&a, &b);
 
         assert_relative_eq!(max, 1.0);
+    }
+
+    #[test]
+    fn tripods_stay_same_height_when_walking() {
+        const MAX_MOVE: f32 = 0.001;
+        const STEP_HEIGHT: f32 = 0.03;
+        let mut tripod = Tripod::LRL;
+        let mut last_written = relaxed_stance().clone();
+        for _ in 0..4 {
+            tripod.invert();
+            let step = step_with_relaxed_transformation(
+                &last_written,
+                relaxed_stance(),
+                &tripod,
+                MoveCommand::new(Vector2::new(0.00, 0.0), 10_f32.to_radians()),
+            );
+            for new_pose in StepIterator::step(
+                last_written.clone(),
+                step.clone(),
+                MAX_MOVE,
+                STEP_HEIGHT,
+                tripod.clone(),
+            ) {
+                // LRL tripod
+                assert_relative_eq!(new_pose.left_front().z, new_pose.right_middle().z);
+                assert_relative_eq!(new_pose.left_rear().z, new_pose.right_middle().z);
+                assert_relative_eq!(new_pose.left_rear().z, new_pose.left_front().z);
+                // RLR tripod
+                assert_relative_eq!(new_pose.right_front().z, new_pose.left_middle().z);
+                assert_relative_eq!(new_pose.right_rear().z, new_pose.left_middle().z);
+                assert_relative_eq!(new_pose.right_rear().z, new_pose.right_front().z);
+                last_written = new_pose;
+            }
+        }
+    }
+
+    #[test]
+    fn grounded_tripods_stay_same_distance_on_ground() {
+        const MAX_MOVE: f32 = 0.001;
+        const STEP_HEIGHT: f32 = 0.03;
+        const MAX_RELATIVE_ERROR: f32 = 0.001;
+        let mut tripod = Tripod::LRL;
+        let initial_pose = relaxed_stance().clone();
+        let mut last_written = initial_pose.clone();
+        for _ in 0..4 {
+            tripod.invert();
+            let step = step_with_relaxed_transformation(
+                &last_written,
+                &initial_pose,
+                &tripod,
+                MoveCommand::new(Vector2::new(0.00, 0.0), 10_f32.to_radians()),
+            );
+            for new_pose in StepIterator::step(
+                last_written.clone(),
+                step.clone(),
+                MAX_MOVE,
+                STEP_HEIGHT,
+                tripod.clone(),
+            ) {
+                match tripod {
+                    Tripod::RLR => {
+                        assert_relative_eq!(
+                            distance(new_pose.left_front(), new_pose.right_middle()),
+                            distance(initial_pose.left_front(), initial_pose.right_middle()),
+                            max_relative = MAX_RELATIVE_ERROR
+                        );
+                        assert_relative_eq!(
+                            distance(new_pose.left_rear(), new_pose.right_middle()),
+                            distance(initial_pose.left_rear(), initial_pose.right_middle()),
+                            max_relative = MAX_RELATIVE_ERROR
+                        );
+                        assert_relative_eq!(
+                            distance(new_pose.left_rear(), new_pose.left_front()),
+                            distance(initial_pose.left_rear(), initial_pose.left_front()),
+                            max_relative = MAX_RELATIVE_ERROR
+                        );
+                    }
+                    Tripod::LRL => {
+                        assert_relative_eq!(
+                            distance(new_pose.right_front(), new_pose.left_middle()),
+                            distance(initial_pose.right_front(), initial_pose.left_middle()),
+                            max_relative = MAX_RELATIVE_ERROR
+                        );
+                        assert_relative_eq!(
+                            distance(new_pose.right_rear(), new_pose.left_middle()),
+                            distance(initial_pose.right_rear(), initial_pose.left_middle()),
+                            max_relative = MAX_RELATIVE_ERROR
+                        );
+                        assert_relative_eq!(
+                            distance(new_pose.right_rear(), new_pose.right_front()),
+                            distance(initial_pose.right_rear(), initial_pose.right_front()),
+                            max_relative = MAX_RELATIVE_ERROR
+                        );
+                    }
+                }
+
+                last_written = new_pose;
+            }
+        }
     }
 }
