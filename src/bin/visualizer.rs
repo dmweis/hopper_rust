@@ -4,8 +4,10 @@ use hopper_rust::{hopper_config, motion_controller, utilities};
 use log::*;
 use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;
-use std::io;
 use std::path::Path;
+use std::{thread::sleep, time::Duration};
+
+use gilrs::Gilrs;
 
 /// Visualize Hopper
 #[derive(Clap)]
@@ -18,12 +20,15 @@ struct Args {
     /// type of floor to draw in visualizer
     #[clap(short, long, default_value = "ChessBoard")]
     ground: GroundType,
+    /// Sets the level of verbosity
+    #[clap(short, parse(from_occurrences))]
+    verbose: u8,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
-    utilities::start_loggers(None, 1)?;
+    utilities::start_loggers(None, args.verbose)?;
     info!("Started main visualizer");
 
     let _config = args
@@ -33,12 +38,31 @@ async fn main() -> Result<()> {
 
     let visualizer = motion_controller::visualizer::HopperVisualizer::new(args.ground);
     let mut motion_controller = motion_controller::MotionController::new(Box::new(visualizer));
-    motion_controller.set_command(MoveCommand::new(
-        Vector2::new(0.04, 0.04),
-        10_f32.to_radians(),
-    ));
-    info!("Press enter to exit");
-    let mut buffer = String::new();
-    io::stdin().read_line(&mut buffer)?;
-    Ok(())
+
+    // gamepad
+    let mut gilrs = Gilrs::new().unwrap();
+    loop {
+        trace!("Read gamepad");
+        while gilrs.next_event().is_some() {}
+        if let Some((_, gamepad)) = gilrs.gamepads().next() {
+            if gamepad.is_connected() {
+                let x = gamepad.value(gilrs::Axis::LeftStickY);
+                let x = if x.abs() > 0.2 { x } else { 0.0 };
+                let y = gamepad.value(gilrs::Axis::LeftStickX);
+                let y = if y.abs() > 0.2 { y } else { 0.0 };
+
+                let yaw = gamepad.value(gilrs::Axis::RightStickX);
+                let yaw = if yaw.abs() > 0.2 { yaw } else { 0.0 };
+
+                if gamepad.is_pressed(gilrs::Button::South) {
+                    info!("You pressed A. That does nothing");
+                }
+                motion_controller.set_command(MoveCommand::new(
+                    Vector2::new(0.06 * x, 0.06 * y),
+                    10_f32.to_radians() * yaw,
+                ));
+            }
+        }
+        sleep(Duration::from_millis(20));
+    }
 }
