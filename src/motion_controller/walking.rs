@@ -354,7 +354,6 @@ fn max_distance(a: &LegPositions, b: &LegPositions) -> f32 {
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use assert_approx_eq::assert_approx_eq;
 
     use super::*;
 
@@ -393,26 +392,23 @@ mod tests {
             MoveCommand::new(Vector2::new(1.0, 0.0), 0.0),
         );
 
-        // this is equality checking some floats
-        // it should work now because we return points by identity
-        // if it breaks you can test it by using distance(a, b) < epsilon
         let expected_lifted_point = Point3::new(1.0, 0.0, 0.0);
         // lifted
-        assert_eq!(after_step_lrl.left_front(), &expected_lifted_point);
-        assert_eq!(after_step_lrl.right_middle(), &expected_lifted_point);
-        assert_eq!(after_step_lrl.left_rear(), &expected_lifted_point);
-        assert_eq!(after_step_rlr.right_front(), &expected_lifted_point);
-        assert_eq!(after_step_rlr.left_middle(), &expected_lifted_point);
-        assert_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
+        assert_relative_eq!(after_step_lrl.left_front(), &expected_lifted_point);
+        assert_relative_eq!(after_step_lrl.right_middle(), &expected_lifted_point);
+        assert_relative_eq!(after_step_lrl.left_rear(), &expected_lifted_point);
+        assert_relative_eq!(after_step_rlr.right_front(), &expected_lifted_point);
+        assert_relative_eq!(after_step_rlr.left_middle(), &expected_lifted_point);
+        assert_relative_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
 
         let expected_grounded_point = Point3::new(-2.0, 0.0, 0.0);
         // grounded
-        assert_eq!(after_step_lrl.right_front(), &expected_grounded_point);
-        assert_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
-        assert_eq!(after_step_lrl.right_rear(), &expected_grounded_point);
-        assert_eq!(after_step_rlr.left_front(), &expected_grounded_point);
-        assert_eq!(after_step_rlr.right_middle(), &expected_grounded_point);
-        assert_eq!(after_step_rlr.left_rear(), &expected_grounded_point);
+        assert_relative_eq!(after_step_lrl.right_front(), &expected_grounded_point);
+        assert_relative_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
+        assert_relative_eq!(after_step_lrl.right_rear(), &expected_grounded_point);
+        assert_relative_eq!(after_step_rlr.left_front(), &expected_grounded_point);
+        assert_relative_eq!(after_step_rlr.right_middle(), &expected_grounded_point);
+        assert_relative_eq!(after_step_rlr.left_rear(), &expected_grounded_point);
     }
 
     #[test]
@@ -430,26 +426,23 @@ mod tests {
         let after_step_lrl = step_transformation(&start, &Tripod::LRL, Vector2::new(1.0, 0.0));
         let after_step_rlr = step_transformation(&start, &Tripod::RLR, Vector2::new(1.0, 0.0));
 
-        // this is equality checking some floats
-        // it should work now because we return points by identity
-        // if it breaks you can test it by using distance(a, b) < epsilon
         let expected_lifted_point = Point3::new(1.0, 0.0, 0.0);
         // lifted
-        assert_eq!(after_step_lrl.left_front(), &expected_lifted_point);
-        assert_eq!(after_step_lrl.right_middle(), &expected_lifted_point);
-        assert_eq!(after_step_lrl.left_rear(), &expected_lifted_point);
-        assert_eq!(after_step_rlr.right_front(), &expected_lifted_point);
-        assert_eq!(after_step_rlr.left_middle(), &expected_lifted_point);
-        assert_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
+        assert_relative_eq!(after_step_lrl.left_front(), &expected_lifted_point);
+        assert_relative_eq!(after_step_lrl.right_middle(), &expected_lifted_point);
+        assert_relative_eq!(after_step_lrl.left_rear(), &expected_lifted_point);
+        assert_relative_eq!(after_step_rlr.right_front(), &expected_lifted_point);
+        assert_relative_eq!(after_step_rlr.left_middle(), &expected_lifted_point);
+        assert_relative_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
 
         let expected_grounded_point = Point3::new(-1.0, 0.0, 0.0);
         // grounded
-        assert_eq!(after_step_lrl.right_front(), &expected_grounded_point);
-        assert_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
-        assert_eq!(after_step_lrl.right_rear(), &expected_grounded_point);
-        assert_eq!(after_step_rlr.left_front(), &expected_grounded_point);
-        assert_eq!(after_step_rlr.right_middle(), &expected_grounded_point);
-        assert_eq!(after_step_rlr.left_rear(), &expected_grounded_point);
+        assert_relative_eq!(after_step_lrl.right_front(), &expected_grounded_point);
+        assert_relative_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
+        assert_relative_eq!(after_step_lrl.right_rear(), &expected_grounded_point);
+        assert_relative_eq!(after_step_rlr.left_front(), &expected_grounded_point);
+        assert_relative_eq!(after_step_rlr.right_middle(), &expected_grounded_point);
+        assert_relative_eq!(after_step_rlr.left_rear(), &expected_grounded_point);
     }
 
     #[test]
@@ -480,9 +473,9 @@ mod tests {
 
         let mut final_state = start.clone();
         for step in StepIterator::step(start, target.clone(), 0.001, 0.02, Tripod::RLR) {
-            assert_approx_eq!(step.left_front().z, 0.0);
-            assert_approx_eq!(step.right_middle().z, 0.0);
-            assert_approx_eq!(step.left_rear().z, 0.0);
+            assert_relative_eq!(step.left_front().z, 0.0);
+            assert_relative_eq!(step.right_middle().z, 0.0);
+            assert_relative_eq!(step.left_rear().z, 0.0);
 
             if step.right_front().z > 0.01 {
                 right_front_lifted = true;
@@ -529,9 +522,9 @@ mod tests {
 
         let mut final_state = start.clone();
         for step in StepIterator::step(start, target.clone(), 0.001, 0.02, Tripod::LRL) {
-            assert_approx_eq!(step.right_front().z, 0.0);
-            assert_approx_eq!(step.left_middle().z, 0.0);
-            assert_approx_eq!(step.right_rear().z, 0.0);
+            assert_relative_eq!(step.right_front().z, 0.0);
+            assert_relative_eq!(step.left_middle().z, 0.0);
+            assert_relative_eq!(step.right_rear().z, 0.0);
 
             if step.left_front().z > 0.01 {
                 left_front_lifted = true;

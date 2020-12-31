@@ -258,13 +258,12 @@ fn get_alpha_angle(a: &f32, b: &f32, c: &f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_approx_eq::*;
-    use nalgebra::distance;
+    use approx::assert_relative_eq;
 
     #[test]
     fn get_angle_equilateral_triangle() {
         let angle = get_alpha_angle(&1.0, &1.0, &1.0);
-        assert_approx_eq!(60_f32.to_radians(), angle);
+        assert_relative_eq!(60_f32.to_radians(), angle);
     }
 
     #[test]
@@ -273,7 +272,7 @@ mod tests {
         let c = 2_f32;
         let a = (b.powi(2) + c.powi(2)).sqrt();
         let angle = get_alpha_angle(&a, &b, &c);
-        assert_approx_eq!(90_f32.to_radians(), angle);
+        assert_relative_eq!(90_f32.to_radians(), angle);
     }
 
     #[test]
@@ -283,9 +282,9 @@ mod tests {
         let motor_positions =
             calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.left_front())
                 .unwrap();
-        assert_approx_eq!(motor_positions.coxa().to_degrees(), 113.28124);
-        assert_approx_eq!(motor_positions.femur().to_degrees(), 112.15929);
-        assert_approx_eq!(motor_positions.tibia().to_degrees(), 196.29994);
+        assert_relative_eq!(motor_positions.coxa().to_degrees(), 113.28124);
+        assert_relative_eq!(motor_positions.femur().to_degrees(), 112.15929);
+        assert_relative_eq!(motor_positions.tibia().to_degrees(), 196.29994);
     }
 
     #[test]
@@ -295,9 +294,9 @@ mod tests {
         let motor_positions =
             calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.right_front())
                 .unwrap();
-        assert_approx_eq!(motor_positions.coxa().to_degrees(), 186.71875);
-        assert_approx_eq!(motor_positions.femur().to_degrees(), 188.0706);
-        assert_approx_eq!(motor_positions.tibia().to_degrees(), 103.929955);
+        assert_relative_eq!(motor_positions.coxa().to_degrees(), 186.71875);
+        assert_relative_eq!(motor_positions.femur().to_degrees(), 188.0706);
+        assert_relative_eq!(motor_positions.tibia().to_degrees(), 103.929955);
     }
 
     #[test]
@@ -338,8 +337,7 @@ mod tests {
             &hopper_config,
             &hopper_config.legs.left_front(),
         );
-        let result_distance = distance(&target, &fk_calculated);
-        assert!(result_distance < 0.0000001);
+        assert_relative_eq!(&target, &fk_calculated);
     }
 
     #[test]
@@ -354,8 +352,7 @@ mod tests {
             &hopper_config,
             &hopper_config.legs.right_front(),
         );
-        let result_distance = distance(&target, &fk_calculated);
-        assert!(result_distance < 0.0000001);
+        assert_relative_eq!(&target, &fk_calculated);
     }
 
     #[test]
@@ -371,11 +368,11 @@ mod tests {
         );
         let motor_positions = calculate_ik(&origin, &hopper_config).unwrap();
         let result = calculate_fk(&motor_positions, &hopper_config);
-        assert!(distance(origin.left_front(), result.left_front()) < 0.0000001);
-        assert!(distance(origin.left_middle(), result.left_middle()) < 0.0000001);
-        assert!(distance(origin.left_rear(), result.left_rear()) < 0.0000001);
-        assert!(distance(origin.right_front(), result.right_front()) < 0.0000001);
-        assert!(distance(origin.right_middle(), result.right_middle()) < 0.0000001);
-        assert!(distance(origin.right_rear(), result.right_rear()) < 0.0000001);
+        assert_relative_eq!(origin.left_front(), result.left_front());
+        assert_relative_eq!(origin.left_middle(), result.left_middle());
+        assert_relative_eq!(origin.left_rear(), result.left_rear());
+        assert_relative_eq!(origin.right_front(), result.right_front());
+        assert_relative_eq!(origin.right_middle(), result.right_middle());
+        assert_relative_eq!(origin.right_rear(), result.right_rear());
     }
 }

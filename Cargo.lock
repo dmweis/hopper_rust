@@ -92,12 +92,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "assert_approx_eq"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c07dab4369547dbe5114677b33fbbf724971019f3818172d59a97a61c774ffd"
-
-[[package]]
 name = "async-trait"
 version = "0.1.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -851,7 +845,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "approx 0.4.0",
- "assert_approx_eq",
  "async-trait",
  "bitflags",
  "clap",

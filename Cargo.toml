@@ -35,5 +35,4 @@ lazy_static = "1.4"
 bitflags = "1.2"
 
 [dev-dependencies]
-assert_approx_eq = "1.1"
 approx = "0.4.0"
