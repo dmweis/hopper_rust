@@ -335,8 +335,25 @@ pub(crate) fn step_with_relaxed_transformation(
     }
 }
 
+fn max_distance(a: &LegPositions, b: &LegPositions) -> f32 {
+    let left_front = distance(a.left_front(), b.left_front());
+    let left_middle = distance(a.left_middle(), b.left_middle());
+    let left_rear = distance(a.left_rear(), b.left_rear());
+    let right_front = distance(a.right_front(), b.right_front());
+    let right_middle = distance(a.right_middle(), b.right_middle());
+    let right_rear = distance(a.right_rear(), b.right_rear());
+
+    left_front
+        .max(left_middle)
+        .max(left_rear)
+        .max(right_front)
+        .max(right_middle)
+        .max(right_rear)
+}
+
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
     use assert_approx_eq::assert_approx_eq;
 
     use super::*;
@@ -531,5 +548,30 @@ mod tests {
         assert!(right_middle_lifted);
         assert!(left_rear_lifted);
         assert_eq!(final_state, target);
+    }
+
+    #[test]
+    fn max_distance_checks_correct_legs() {
+        let a = LegPositions::new(
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(20.0, 0.0, 0.0),
+            Point3::origin(),
+            Point3::origin(),
+            Point3::origin(),
+            Point3::origin(),
+        );
+
+        let b = LegPositions::new(
+            Point3::origin(),
+            Point3::new(20.0, 0.0, 0.0),
+            Point3::origin(),
+            Point3::origin(),
+            Point3::origin(),
+            Point3::origin(),
+        );
+
+        let max = max_distance(&a, &b);
+
+        assert_relative_eq!(max, 1.0);
     }
 }
