@@ -536,6 +536,42 @@
 <span id="533">533</span>
 <span id="534">534</span>
 <span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hexapod</span>::<span class="ident">LegFlags</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">leg_positions</span>::<span class="ident">LegPositions</span>;
@@ -874,9 +910,26 @@
     }
 }
 
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="kw">fn</span> <span class="ident">max_distance</span>(<span class="ident">a</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>, <span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f32</span> {
+    <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="ident">a</span>.<span class="ident">left_front</span>(), <span class="ident">b</span>.<span class="ident">left_front</span>());
+    <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="ident">a</span>.<span class="ident">left_middle</span>(), <span class="ident">b</span>.<span class="ident">left_middle</span>());
+    <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="ident">a</span>.<span class="ident">left_rear</span>(), <span class="ident">b</span>.<span class="ident">left_rear</span>());
+    <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="ident">a</span>.<span class="ident">right_front</span>(), <span class="ident">b</span>.<span class="ident">right_front</span>());
+    <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="ident">a</span>.<span class="ident">right_middle</span>(), <span class="ident">b</span>.<span class="ident">right_middle</span>());
+    <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="ident">a</span>.<span class="ident">right_rear</span>(), <span class="ident">b</span>.<span class="ident">right_rear</span>());
+
+    <span class="ident">left_front</span>
+        .<span class="ident">max</span>(<span class="ident">left_middle</span>)
+        .<span class="ident">max</span>(<span class="ident">left_rear</span>)
+        .<span class="ident">max</span>(<span class="ident">right_front</span>)
+        .<span class="ident">max</span>(<span class="ident">right_middle</span>)
+        .<span class="ident">max</span>(<span class="ident">right_rear</span>)
+}
+
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">assert_approx_eq</span>::<span class="ident">assert_approx_eq</span>;
+    <span class="kw">use</span> <span class="ident">approx</span>::<span class="ident">assert_relative_eq</span>;
 
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
@@ -915,26 +968,23 @@
             <span class="ident">MoveCommand</span>::<span class="ident">new</span>(<span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>), <span class="number">0.0</span>),
         );
 
-        <span class="comment">// this is equality checking some floats</span>
-        <span class="comment">// it should work now because we return points by identity</span>
-        <span class="comment">// if it breaks you can test it by using distance(a, b) &lt; epsilon</span>
         <span class="kw">let</span> <span class="ident">expected_lifted_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
         <span class="comment">// lifted</span>
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
 
         <span class="kw">let</span> <span class="ident">expected_grounded_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">2.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
         <span class="comment">// grounded</span>
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -952,26 +1002,23 @@
         <span class="kw">let</span> <span class="ident">after_step_lrl</span> <span class="op">=</span> <span class="ident">step_transformation</span>(<span class="kw-2">&amp;</span><span class="ident">start</span>, <span class="kw-2">&amp;</span><span class="ident">Tripod</span>::<span class="ident">LRL</span>, <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>));
         <span class="kw">let</span> <span class="ident">after_step_rlr</span> <span class="op">=</span> <span class="ident">step_transformation</span>(<span class="kw-2">&amp;</span><span class="ident">start</span>, <span class="kw-2">&amp;</span><span class="ident">Tripod</span>::<span class="ident">RLR</span>, <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>));
 
-        <span class="comment">// this is equality checking some floats</span>
-        <span class="comment">// it should work now because we return points by identity</span>
-        <span class="comment">// if it breaks you can test it by using distance(a, b) &lt; epsilon</span>
         <span class="kw">let</span> <span class="ident">expected_lifted_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
         <span class="comment">// lifted</span>
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
 
         <span class="kw">let</span> <span class="ident">expected_grounded_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
         <span class="comment">// grounded</span>
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -1002,9 +1049,9 @@
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">final_state</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">clone</span>();
         <span class="kw">for</span> <span class="ident">step</span> <span class="kw">in</span> <span class="ident">StepIterator</span>::<span class="ident">step</span>(<span class="ident">start</span>, <span class="ident">target</span>.<span class="ident">clone</span>(), <span class="number">0.001</span>, <span class="number">0.02</span>, <span class="ident">Tripod</span>::<span class="ident">RLR</span>) {
-            <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">left_front</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
-            <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">right_middle</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
-            <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">left_rear</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
+            <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">left_front</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
+            <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">right_middle</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
+            <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">left_rear</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
 
             <span class="kw">if</span> <span class="ident">step</span>.<span class="ident">right_front</span>().<span class="ident">z</span> <span class="op">&gt;</span> <span class="number">0.01</span> {
                 <span class="ident">right_front_lifted</span> <span class="op">=</span> <span class="bool-val">true</span>;
@@ -1051,9 +1098,9 @@
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">final_state</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">clone</span>();
         <span class="kw">for</span> <span class="ident">step</span> <span class="kw">in</span> <span class="ident">StepIterator</span>::<span class="ident">step</span>(<span class="ident">start</span>, <span class="ident">target</span>.<span class="ident">clone</span>(), <span class="number">0.001</span>, <span class="number">0.02</span>, <span class="ident">Tripod</span>::<span class="ident">LRL</span>) {
-            <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">right_front</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
-            <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">left_middle</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
-            <span class="macro">assert_approx_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">right_rear</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
+            <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">right_front</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
+            <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">left_middle</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
+            <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">step</span>.<span class="ident">right_rear</span>().<span class="ident">z</span>, <span class="number">0.0</span>);
 
             <span class="kw">if</span> <span class="ident">step</span>.<span class="ident">left_front</span>().<span class="ident">z</span> <span class="op">&gt;</span> <span class="number">0.01</span> {
                 <span class="ident">left_front_lifted</span> <span class="op">=</span> <span class="bool-val">true</span>;
@@ -1070,6 +1117,31 @@
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">right_middle_lifted</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">left_rear_lifted</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">final_state</span>, <span class="ident">target</span>);
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">max_distance_checks_correct_legs</span>() {
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>),
+            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">20.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+        );
+
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">20.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+            <span class="ident">Point3</span>::<span class="ident">origin</span>(),
+        );
+
+        <span class="kw">let</span> <span class="ident">max</span> <span class="op">=</span> <span class="ident">max_distance</span>(<span class="kw-2">&amp;</span><span class="ident">a</span>, <span class="kw-2">&amp;</span><span class="ident">b</span>);
+
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">max</span>, <span class="number">1.0</span>);
     }
 }
 </pre></div>
