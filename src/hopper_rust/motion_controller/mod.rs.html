@@ -98,6 +98,8 @@
 <span id="95">95</span>
 <span id="96">96</span>
 <span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stance</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;visualizer&quot;</span>)]</span>
@@ -136,11 +138,13 @@
     }
 
     <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">control_loop</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">const</span> <span class="ident">MAX_MOVE</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.001</span>;
+        <span class="kw">const</span> <span class="ident">STEP_HEIGHT</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.03</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">interval</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">1000</span> <span class="op">/</span> <span class="number">50</span>));
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">stance</span>::<span class="ident">grounded_stance</span>().<span class="ident">clone</span>();
         <span class="comment">// stand up</span>
         <span class="kw">for</span> <span class="ident">pose</span> <span class="kw">in</span> <span class="kw-2">&amp;</span>[<span class="ident">stance</span>::<span class="ident">grounded_stance</span>(), <span class="ident">stance</span>::<span class="ident">relaxed_wide_stance</span>()] {
-            <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">last_written_pose</span>.<span class="ident">to_move_towards_iter</span>(<span class="ident">pose</span>, <span class="number">0.001</span>) {
+            <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">last_written_pose</span>.<span class="ident">to_move_towards_iter</span>(<span class="ident">pose</span>, <span class="ident">MAX_MOVE</span>) {
                 <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="ident">await</span><span class="question-mark">?</span>;
                 <span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">new_pose</span>;
                 <span class="ident">interval</span>.<span class="ident">tick</span>().<span class="ident">await</span>;
@@ -152,8 +156,8 @@
             <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">StepIterator</span>::<span class="ident">step</span>(
                 <span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
                 <span class="ident">step</span>.<span class="ident">clone</span>(),
-                <span class="number">0.0008</span>,
-                <span class="number">0.03</span>,
+                <span class="ident">MAX_MOVE</span>,
+                <span class="ident">STEP_HEIGHT</span>,
                 <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">clone</span>(),
             ) {
                 <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="ident">await</span><span class="question-mark">?</span>;
@@ -165,8 +169,8 @@
             <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">StepIterator</span>::<span class="ident">step</span>(
                 <span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
                 <span class="ident">step</span>.<span class="ident">clone</span>(),
-                <span class="number">0.0008</span>,
-                <span class="number">0.03</span>,
+                <span class="ident">MAX_MOVE</span>,
+                <span class="ident">STEP_HEIGHT</span>,
                 <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">clone</span>(),
             ) {
                 <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="ident">await</span><span class="question-mark">?</span>;
@@ -180,13 +184,13 @@
                 <span class="kw-2">&amp;</span><span class="ident">last_written_pose</span>,
                 <span class="ident">stance</span>::<span class="ident">relaxed_stance</span>(),
                 <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">last_tripod</span>,
-                <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">0.05</span>, <span class="number">0.0</span>),
+                <span class="ident">MoveCommand</span>::<span class="ident">new</span>(<span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">0.06</span>, <span class="number">0.0</span>), <span class="number">10_f32</span>.<span class="ident">to_radians</span>()),
             );
             <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">StepIterator</span>::<span class="ident">step</span>(
                 <span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
                 <span class="ident">step</span>.<span class="ident">clone</span>(),
-                <span class="number">0.0008</span>,
-                <span class="number">0.03</span>,
+                <span class="ident">MAX_MOVE</span>,
+                <span class="ident">STEP_HEIGHT</span>,
                 <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">clone</span>(),
             ) {
                 <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="ident">await</span><span class="question-mark">?</span>;
