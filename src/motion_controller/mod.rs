@@ -81,7 +81,7 @@ impl MotionController {
                 &last_written_pose,
                 stance::relaxed_stance(),
                 &self.last_tripod,
-                MoveCommand::new(Vector2::new(0.06, 0.0), 10_f32.to_radians()),
+                MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),

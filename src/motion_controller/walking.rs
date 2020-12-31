@@ -623,7 +623,7 @@ mod tests {
                 &last_written,
                 &initial_pose,
                 &tripod,
-                MoveCommand::new(Vector2::new(0.00, 0.0), 10_f32.to_radians()),
+                MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
             for new_pose in StepIterator::step(
                 last_written.clone(),
@@ -669,6 +669,70 @@ mod tests {
                     }
                 }
 
+                last_written = new_pose;
+            }
+        }
+    }
+
+    /// this test tests both lifted and grounded triangles for changes
+    /// this is technically speaking not guaranteed. But still good to know.
+    /// This test could just fail after an update to the gait generation
+    /// with no negative effects
+    #[test]
+    fn no_tripods_stay_same_distance_on_ground() {
+        const MAX_MOVE: f32 = 0.001;
+        const STEP_HEIGHT: f32 = 0.03;
+        const MAX_RELATIVE_ERROR: f32 = 0.005;
+        let mut tripod = Tripod::LRL;
+        let initial_pose = relaxed_stance().clone();
+        let mut last_written = initial_pose.clone();
+        for _ in 0..4 {
+            tripod.invert();
+            let step = step_with_relaxed_transformation(
+                &last_written,
+                &initial_pose,
+                &tripod,
+                MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
+            );
+            for new_pose in StepIterator::step(
+                last_written.clone(),
+                step.clone(),
+                MAX_MOVE,
+                STEP_HEIGHT,
+                tripod.clone(),
+            ) {
+                // RLR tripod
+                assert_relative_eq!(
+                    distance(new_pose.right_front(), new_pose.left_middle()),
+                    distance(initial_pose.right_front(), initial_pose.left_middle()),
+                    max_relative = MAX_RELATIVE_ERROR
+                );
+                assert_relative_eq!(
+                    distance(new_pose.right_rear(), new_pose.left_middle()),
+                    distance(initial_pose.right_rear(), initial_pose.left_middle()),
+                    max_relative = MAX_RELATIVE_ERROR
+                );
+                assert_relative_eq!(
+                    distance(new_pose.right_rear(), new_pose.right_front()),
+                    distance(initial_pose.right_rear(), initial_pose.right_front()),
+                    max_relative = MAX_RELATIVE_ERROR
+                );
+                // LRL tripod
+                assert_relative_eq!(
+                    distance(new_pose.left_front(), new_pose.right_middle()),
+                    distance(initial_pose.left_front(), initial_pose.right_middle()),
+                    max_relative = MAX_RELATIVE_ERROR
+                );
+                assert_relative_eq!(
+                    distance(new_pose.left_rear(), new_pose.right_middle()),
+                    distance(initial_pose.left_rear(), initial_pose.right_middle()),
+                    max_relative = MAX_RELATIVE_ERROR
+                );
+                assert_relative_eq!(
+                    distance(new_pose.left_rear(), new_pose.left_front()),
+                    distance(initial_pose.left_rear(), initial_pose.left_front()),
+                    max_relative = MAX_RELATIVE_ERROR
+                );
                 last_written = new_pose;
             }
         }
