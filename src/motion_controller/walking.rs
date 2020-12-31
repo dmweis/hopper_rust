@@ -1,7 +1,31 @@
 use crate::hexapod::LegFlags;
 use crate::ik_controller::leg_positions::LegPositions;
-use nalgebra::{distance, Point3, Vector2};
+use nalgebra::{distance, Point3, Rotation3, Vector2, Vector3};
+use serde::{Deserialize, Serialize};
 use std::f32;
+
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
+pub struct MoveCommand {
+    direction: Vector2<f32>,
+    rotation: f32,
+}
+
+impl MoveCommand {
+    pub fn new(direction: Vector2<f32>, rotation: f32) -> Self {
+        Self {
+            direction,
+            rotation,
+        }
+    }
+
+    pub fn direction(&self) -> Vector2<f32> {
+        self.direction
+    }
+
+    pub fn rotation(&self) -> f32 {
+        self.rotation
+    }
+}
 
 #[derive(Debug, Clone)]
 pub(crate) enum Tripod {
@@ -190,9 +214,9 @@ pub(crate) fn step_lifted_leg(
     let full_ground_translation = target.xy() - start.xy();
     let current_translation =
         (last_written.xy() - start.xy()) + full_ground_translation.normalize() * max_move;
-    let progress = distance(&last_written.xy(), &target.xy()) / distance(&start.xy(), &target.xy());
-    let height = (progress * f32::consts::PI).sin() * step_height + start.z;
     let ground_position = start.xy() + current_translation;
+    let progress = distance(&ground_position, &target.xy()) / distance(&start.xy(), &target.xy());
+    let height = (progress * f32::consts::PI).sin() * step_height + start.z;
     let new_position = Point3::new(ground_position.x, ground_position.y, height);
     (new_position, true)
 }
@@ -265,19 +289,22 @@ pub(crate) fn step_with_relaxed_transformation(
     start: &LegPositions,
     relaxed: &LegPositions,
     lifted_tripod: &Tripod,
-    motion: Vector2<f32>,
+    command: MoveCommand,
 ) -> LegPositions {
-    let linear_motion = motion.to_homogeneous();
+    let linear_motion = command.direction().to_homogeneous();
+    let rotation = Rotation3::from_axis_angle(&Vector3::z_axis(), command.rotation() / 2.0);
+    let inverse_rotation =
+        Rotation3::from_axis_angle(&Vector3::z_axis(), -command.rotation() / 2.0);
     match lifted_tripod {
         Tripod::LRL => {
             // lifted
-            let left_front = relaxed.left_front() + linear_motion;
-            let right_middle = relaxed.right_middle() + linear_motion;
-            let left_rear = relaxed.left_rear() + linear_motion;
+            let left_front = rotation * (relaxed.left_front() + linear_motion);
+            let right_middle = rotation * (relaxed.right_middle() + linear_motion);
+            let left_rear = rotation * (relaxed.left_rear() + linear_motion);
             // grounded
-            let left_middle = start.left_middle() - linear_motion;
-            let right_front = start.right_front() - linear_motion;
-            let right_rear = start.right_rear() - linear_motion;
+            let left_middle = inverse_rotation * (start.left_middle() - linear_motion);
+            let right_front = inverse_rotation * (start.right_front() - linear_motion);
+            let right_rear = inverse_rotation * (start.right_rear() - linear_motion);
             LegPositions::new(
                 left_front,
                 left_middle,
@@ -289,13 +316,13 @@ pub(crate) fn step_with_relaxed_transformation(
         }
         Tripod::RLR => {
             // lifted
-            let right_front = relaxed.right_front() + linear_motion;
-            let left_middle = relaxed.left_middle() + linear_motion;
-            let right_rear = relaxed.right_rear() + linear_motion;
+            let right_front = rotation * (relaxed.right_front() + linear_motion);
+            let left_middle = rotation * (relaxed.left_middle() + linear_motion);
+            let right_rear = rotation * (relaxed.right_rear() + linear_motion);
             // grounded
-            let left_front = start.left_front() - linear_motion;
-            let left_rear = start.left_rear() - linear_motion;
-            let right_middle = start.right_middle() - linear_motion;
+            let left_front = inverse_rotation * (start.left_front() - linear_motion);
+            let left_rear = inverse_rotation * (start.left_rear() - linear_motion);
+            let right_middle = inverse_rotation * (start.right_middle() - linear_motion);
             LegPositions::new(
                 left_front,
                 left_middle,
@@ -340,13 +367,13 @@ mod tests {
             &start,
             &relaxed,
             &Tripod::LRL,
-            Vector2::new(1.0, 0.0),
+            MoveCommand::new(Vector2::new(1.0, 0.0), 0.0),
         );
         let after_step_rlr = step_with_relaxed_transformation(
             &start,
             &relaxed,
             &Tripod::RLR,
-            Vector2::new(1.0, 0.0),
+            MoveCommand::new(Vector2::new(1.0, 0.0), 0.0),
         );
 
         // this is equality checking some floats
