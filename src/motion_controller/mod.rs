@@ -47,12 +47,13 @@ impl MotionController {
                 interval.tick().await;
             }
         }
-        for stance in &[stance::relaxed_wide_stance(), stance::relaxed_stance()] {
+        // step to narrow
+        for pose in &[stance::relaxed_wide_stance(), stance::relaxed_stance()] {
             self.last_tripod.invert();
-            let step = last_written_pose.merge_with(stance, self.last_tripod.as_flag());
+            let target = last_written_pose.merge_with(pose, self.last_tripod.as_flag());
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),
-                step.clone(),
+                target.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
                 self.last_tripod.clone(),
@@ -62,10 +63,10 @@ impl MotionController {
                 interval.tick().await;
             }
             self.last_tripod.invert();
-            let step = last_written_pose.merge_with(stance, self.last_tripod.as_flag());
+            let target = last_written_pose.merge_with(pose, self.last_tripod.as_flag());
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),
-                step.clone(),
+                target.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
                 self.last_tripod.clone(),
@@ -77,7 +78,7 @@ impl MotionController {
         }
         loop {
             self.last_tripod.invert();
-            let step = step_with_relaxed_transformation(
+            let target = step_with_relaxed_transformation(
                 &last_written_pose,
                 stance::relaxed_stance(),
                 &self.last_tripod,
@@ -85,7 +86,7 @@ impl MotionController {
             );
             for new_pose in StepIterator::step(
                 last_written_pose.clone(),
-                step.clone(),
+                target.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
                 self.last_tripod.clone(),
