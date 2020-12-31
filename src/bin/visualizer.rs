@@ -2,7 +2,8 @@ use anyhow::Result;
 use clap::Clap;
 use hopper_rust::{hopper_config, motion_controller, utilities};
 use log::*;
-use motion_controller::visualizer::GroundType;
+use motion_controller::{visualizer::GroundType, walking::MoveCommand};
+use nalgebra::Vector2;
 use std::io;
 use std::path::Path;
 
@@ -31,8 +32,11 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
 
     let visualizer = motion_controller::visualizer::HopperVisualizer::new(args.ground);
-    let _motion_controller =
-        motion_controller::MotionController::start_as_task(Box::new(visualizer));
+    let mut motion_controller = motion_controller::MotionController::new(Box::new(visualizer));
+    motion_controller.set_command(MoveCommand::new(
+        Vector2::new(0.04, 0.04),
+        10_f32.to_radians(),
+    ));
     info!("Press enter to exit");
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;

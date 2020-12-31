@@ -4,7 +4,7 @@ use nalgebra::{distance, Point3, Rotation3, Vector2, Vector3};
 use serde::{Deserialize, Serialize};
 use std::f32;
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Default)]
 pub struct MoveCommand {
     direction: Vector2<f32>,
     rotation: f32,
