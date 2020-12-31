@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["hopper_rust"] = [{"text":"impl&lt;'de&gt; Deserialize&lt;'de&gt; for LegMotorPositions","synthetic":false,"types":[]},{"text":"impl&lt;'de&gt; Deserialize&lt;'de&gt; for LegConfig","synthetic":false,"types":[]},{"text":"impl&lt;'de&gt; Deserialize&lt;'de&gt; for HopperConfig","synthetic":false,"types":[]}];
+implementors["hopper_rust"] = [{"text":"impl&lt;'de&gt; Deserialize&lt;'de&gt; for LegMotorPositions","synthetic":false,"types":[]},{"text":"impl&lt;'de&gt; Deserialize&lt;'de&gt; for LegConfig","synthetic":false,"types":[]},{"text":"impl&lt;'de&gt; Deserialize&lt;'de&gt; for HopperConfig","synthetic":false,"types":[]},{"text":"impl&lt;'de&gt; Deserialize&lt;'de&gt; for MoveCommand","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

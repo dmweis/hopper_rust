@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["stance",""],["visualizer",""]],"struct":[["MotionController",""]]});
+initSidebarItems({"mod":[["stance",""],["visualizer",""],["walking",""]],"struct":[["MotionController",""]]});

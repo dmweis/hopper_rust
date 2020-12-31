@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["hopper_rust"] = [{"text":"impl Clone for LegMotorPositions","synthetic":false,"types":[]},{"text":"impl Clone for LegConfig","synthetic":false,"types":[]},{"text":"impl Clone for HopperConfig","synthetic":false,"types":[]}];
+implementors["hopper_rust"] = [{"text":"impl Clone for LegMotorPositions","synthetic":false,"types":[]},{"text":"impl Clone for LegConfig","synthetic":false,"types":[]},{"text":"impl Clone for HopperConfig","synthetic":false,"types":[]},{"text":"impl Clone for MoveCommand","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

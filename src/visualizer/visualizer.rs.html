@@ -41,12 +41,17 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
 <span class="kw">use</span> <span class="ident">hopper_rust</span>::{<span class="ident">hopper_config</span>, <span class="ident">motion_controller</span>, <span class="ident">utilities</span>};
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">motion_controller</span>::<span class="ident">visualizer</span>::<span class="ident">GroundType</span>;
+<span class="kw">use</span> <span class="ident">motion_controller</span>::{<span class="ident">visualizer</span>::<span class="ident">GroundType</span>, <span class="ident">walking</span>::<span class="ident">MoveCommand</span>};
+<span class="kw">use</span> <span class="ident">nalgebra</span>::<span class="ident">Vector2</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">Path</span>;
 
@@ -75,8 +80,11 @@
         .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">hopper_config</span>::<span class="ident">HopperConfig</span>::<span class="ident">default</span>()))<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">visualizer</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">visualizer</span>::<span class="ident">HopperVisualizer</span>::<span class="ident">new</span>(<span class="ident">args</span>.<span class="ident">ground</span>);
-    <span class="kw">let</span> <span class="ident">_motion_controller</span> <span class="op">=</span>
-        <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">start_as_task</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">visualizer</span>));
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">motion_controller</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">new</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">visualizer</span>));
+    <span class="ident">motion_controller</span>.<span class="ident">set_command</span>(<span class="ident">MoveCommand</span>::<span class="ident">new</span>(
+        <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">0.04</span>, <span class="number">0.04</span>),
+        <span class="number">10_f32</span>.<span class="ident">to_radians</span>(),
+    ));
     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Press enter to exit&quot;</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buffer</span> <span class="op">=</span> <span class="ident">String</span>::<span class="ident">new</span>();
     <span class="ident">io</span>::<span class="ident">stdin</span>().<span class="ident">read_line</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buffer</span>)<span class="question-mark">?</span>;
