@@ -335,6 +335,7 @@ pub(crate) fn step_with_relaxed_transformation(
     }
 }
 
+#[allow(dead_code)]
 fn max_distance(a: &LegPositions, b: &LegPositions) -> f32 {
     let left_front = distance(a.left_front(), b.left_front());
     let left_middle = distance(a.left_middle(), b.left_middle());
