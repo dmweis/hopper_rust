@@ -24,7 +24,7 @@ jobs:
 
   fmt:
     name: Rustfmt
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -40,8 +40,10 @@ jobs:
 
   clippy:
     name: Clippy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
+      - name: Install libudev
+        run: sudo apt install librust-libudev-sys-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -56,8 +58,10 @@ jobs:
 
   coverage:
     name: Code coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
+      - name: Install libudev
+        run: sudo apt install librust-libudev-sys-dev
       - name: Checkout repository
         uses: actions/checkout@v2
 
