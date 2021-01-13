@@ -1,6 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `src/bin/visualizer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>visualizer.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/bin/visualizer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>visualizer.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../visualizer/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../visualizer/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
 <span id="2"> 2</span>
 <span id="3"> 3</span>
@@ -45,6 +45,30 @@
 <span id="42">42</span>
 <span id="43">43</span>
 <span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
@@ -52,8 +76,10 @@
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">motion_controller</span>::{<span class="ident">visualizer</span>::<span class="ident">GroundType</span>, <span class="ident">walking</span>::<span class="ident">MoveCommand</span>};
 <span class="kw">use</span> <span class="ident">nalgebra</span>::<span class="ident">Vector2</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">Path</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">thread</span>::<span class="ident">sleep</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
+
+<span class="kw">use</span> <span class="ident">gilrs</span>::<span class="ident">Gilrs</span>;
 
 <span class="doccomment">/// Visualize Hopper</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
@@ -66,12 +92,15 @@
     <span class="doccomment">/// type of floor to draw in visualizer</span>
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;ChessBoard&quot;</span>)]</span>
     <span class="ident">ground</span>: <span class="ident">GroundType</span>,
+    <span class="doccomment">/// Sets the level of verbosity</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">parse</span>(<span class="ident">from_occurrences</span>))]</span>
+    <span class="ident">verbose</span>: <span class="ident">u8</span>,
 }
 
 <span class="attribute">#[<span class="ident">tokio</span>::<span class="ident">main</span>]</span>
 <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">args</span>: <span class="ident">Args</span> <span class="op">=</span> <span class="ident">Args</span>::<span class="ident">parse</span>();
-    <span class="ident">utilities</span>::<span class="ident">start_loggers</span>(<span class="prelude-val">None</span>, <span class="number">1</span>)<span class="question-mark">?</span>;
+    <span class="ident">utilities</span>::<span class="ident">start_loggers</span>(<span class="prelude-val">None</span>, <span class="ident">args</span>.<span class="ident">verbose</span>)<span class="question-mark">?</span>;
     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Started main visualizer&quot;</span>);
 
     <span class="kw">let</span> <span class="ident">_config</span> <span class="op">=</span> <span class="ident">args</span>
@@ -81,14 +110,33 @@
 
     <span class="kw">let</span> <span class="ident">visualizer</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">visualizer</span>::<span class="ident">HopperVisualizer</span>::<span class="ident">new</span>(<span class="ident">args</span>.<span class="ident">ground</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">motion_controller</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">new</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">visualizer</span>));
-    <span class="ident">motion_controller</span>.<span class="ident">set_command</span>(<span class="ident">MoveCommand</span>::<span class="ident">new</span>(
-        <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">0.04</span>, <span class="number">0.04</span>),
-        <span class="number">10_f32</span>.<span class="ident">to_radians</span>(),
-    ));
-    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Press enter to exit&quot;</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buffer</span> <span class="op">=</span> <span class="ident">String</span>::<span class="ident">new</span>();
-    <span class="ident">io</span>::<span class="ident">stdin</span>().<span class="ident">read_line</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buffer</span>)<span class="question-mark">?</span>;
-    <span class="prelude-val">Ok</span>(())
+
+    <span class="comment">// gamepad</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gilrs</span> <span class="op">=</span> <span class="ident">Gilrs</span>::<span class="ident">new</span>().<span class="ident">unwrap</span>();
+    <span class="kw">loop</span> {
+        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Read gamepad&quot;</span>);
+        <span class="kw">while</span> <span class="ident">gilrs</span>.<span class="ident">next_event</span>().<span class="ident">is_some</span>() {}
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">gamepad</span>)) <span class="op">=</span> <span class="ident">gilrs</span>.<span class="ident">gamepads</span>().<span class="ident">next</span>() {
+            <span class="kw">if</span> <span class="ident">gamepad</span>.<span class="ident">is_connected</span>() {
+                <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">value</span>(<span class="ident">gilrs</span>::<span class="ident">Axis</span>::<span class="ident">LeftStickY</span>);
+                <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">x</span>.<span class="ident">abs</span>() <span class="op">&gt;</span> <span class="number">0.2</span> { <span class="ident">x</span> } <span class="kw">else</span> { <span class="number">0.0</span> };
+                <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">value</span>(<span class="ident">gilrs</span>::<span class="ident">Axis</span>::<span class="ident">LeftStickX</span>);
+                <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">y</span>.<span class="ident">abs</span>() <span class="op">&gt;</span> <span class="number">0.2</span> { <span class="ident">y</span> } <span class="kw">else</span> { <span class="number">0.0</span> };
+
+                <span class="kw">let</span> <span class="ident">yaw</span> <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">value</span>(<span class="ident">gilrs</span>::<span class="ident">Axis</span>::<span class="ident">RightStickX</span>);
+                <span class="kw">let</span> <span class="ident">yaw</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">yaw</span>.<span class="ident">abs</span>() <span class="op">&gt;</span> <span class="number">0.2</span> { <span class="ident">yaw</span> } <span class="kw">else</span> { <span class="number">0.0</span> };
+
+                <span class="kw">if</span> <span class="ident">gamepad</span>.<span class="ident">is_pressed</span>(<span class="ident">gilrs</span>::<span class="ident">Button</span>::<span class="ident">South</span>) {
+                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;You pressed A. That does nothing&quot;</span>);
+                }
+                <span class="ident">motion_controller</span>.<span class="ident">set_command</span>(<span class="ident">MoveCommand</span>::<span class="ident">new</span>(
+                    <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">0.06</span> <span class="op">*</span> <span class="ident">x</span>, <span class="number">0.06</span> <span class="op">*</span> <span class="ident">y</span>),
+                    <span class="number">10_f32</span>.<span class="ident">to_radians</span>() <span class="op">*</span> <span class="ident">yaw</span>,
+                ));
+            }
+        }
+        <span class="ident">sleep</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">20</span>));
+    }
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "visualizer";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
