@@ -243,53 +243,6 @@ pub(crate) fn step_grounded_leg(
     (new_position, true)
 }
 
-#[allow(dead_code)]
-pub(crate) fn step_transformation(
-    start: &LegPositions,
-    lifted_tripod: &Tripod,
-    motion: Vector2<f32>,
-) -> LegPositions {
-    let linear_motion = motion.to_homogeneous();
-    match lifted_tripod {
-        Tripod::LRL => {
-            // lifted
-            let left_front = start.left_front() + linear_motion;
-            let right_middle = start.right_middle() + linear_motion;
-            let left_rear = start.left_rear() + linear_motion;
-            // grounded
-            let left_middle = start.left_middle() - linear_motion;
-            let right_front = start.right_front() - linear_motion;
-            let right_rear = start.right_rear() - linear_motion;
-            LegPositions::new(
-                left_front,
-                left_middle,
-                left_rear,
-                right_front,
-                right_middle,
-                right_rear,
-            )
-        }
-        Tripod::RLR => {
-            // lifted
-            let right_front = start.right_front() + linear_motion;
-            let left_middle = start.left_middle() + linear_motion;
-            let right_rear = start.right_rear() + linear_motion;
-            // grounded
-            let left_front = start.left_front() - linear_motion;
-            let left_rear = start.left_rear() - linear_motion;
-            let right_middle = start.right_middle() - linear_motion;
-            LegPositions::new(
-                left_front,
-                left_middle,
-                left_rear,
-                right_front,
-                right_middle,
-                right_rear,
-            )
-        }
-    }
-}
-
 pub(crate) fn step_with_relaxed_transformation(
     start: &LegPositions,
     relaxed: &LegPositions,
@@ -409,40 +362,6 @@ mod tests {
         assert_relative_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
 
         let expected_grounded_point = Point3::new(-2.0, 0.0, 0.0);
-        // grounded
-        assert_relative_eq!(after_step_lrl.right_front(), &expected_grounded_point);
-        assert_relative_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
-        assert_relative_eq!(after_step_lrl.right_rear(), &expected_grounded_point);
-        assert_relative_eq!(after_step_rlr.left_front(), &expected_grounded_point);
-        assert_relative_eq!(after_step_rlr.right_middle(), &expected_grounded_point);
-        assert_relative_eq!(after_step_rlr.left_rear(), &expected_grounded_point);
-    }
-
-    #[test]
-    fn stepping_direct() {
-        let start_point = Point3::new(0.0, 0.0, 0.0);
-        let start = LegPositions::new(
-            start_point,
-            start_point,
-            start_point,
-            start_point,
-            start_point,
-            start_point,
-        );
-
-        let after_step_lrl = step_transformation(&start, &Tripod::LRL, Vector2::new(1.0, 0.0));
-        let after_step_rlr = step_transformation(&start, &Tripod::RLR, Vector2::new(1.0, 0.0));
-
-        let expected_lifted_point = Point3::new(1.0, 0.0, 0.0);
-        // lifted
-        assert_relative_eq!(after_step_lrl.left_front(), &expected_lifted_point);
-        assert_relative_eq!(after_step_lrl.right_middle(), &expected_lifted_point);
-        assert_relative_eq!(after_step_lrl.left_rear(), &expected_lifted_point);
-        assert_relative_eq!(after_step_rlr.right_front(), &expected_lifted_point);
-        assert_relative_eq!(after_step_rlr.left_middle(), &expected_lifted_point);
-        assert_relative_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
-
-        let expected_grounded_point = Point3::new(-1.0, 0.0, 0.0);
         // grounded
         assert_relative_eq!(after_step_lrl.right_front(), &expected_grounded_point);
         assert_relative_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
