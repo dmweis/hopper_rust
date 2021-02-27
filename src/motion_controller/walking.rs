@@ -1,8 +1,10 @@
 use crate::hexapod::LegFlags;
 use crate::ik_controller::leg_positions::LegPositions;
+use log::*;
 use nalgebra::{distance, Point3, Rotation3, Vector2, Vector3};
 use serde::{Deserialize, Serialize};
 use std::f32;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Default)]
 pub struct MoveCommand {
@@ -206,6 +208,165 @@ impl Iterator for StepIterator {
     }
 }
 
+pub(crate) struct TimedStepIterator {
+    start: LegPositions,
+    last: LegPositions,
+    target: LegPositions,
+    period: Duration,
+    step_height: f32,
+    tripod: Tripod,
+    start_time: Instant,
+}
+
+impl TimedStepIterator {
+    pub(crate) fn step(
+        start: LegPositions,
+        target: LegPositions,
+        period: Duration,
+        step_height: f32,
+        tripod: Tripod,
+    ) -> Self {
+        Self {
+            start: start.clone(),
+            last: start,
+            target,
+            period,
+            step_height,
+            tripod,
+            start_time: Instant::now(),
+        }
+    }
+}
+
+impl Iterator for TimedStepIterator {
+    type Item = LegPositions;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let step_portion = self.start_time.elapsed().as_secs_f32() / self.period.as_secs_f32();
+        trace!("Step portion is {}", step_portion);
+        let full_distance = max_horizontal_distance(&self.start, &self.target);
+        let current_distance = (full_distance * step_portion).min(full_distance);
+        let mut progress = current_distance / full_distance;
+        if !progress.is_finite() {
+            progress = 0.0;
+        }
+        let (positions, moved) = match self.tripod {
+            Tripod::LRL => {
+                // lifted
+                let (left_front, lf_moved) = step_lifted_leg(
+                    self.start.left_front(),
+                    self.last.left_front(),
+                    self.target.left_front(),
+                    self.step_height,
+                    progress,
+                );
+                let (right_middle, rm_moved) = step_lifted_leg(
+                    self.start.right_middle(),
+                    self.last.right_middle(),
+                    self.target.right_middle(),
+                    self.step_height,
+                    progress,
+                );
+                let (left_rear, lr_moved) = step_lifted_leg(
+                    self.start.left_rear(),
+                    self.last.left_rear(),
+                    self.target.left_rear(),
+                    self.step_height,
+                    progress,
+                );
+                // grounded
+                let (right_front, rf_moved) = step_grounded_leg(
+                    self.start.right_front(),
+                    self.last.right_front(),
+                    self.target.right_front(),
+                    progress,
+                );
+                let (left_middle, lm_moved) = step_grounded_leg(
+                    self.start.left_middle(),
+                    self.last.left_middle(),
+                    self.target.left_middle(),
+                    progress,
+                );
+                let (right_rear, rr_moved) = step_grounded_leg(
+                    self.start.right_rear(),
+                    self.last.right_rear(),
+                    self.target.right_rear(),
+                    progress,
+                );
+                let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
+                let positions = LegPositions::new(
+                    left_front,
+                    left_middle,
+                    left_rear,
+                    right_front,
+                    right_middle,
+                    right_rear,
+                );
+                (positions, moved)
+            }
+            Tripod::RLR => {
+                // grounded
+                let (left_front, lf_moved) = step_grounded_leg(
+                    self.start.left_front(),
+                    self.last.left_front(),
+                    self.target.left_front(),
+                    progress,
+                );
+                let (right_middle, rm_moved) = step_grounded_leg(
+                    self.start.right_middle(),
+                    self.last.right_middle(),
+                    self.target.right_middle(),
+                    progress,
+                );
+                let (left_rear, lr_moved) = step_grounded_leg(
+                    self.start.left_rear(),
+                    self.last.left_rear(),
+                    self.target.left_rear(),
+                    progress,
+                );
+                // lifted
+                let (right_front, rf_moved) = step_lifted_leg(
+                    self.start.right_front(),
+                    self.last.right_front(),
+                    self.target.right_front(),
+                    self.step_height,
+                    progress,
+                );
+                let (left_middle, lm_moved) = step_lifted_leg(
+                    self.start.left_middle(),
+                    self.last.left_middle(),
+                    self.target.left_middle(),
+                    self.step_height,
+                    progress,
+                );
+                let (right_rear, rr_moved) = step_lifted_leg(
+                    self.start.right_rear(),
+                    self.last.right_rear(),
+                    self.target.right_rear(),
+                    self.step_height,
+                    progress,
+                );
+                let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
+                let positions = LegPositions::new(
+                    left_front,
+                    left_middle,
+                    left_rear,
+                    right_front,
+                    right_middle,
+                    right_rear,
+                );
+                (positions, moved)
+            }
+        };
+        if moved {
+            self.last = positions;
+            Some(self.last.clone())
+        } else {
+            None
+        }
+    }
+}
+
 pub(crate) fn step_lifted_leg(
     start: &Point3<f32>,
     last_written: &Point3<f32>,
@@ -293,6 +454,7 @@ pub(crate) fn step_with_relaxed_transformation(
     }
 }
 
+// Calculate longest distance a leg has to travel
 fn max_horizontal_distance(a: &LegPositions, b: &LegPositions) -> f32 {
     let left_front = distance(&a.left_front().xy(), &b.left_front().xy());
     let left_middle = distance(&a.left_middle().xy(), &b.left_middle().xy());

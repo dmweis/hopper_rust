@@ -43,6 +43,7 @@ impl MotionController {
         command: Arc<Mutex<MoveCommand>>,
     ) -> Result<()> {
         const MAX_MOVE: f32 = 0.001;
+        let move_duration: Duration = Duration::from_secs_f32(0.4);
         const STEP_HEIGHT: f32 = 0.03;
         let mut last_tripod = Tripod::LRL;
         let mut interval = time::interval(Duration::from_millis(1000 / 50));
@@ -92,10 +93,10 @@ impl MotionController {
                 &last_tripod,
                 *command.lock().unwrap(),
             );
-            for new_pose in StepIterator::step(
+            for new_pose in TimedStepIterator::step(
                 last_written_pose.clone(),
                 target.clone(),
-                MAX_MOVE,
+                move_duration,
                 STEP_HEIGHT,
                 last_tripod.clone(),
             ) {
