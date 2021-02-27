@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/motion_controller/walking.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>walking.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../hopper_rust/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../hopper_rust/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -741,12 +741,95 @@
 <span id="738">738</span>
 <span id="739">739</span>
 <span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+<span id="815">815</span>
+<span id="816">816</span>
+<span id="817">817</span>
+<span id="818">818</span>
+<span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hexapod</span>::<span class="ident">LegFlags</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">leg_positions</span>::<span class="ident">LegPositions</span>;
+<span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">distance</span>, <span class="ident">Point3</span>, <span class="ident">Rotation3</span>, <span class="ident">Vector2</span>, <span class="ident">Vector3</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">f32</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MoveCommand</span> {
@@ -950,6 +1033,165 @@
     }
 }
 
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">TimedStepIterator</span> {
+    <span class="ident">start</span>: <span class="ident">LegPositions</span>,
+    <span class="ident">last</span>: <span class="ident">LegPositions</span>,
+    <span class="ident">target</span>: <span class="ident">LegPositions</span>,
+    <span class="ident">period</span>: <span class="ident">Duration</span>,
+    <span class="ident">step_height</span>: <span class="ident">f32</span>,
+    <span class="ident">tripod</span>: <span class="ident">Tripod</span>,
+    <span class="ident">start_time</span>: <span class="ident">Instant</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">TimedStepIterator</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">step</span>(
+        <span class="ident">start</span>: <span class="ident">LegPositions</span>,
+        <span class="ident">target</span>: <span class="ident">LegPositions</span>,
+        <span class="ident">period</span>: <span class="ident">Duration</span>,
+        <span class="ident">step_height</span>: <span class="ident">f32</span>,
+        <span class="ident">tripod</span>: <span class="ident">Tripod</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">start</span>: <span class="ident">start</span>.<span class="ident">clone</span>(),
+            <span class="ident">last</span>: <span class="ident">start</span>,
+            <span class="ident">target</span>,
+            <span class="ident">period</span>,
+            <span class="ident">step_height</span>,
+            <span class="ident">tripod</span>,
+            <span class="ident">start_time</span>: <span class="ident">Instant</span>::<span class="ident">now</span>(),
+        }
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">TimedStepIterator</span> {
+    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">LegPositions</span>;
+
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">step_portion</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">start_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f32</span>() <span class="op">/</span> <span class="self">self</span>.<span class="ident">period</span>.<span class="ident">as_secs_f32</span>();
+        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Step portion is {}&quot;</span>, <span class="ident">step_portion</span>);
+        <span class="kw">let</span> <span class="ident">full_distance</span> <span class="op">=</span> <span class="ident">max_horizontal_distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">start</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">target</span>);
+        <span class="kw">let</span> <span class="ident">current_distance</span> <span class="op">=</span> (<span class="ident">full_distance</span> <span class="op">*</span> <span class="ident">step_portion</span>).<span class="ident">min</span>(<span class="ident">full_distance</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">progress</span> <span class="op">=</span> <span class="ident">current_distance</span> <span class="op">/</span> <span class="ident">full_distance</span>;
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">progress</span>.<span class="ident">is_finite</span>() {
+            <span class="ident">progress</span> <span class="op">=</span> <span class="number">0.0</span>;
+        }
+        <span class="kw">let</span> (<span class="ident">positions</span>, <span class="ident">moved</span>) <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">tripod</span> {
+            <span class="ident">Tripod</span>::<span class="ident">LRL</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="comment">// lifted</span>
+                <span class="kw">let</span> (<span class="ident">left_front</span>, <span class="ident">lf_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_front</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_front</span>(),
+                    <span class="self">self</span>.<span class="ident">step_height</span>,
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">right_middle</span>, <span class="ident">rm_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">step_height</span>,
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">left_rear</span>, <span class="ident">lr_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">step_height</span>,
+                    <span class="ident">progress</span>,
+                );
+                <span class="comment">// grounded</span>
+                <span class="kw">let</span> (<span class="ident">right_front</span>, <span class="ident">rf_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_front</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_front</span>(),
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">left_middle</span>, <span class="ident">lm_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_middle</span>(),
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">right_rear</span>, <span class="ident">rr_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_rear</span>(),
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> <span class="ident">moved</span> <span class="op">=</span> <span class="ident">lf_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">lm_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">lr_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">rf_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">rm_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">rr_moved</span>;
+                <span class="kw">let</span> <span class="ident">positions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+                    <span class="ident">left_front</span>,
+                    <span class="ident">left_middle</span>,
+                    <span class="ident">left_rear</span>,
+                    <span class="ident">right_front</span>,
+                    <span class="ident">right_middle</span>,
+                    <span class="ident">right_rear</span>,
+                );
+                (<span class="ident">positions</span>, <span class="ident">moved</span>)
+            }
+            <span class="ident">Tripod</span>::<span class="ident">RLR</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="comment">// grounded</span>
+                <span class="kw">let</span> (<span class="ident">left_front</span>, <span class="ident">lf_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_front</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_front</span>(),
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">right_middle</span>, <span class="ident">rm_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_middle</span>(),
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">left_rear</span>, <span class="ident">lr_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_rear</span>(),
+                    <span class="ident">progress</span>,
+                );
+                <span class="comment">// lifted</span>
+                <span class="kw">let</span> (<span class="ident">right_front</span>, <span class="ident">rf_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_front</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_front</span>(),
+                    <span class="self">self</span>.<span class="ident">step_height</span>,
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">left_middle</span>, <span class="ident">lm_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">step_height</span>,
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> (<span class="ident">right_rear</span>, <span class="ident">rr_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
+                    <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">step_height</span>,
+                    <span class="ident">progress</span>,
+                );
+                <span class="kw">let</span> <span class="ident">moved</span> <span class="op">=</span> <span class="ident">lf_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">lm_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">lr_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">rf_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">rm_moved</span> <span class="op">|</span><span class="op">|</span> <span class="ident">rr_moved</span>;
+                <span class="kw">let</span> <span class="ident">positions</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+                    <span class="ident">left_front</span>,
+                    <span class="ident">left_middle</span>,
+                    <span class="ident">left_rear</span>,
+                    <span class="ident">right_front</span>,
+                    <span class="ident">right_middle</span>,
+                    <span class="ident">right_rear</span>,
+                );
+                (<span class="ident">positions</span>, <span class="ident">moved</span>)
+            }
+        };
+        <span class="kw">if</span> <span class="ident">moved</span> {
+            <span class="self">self</span>.<span class="ident">last</span> <span class="op">=</span> <span class="ident">positions</span>;
+            <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">last</span>.<span class="ident">clone</span>())
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        }
+    }
+}
+
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">step_lifted_leg</span>(
     <span class="ident">start</span>: <span class="kw-2">&amp;</span><span class="ident">Point3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>,
     <span class="ident">last_written</span>: <span class="kw-2">&amp;</span><span class="ident">Point3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>,
@@ -985,53 +1227,6 @@
     <span class="kw">let</span> <span class="ident">full_translation</span> <span class="op">=</span> <span class="ident">target</span> <span class="op">-</span> <span class="ident">start</span>;
     <span class="kw">let</span> <span class="ident">new_position</span> <span class="op">=</span> <span class="ident">start</span> <span class="op">+</span> <span class="ident">full_translation</span> <span class="op">*</span> <span class="ident">progress</span>;
     (<span class="ident">new_position</span>, <span class="bool-val">true</span>)
-}
-
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">step_transformation</span>(
-    <span class="ident">start</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>,
-    <span class="ident">lifted_tripod</span>: <span class="kw-2">&amp;</span><span class="ident">Tripod</span>,
-    <span class="ident">motion</span>: <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
-    <span class="kw">let</span> <span class="ident">linear_motion</span> <span class="op">=</span> <span class="ident">motion</span>.<span class="ident">to_homogeneous</span>();
-    <span class="kw">match</span> <span class="ident">lifted_tripod</span> {
-        <span class="ident">Tripod</span>::<span class="ident">LRL</span> <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="comment">// lifted</span>
-            <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">left_front</span>() <span class="op">+</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">right_middle</span>() <span class="op">+</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">left_rear</span>() <span class="op">+</span> <span class="ident">linear_motion</span>;
-            <span class="comment">// grounded</span>
-            <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">left_middle</span>() <span class="op">-</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">right_front</span>() <span class="op">-</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">right_rear</span>() <span class="op">-</span> <span class="ident">linear_motion</span>;
-            <span class="ident">LegPositions</span>::<span class="ident">new</span>(
-                <span class="ident">left_front</span>,
-                <span class="ident">left_middle</span>,
-                <span class="ident">left_rear</span>,
-                <span class="ident">right_front</span>,
-                <span class="ident">right_middle</span>,
-                <span class="ident">right_rear</span>,
-            )
-        }
-        <span class="ident">Tripod</span>::<span class="ident">RLR</span> <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="comment">// lifted</span>
-            <span class="kw">let</span> <span class="ident">right_front</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">right_front</span>() <span class="op">+</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">left_middle</span>() <span class="op">+</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">right_rear</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">right_rear</span>() <span class="op">+</span> <span class="ident">linear_motion</span>;
-            <span class="comment">// grounded</span>
-            <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">left_front</span>() <span class="op">-</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">left_rear</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">left_rear</span>() <span class="op">-</span> <span class="ident">linear_motion</span>;
-            <span class="kw">let</span> <span class="ident">right_middle</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">right_middle</span>() <span class="op">-</span> <span class="ident">linear_motion</span>;
-            <span class="ident">LegPositions</span>::<span class="ident">new</span>(
-                <span class="ident">left_front</span>,
-                <span class="ident">left_middle</span>,
-                <span class="ident">left_rear</span>,
-                <span class="ident">right_front</span>,
-                <span class="ident">right_middle</span>,
-                <span class="ident">right_rear</span>,
-            )
-        }
-    }
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">step_with_relaxed_transformation</span>(
@@ -1084,6 +1279,7 @@
     }
 }
 
+<span class="comment">// Calculate longest distance a leg has to travel</span>
 <span class="kw">fn</span> <span class="ident">max_horizontal_distance</span>(<span class="ident">a</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>, <span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f32</span> {
     <span class="kw">let</span> <span class="ident">left_front</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="kw-2">&amp;</span><span class="ident">a</span>.<span class="ident">left_front</span>().<span class="ident">xy</span>(), <span class="kw-2">&amp;</span><span class="ident">b</span>.<span class="ident">left_front</span>().<span class="ident">xy</span>());
     <span class="kw">let</span> <span class="ident">left_middle</span> <span class="op">=</span> <span class="ident">distance</span>(<span class="kw-2">&amp;</span><span class="ident">a</span>.<span class="ident">left_middle</span>().<span class="ident">xy</span>(), <span class="kw-2">&amp;</span><span class="ident">b</span>.<span class="ident">left_middle</span>().<span class="ident">xy</span>());
@@ -1153,40 +1349,6 @@
         <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
 
         <span class="kw">let</span> <span class="ident">expected_grounded_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">2.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
-        <span class="comment">// grounded</span>
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
-    }
-
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">stepping_direct</span>() {
-        <span class="kw">let</span> <span class="ident">start_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
-        <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
-            <span class="ident">start_point</span>,
-            <span class="ident">start_point</span>,
-            <span class="ident">start_point</span>,
-            <span class="ident">start_point</span>,
-            <span class="ident">start_point</span>,
-            <span class="ident">start_point</span>,
-        );
-
-        <span class="kw">let</span> <span class="ident">after_step_lrl</span> <span class="op">=</span> <span class="ident">step_transformation</span>(<span class="kw-2">&amp;</span><span class="ident">start</span>, <span class="kw-2">&amp;</span><span class="ident">Tripod</span>::<span class="ident">LRL</span>, <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>));
-        <span class="kw">let</span> <span class="ident">after_step_rlr</span> <span class="op">=</span> <span class="ident">step_transformation</span>(<span class="kw-2">&amp;</span><span class="ident">start</span>, <span class="kw-2">&amp;</span><span class="ident">Tripod</span>::<span class="ident">RLR</span>, <span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>));
-
-        <span class="kw">let</span> <span class="ident">expected_lifted_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
-        <span class="comment">// lifted</span>
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_rlr</span>.<span class="ident">right_rear</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_lifted_point</span>);
-
-        <span class="kw">let</span> <span class="ident">expected_grounded_point</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
         <span class="comment">// grounded</span>
         <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">right_front</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
         <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">after_step_lrl</span>.<span class="ident">left_middle</span>(), <span class="kw-2">&amp;</span><span class="ident">expected_grounded_point</span>);
