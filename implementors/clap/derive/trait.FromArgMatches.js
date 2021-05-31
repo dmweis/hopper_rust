@@ -1,4 +1,4 @@
 (function() {var implementors = {};
-implementors["hopper"] = [{"text":"impl FromArgMatches for Args","synthetic":false,"types":[]}];
-implementors["visualizer"] = [{"text":"impl FromArgMatches for Args","synthetic":false,"types":[]}];
+implementors["hopper"] = [{"text":"impl <a class=\"trait\" href=\"https://docs.rs/clap/3.0.0-beta.2/clap/derive/trait.FromArgMatches.html\" title=\"trait clap::derive::FromArgMatches\">FromArgMatches</a> for <a class=\"struct\" href=\"hopper/struct.Args.html\" title=\"struct hopper::Args\">Args</a>","synthetic":false,"types":["hopper::Args"]}];
+implementors["visualizer"] = [{"text":"impl <a class=\"trait\" href=\"https://docs.rs/clap/3.0.0-beta.2/clap/derive/trait.FromArgMatches.html\" title=\"trait clap::derive::FromArgMatches\">FromArgMatches</a> for <a class=\"struct\" href=\"visualizer/struct.Args.html\" title=\"struct visualizer::Args\">Args</a>","synthetic":false,"types":["visualizer::Args"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
