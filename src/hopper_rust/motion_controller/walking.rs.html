@@ -822,6 +822,7 @@
 <span id="819">819</span>
 <span id="820">820</span>
 <span id="821">821</span>
+<span id="822">822</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hexapod</span>::<span class="ident">LegFlags</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">leg_positions</span>::<span class="ident">LegPositions</span>;
@@ -855,6 +856,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">upper_case_acronyms</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum</span> <span class="ident">Tripod</span> {
     <span class="ident">LRL</span>,
     <span class="ident">RLR</span>,
