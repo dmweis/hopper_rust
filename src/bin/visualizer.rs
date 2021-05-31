@@ -37,7 +37,8 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
 
     let visualizer = motion_controller::visualizer::HopperVisualizer::new(args.ground);
-    let mut motion_controller = motion_controller::MotionController::new(Box::new(visualizer));
+    let mut motion_controller =
+        motion_controller::MotionController::new(Box::new(visualizer)).await?;
 
     // gamepad
     let mut gilrs = Gilrs::new().unwrap();
@@ -56,7 +57,12 @@ async fn main() -> Result<()> {
                 let yaw = if yaw.abs() > 0.2 { yaw } else { 0.0 };
 
                 if gamepad.is_pressed(gilrs::Button::South) {
-                    info!("You pressed A. That does nothing");
+                    info!("Settings desired state to Standing");
+                    motion_controller.set_body_state(motion_controller::BodyState::Standing);
+                }
+                if gamepad.is_pressed(gilrs::Button::East) {
+                    info!("Settings desired state to Grounded");
+                    motion_controller.set_body_state(motion_controller::BodyState::Grounded);
                 }
 
                 let move_command =

@@ -907,6 +907,7 @@ dependencies = [
  "dynamixel-driver",
  "gilrs",
  "kiss3d",
+ "last-message-channel",
  "lazy_static",
  "log",
  "mint",
@@ -1052,6 +1053,15 @@ dependencies = [
  "serde_derive",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "last-message-channel"
+version = "0.1.0"
+source = "git+https://github.com/dmweis/last-message-channel?branch=main#e0e1eb313b5abe0de8211099ec479031f974b271"
+dependencies = [
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

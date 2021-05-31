@@ -102,7 +102,7 @@ impl IkControllable for HopperVisualizer {
     }
 
     async fn read_leg_positions(&mut self) -> Result<LegPositions> {
-        unimplemented!("shouldn't be called on a mock");
+        Ok(self.leg_positions.lock().unwrap().clone())
     }
 
     async fn disable_motors(&mut self) -> Result<()> {
