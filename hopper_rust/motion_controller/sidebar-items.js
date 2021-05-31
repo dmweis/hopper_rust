@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["stance",""],["visualizer",""],["walking",""]],"struct":[["MotionController",""]]});
+initSidebarItems({"enum":[["BodyState",""]],"mod":[["stance",""],["visualizer",""],["walking",""]],"struct":[["MotionController",""]]});

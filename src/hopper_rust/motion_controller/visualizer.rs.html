@@ -432,7 +432,7 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_leg_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LegPositions</span><span class="op">&gt;</span> {
-        <span class="macro">unimplemented</span><span class="macro">!</span>(<span class="string">&quot;shouldn&#39;t be called on a mock&quot;</span>);
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">leg_positions</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>())
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">disable_motors</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

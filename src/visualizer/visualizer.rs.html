@@ -71,6 +71,12 @@
 <span id="68">68</span>
 <span id="69">69</span>
 <span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
@@ -111,7 +117,8 @@
         .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">hopper_config</span>::<span class="ident">HopperConfig</span>::<span class="ident">default</span>()))<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">visualizer</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">visualizer</span>::<span class="ident">HopperVisualizer</span>::<span class="ident">new</span>(<span class="ident">args</span>.<span class="ident">ground</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">motion_controller</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">new</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">visualizer</span>));
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">motion_controller</span> <span class="op">=</span>
+        <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">new</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">visualizer</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="comment">// gamepad</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gilrs</span> <span class="op">=</span> <span class="ident">Gilrs</span>::<span class="ident">new</span>().<span class="ident">unwrap</span>();
@@ -130,7 +137,12 @@
                 <span class="kw">let</span> <span class="ident">yaw</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">yaw</span>.<span class="ident">abs</span>() <span class="op">&gt;</span> <span class="number">0.2</span> { <span class="ident">yaw</span> } <span class="kw">else</span> { <span class="number">0.0</span> };
 
                 <span class="kw">if</span> <span class="ident">gamepad</span>.<span class="ident">is_pressed</span>(<span class="ident">gilrs</span>::<span class="ident">Button</span>::<span class="ident">South</span>) {
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;You pressed A. That does nothing&quot;</span>);
+                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Settings desired state to Standing&quot;</span>);
+                    <span class="ident">motion_controller</span>.<span class="ident">set_body_state</span>(<span class="ident">motion_controller</span>::<span class="ident">BodyState</span>::<span class="ident">Standing</span>);
+                }
+                <span class="kw">if</span> <span class="ident">gamepad</span>.<span class="ident">is_pressed</span>(<span class="ident">gilrs</span>::<span class="ident">Button</span>::<span class="ident">East</span>) {
+                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Settings desired state to Grounded&quot;</span>);
+                    <span class="ident">motion_controller</span>.<span class="ident">set_body_state</span>(<span class="ident">motion_controller</span>::<span class="ident">BodyState</span>::<span class="ident">Grounded</span>);
                 }
 
                 <span class="kw">let</span> <span class="ident">move_command</span> <span class="op">=</span>
