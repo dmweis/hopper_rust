@@ -48,7 +48,8 @@ async fn main() -> Result<()> {
             if gamepad.is_connected() {
                 let x = gamepad.value(gilrs::Axis::LeftStickY);
                 let x = if x.abs() > 0.2 { x } else { 0.0 };
-                let y = gamepad.value(gilrs::Axis::LeftStickX);
+                // y direction needs to be inverted
+                let y = -gamepad.value(gilrs::Axis::LeftStickX);
                 let y = if y.abs() > 0.2 { y } else { 0.0 };
 
                 let yaw = gamepad.value(gilrs::Axis::RightStickX);
@@ -57,10 +58,11 @@ async fn main() -> Result<()> {
                 if gamepad.is_pressed(gilrs::Button::South) {
                     info!("You pressed A. That does nothing");
                 }
-                motion_controller.set_command(MoveCommand::new(
-                    Vector2::new(0.06 * x, 0.06 * y),
-                    10_f32.to_radians() * yaw,
-                ));
+
+                let move_command =
+                    MoveCommand::new(Vector2::new(0.06 * x, 0.06 * y), 10_f32.to_radians() * yaw);
+                info!("{:?}", move_command);
+                motion_controller.set_command(move_command);
             }
         }
         sleep(Duration::from_millis(20));
