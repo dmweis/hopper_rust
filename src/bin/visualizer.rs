@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
 
                 let move_command =
                     MoveCommand::new(Vector2::new(0.06 * x, 0.06 * y), 10_f32.to_radians() * yaw);
-                info!("{:?}", move_command);
+                trace!("{:?}", move_command);
                 motion_controller.set_command(move_command);
             }
         }
