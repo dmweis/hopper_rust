@@ -35,7 +35,7 @@ lazy_static = "1.4"
 bitflags = "1.2"
 gilrs = "0.8"
 last-message-channel = { branch = "main", git = "https://github.com/dmweis/last-message-channel" }
-
+rand = "0.8"
 
 [dev-dependencies]
 approx = "0.4.0"

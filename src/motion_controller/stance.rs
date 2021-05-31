@@ -106,6 +106,51 @@ pub fn relaxed_wide_stance() -> &'static LegPositions {
     &*RELAXED_WIDE
 }
 
+fn random_float(range: f32) -> f32 {
+    (rand::random::<f32>() - 0.5) * 2.0 * range
+}
+
+pub fn random_grounded_stance() -> LegPositions {
+    LegPositions::new(
+        Point3::new(
+            LEG_DISTANCE_LATERAL + OFFSET_DISTANCE + random_float(0.03),
+            LEG_DISTANCE_LONGITUDAL + OFFSET_DISTANCE + random_float(0.03),
+            GROUND_LEG_HEIGHT + random_float(0.03),
+        ),
+        Point3::new(
+            0.0 + random_float(0.03),
+            LEG_DISTANCE_LONGITUDAL
+                + MIDDLE_LEG_LONGITUDAL_OFFSET
+                + OFFSET_DISTANCE
+                + random_float(0.03),
+            GROUND_LEG_HEIGHT + random_float(0.03),
+        ),
+        Point3::new(
+            -LEG_DISTANCE_LATERAL + OFFSET_DISTANCE - random_float(0.03),
+            LEG_DISTANCE_LONGITUDAL + OFFSET_DISTANCE + random_float(0.03),
+            GROUND_LEG_HEIGHT + random_float(0.03),
+        ),
+        Point3::new(
+            LEG_DISTANCE_LATERAL + OFFSET_DISTANCE + random_float(0.03),
+            -LEG_DISTANCE_LONGITUDAL + OFFSET_DISTANCE - random_float(0.03),
+            GROUND_LEG_HEIGHT + random_float(0.03),
+        ),
+        Point3::new(
+            0.0 + random_float(0.03),
+            -LEG_DISTANCE_LONGITUDAL
+                - MIDDLE_LEG_LONGITUDAL_OFFSET
+                - OFFSET_DISTANCE
+                - random_float(0.03),
+            GROUND_LEG_HEIGHT + random_float(0.03),
+        ),
+        Point3::new(
+            -LEG_DISTANCE_LATERAL - OFFSET_DISTANCE + random_float(0.03),
+            -LEG_DISTANCE_LONGITUDAL - OFFSET_DISTANCE + random_float(0.03),
+            GROUND_LEG_HEIGHT + random_float(0.03),
+        ),
+    )
+}
+
 pub fn save_basic() -> Result<()> {
     fs::write(
         "config/stance/relaxed.toml",

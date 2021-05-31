@@ -31,7 +31,7 @@ pub struct HopperVisualizer {
 
 impl HopperVisualizer {
     pub fn new(ground_type: GroundType) -> Self {
-        let initial_position = stance::grounded_stance().clone();
+        let initial_position = stance::random_grounded_stance();
         let leg_positions = Arc::new(Mutex::new(initial_position));
         let keep_running = Arc::new(AtomicBool::new(true));
 

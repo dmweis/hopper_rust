@@ -101,8 +101,12 @@ impl MotionControllerLoop {
     }
 
     async fn stand_up(&mut self) -> Result<()> {
-        self.transition_direct(&[stance::grounded_stance(), stance::relaxed_wide_stance()])
-            .await?;
+        self.transition_direct(&[
+            &self.last_written_pose.clone(),
+            stance::grounded_stance(),
+            stance::relaxed_wide_stance(),
+        ])
+        .await?;
         self.transition_step(&[stance::relaxed_wide_stance(), stance::relaxed_stance()])
             .await?;
         self.state = BodyState::Standing;
