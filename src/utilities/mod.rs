@@ -29,7 +29,12 @@ pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> Result<()
         let file_logger = WriteLogger::new(filter, config.clone(), log_file);
         loggers.push(file_logger);
     }
-    loggers.push(TermLogger::new(filter, config, TerminalMode::Mixed));
+    loggers.push(TermLogger::new(
+        filter,
+        config,
+        TerminalMode::Mixed,
+        ColorChoice::Auto,
+    ));
     CombinedLogger::init(loggers)?;
     info!("Logging level set to {}", filter);
     Ok(())
