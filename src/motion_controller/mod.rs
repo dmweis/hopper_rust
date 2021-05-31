@@ -6,7 +6,6 @@ pub mod walking;
 use crate::ik_controller::leg_positions::LegPositions;
 use crate::ik_controller::{leg_positions::MoveTowards, IkControllable};
 use anyhow::Result;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::time;
 use tokio::{spawn, task::JoinHandle};
@@ -18,40 +17,51 @@ pub enum BodyState {
     Grounded,
 }
 
+impl Default for BodyState {
+    fn default() -> Self {
+        BodyState::Grounded
+    }
+}
+
 pub struct MotionController {
-    command: Arc<Mutex<MoveCommand>>,
-    desired_state: Arc<Mutex<BodyState>>,
+    command_sender: last_message_channel::Sender<MotionControllerCommand>,
+    command: MotionControllerCommand,
     _handle: JoinHandle<Result<()>>,
 }
 
 impl MotionController {
     pub async fn new(ik_controller: Box<dyn IkControllable>) -> Result<Self> {
-        let command = Arc::new(Mutex::new(MoveCommand::default()));
-        let desired_state = Arc::new(Mutex::new(BodyState::Grounded));
-        let motion_controller_loop =
-            MotionControllerLoop::new(ik_controller, command.clone(), desired_state.clone())
-                .await?;
+        let (command_sender, receiver) = last_message_channel::latest_message_channel();
+        let command = MotionControllerCommand::default();
+
+        let motion_controller_loop = MotionControllerLoop::new(ik_controller, receiver).await?;
         let handle = spawn(motion_controller_loop.run());
         Ok(MotionController {
+            command_sender,
             command,
-            desired_state,
             _handle: handle,
         })
     }
 
     pub fn set_command(&mut self, command: MoveCommand) {
-        let mut guard = self.command.lock().unwrap();
-        *guard = command;
+        self.command.move_command = command;
+        self.command_sender.send(self.command.clone()).unwrap();
     }
 
     pub fn get_command(&self) -> MoveCommand {
-        *self.command.lock().unwrap()
+        self.command.move_command
     }
 
     pub fn set_body_state(&mut self, state: BodyState) {
-        let mut guard = self.desired_state.lock().unwrap();
-        *guard = state;
+        self.command.body_state = state;
+        self.command_sender.send(self.command.clone()).unwrap();
     }
+}
+
+#[derive(Debug, Clone, Default)]
+struct MotionControllerCommand {
+    move_command: MoveCommand,
+    body_state: BodyState,
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
@@ -60,10 +70,10 @@ const STEP_HEIGHT: f32 = 0.03;
 
 struct MotionControllerLoop {
     ik_controller: Box<dyn IkControllable>,
-    move_command: Arc<Mutex<MoveCommand>>,
+    command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
+    command: MotionControllerCommand,
     move_duration: Duration,
     state: BodyState,
-    desired_state: Arc<Mutex<BodyState>>,
     last_tripod: Tripod,
     last_written_pose: LegPositions,
 }
@@ -71,16 +81,15 @@ struct MotionControllerLoop {
 impl MotionControllerLoop {
     async fn new(
         mut ik_controller: Box<dyn IkControllable>,
-        move_command: Arc<Mutex<MoveCommand>>,
-        desired_state: Arc<Mutex<BodyState>>,
+        command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
     ) -> Result<Self> {
         let last_written_pose = ik_controller.read_leg_positions().await?;
         Ok(Self {
             ik_controller,
-            move_command,
+            command_receiver,
+            command: MotionControllerCommand::default(),
             move_duration: Duration::from_secs_f32(0.4),
             state: BodyState::Grounded,
-            desired_state,
             last_tripod: Tripod::LRL,
             last_written_pose,
         })
@@ -109,6 +118,7 @@ impl MotionControllerLoop {
         Ok(())
     }
 
+    /// Move over sequence of LegPositions using direct motions
     async fn transition_direct(&mut self, states: &[&LegPositions]) -> Result<()> {
         let mut interval = time::interval(TICK_DURATION);
         for pose in states {
@@ -121,6 +131,9 @@ impl MotionControllerLoop {
         Ok(())
     }
 
+    /// Move over sequence of LegPositions using step transitions
+    ///
+    /// Uses the last tripod to alternate steps
     async fn transition_step(&mut self, states: &[&LegPositions]) -> Result<()> {
         let mut interval = time::interval(TICK_DURATION);
         for pose in states {
@@ -162,9 +175,12 @@ impl MotionControllerLoop {
         let mut interval = time::interval(TICK_DURATION);
 
         loop {
-            let desired_state = *self.desired_state.lock().unwrap();
-            if self.state != desired_state {
-                match desired_state {
+            if let Some(command) = self.command_receiver.try_recv().unwrap() {
+                self.command = command;
+            }
+
+            if self.state != self.command.body_state {
+                match self.command.body_state {
                     BodyState::Standing => self.stand_up().await?,
                     BodyState::Grounded => self.sit_down().await?,
                 }
@@ -177,7 +193,7 @@ impl MotionControllerLoop {
                     &self.last_written_pose,
                     stance::relaxed_stance(),
                     &self.last_tripod,
-                    *self.move_command.lock().unwrap(),
+                    self.command.move_command,
                 );
                 for new_pose in TimedStepIterator::step(
                     self.last_written_pose.clone(),
