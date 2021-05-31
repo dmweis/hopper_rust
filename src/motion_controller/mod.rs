@@ -92,50 +92,10 @@ impl MotionControllerLoop {
     }
 
     async fn stand_up(&mut self) -> Result<()> {
-        let mut interval = time::interval(TICK_DURATION);
-
-        // lift up
-        for pose in &[stance::grounded_stance(), stance::relaxed_wide_stance()] {
-            for new_pose in self.last_written_pose.to_move_towards_iter(pose, MAX_MOVE) {
-                self.ik_controller.move_to_positions(&new_pose).await?;
-                self.last_written_pose = new_pose;
-                interval.tick().await;
-            }
-        }
-
-        // step wide
-        for pose in &[stance::relaxed_wide_stance(), stance::relaxed_stance()] {
-            self.last_tripod.invert();
-            let target = self
-                .last_written_pose
-                .merge_with(pose, self.last_tripod.as_flag());
-            for new_pose in StepIterator::step(
-                self.last_written_pose.clone(),
-                target.clone(),
-                MAX_MOVE,
-                STEP_HEIGHT,
-                self.last_tripod.clone(),
-            ) {
-                self.ik_controller.move_to_positions(&new_pose).await?;
-                self.last_written_pose = new_pose;
-                interval.tick().await;
-            }
-            self.last_tripod.invert();
-            let target = self
-                .last_written_pose
-                .merge_with(pose, self.last_tripod.as_flag());
-            for new_pose in StepIterator::step(
-                self.last_written_pose.clone(),
-                target.clone(),
-                MAX_MOVE,
-                STEP_HEIGHT,
-                self.last_tripod.clone(),
-            ) {
-                self.ik_controller.move_to_positions(&new_pose).await?;
-                self.last_written_pose = new_pose;
-                interval.tick().await;
-            }
-        }
+        self.transition_direct(&[stance::grounded_stance(), stance::relaxed_wide_stance()])
+            .await?;
+        self.transition_step(&[stance::relaxed_wide_stance(), stance::relaxed_stance()])
+            .await?;
         self.state = BodyState::Standing;
         Ok(())
     }
