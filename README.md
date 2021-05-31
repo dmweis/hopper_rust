@@ -5,8 +5,6 @@
 [![Security audit](https://github.com/dmweis/hopper_rust/workflows/Security%20audit/badge.svg)](https://github.com/dmweis/hopper_rust/actions)
 [![Private docs](https://github.com/dmweis/hopper_rust/workflows/Deploy%20Docs%20to%20GitHub%20Pages/badge.svg)](https://davidweis.dev/hopper_rust/hopper_rust/index.html)
 
-[![Build Status](https://travis-ci.org/dmweis/hopper_rust.svg?branch=master)](https://travis-ci.org/dmweis/hopper_rust)
-
 Rewrite of [Hopper's](https://github.com/dmweis/Hopper_ROS) body controller and kinematics unit in Rust
 
 ## [Click here for more images](https://davidweis.dev/robotics/2019/09/21/HopperGallery2019.html)
