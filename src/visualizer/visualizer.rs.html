@@ -147,7 +147,7 @@
 
                 <span class="kw">let</span> <span class="ident">move_command</span> <span class="op">=</span>
                     <span class="ident">MoveCommand</span>::<span class="ident">new</span>(<span class="ident">Vector2</span>::<span class="ident">new</span>(<span class="number">0.06</span> <span class="op">*</span> <span class="ident">x</span>, <span class="number">0.06</span> <span class="op">*</span> <span class="ident">y</span>), <span class="number">10_f32</span>.<span class="ident">to_radians</span>() <span class="op">*</span> <span class="ident">yaw</span>);
-                <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">move_command</span>);
+                <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">move_command</span>);
                 <span class="ident">motion_controller</span>.<span class="ident">set_command</span>(<span class="ident">move_command</span>);
             }
         }
