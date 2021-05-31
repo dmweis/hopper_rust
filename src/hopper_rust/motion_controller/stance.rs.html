@@ -124,6 +124,51 @@
 <span id="121">121</span>
 <span id="122">122</span>
 <span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">leg_positions</span>::<span class="ident">LegPositions</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
@@ -231,6 +276,51 @@
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">relaxed_wide_stance</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">LegPositions</span> {
     <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">RELAXED_WIDE</span>
+}
+
+<span class="kw">fn</span> <span class="ident">random_float</span>(<span class="ident">range</span>: <span class="ident">f32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f32</span> {
+    (<span class="ident">rand</span>::<span class="ident">random</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>() <span class="op">-</span> <span class="number">0.5</span>) <span class="op">*</span> <span class="number">2.0</span> <span class="op">*</span> <span class="ident">range</span>
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_grounded_stance</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
+    <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+        <span class="ident">Point3</span>::<span class="ident">new</span>(
+            <span class="ident">LEG_DISTANCE_LATERAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">LEG_DISTANCE_LONGITUDAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">GROUND_LEG_HEIGHT</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+        ),
+        <span class="ident">Point3</span>::<span class="ident">new</span>(
+            <span class="number">0.0</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">LEG_DISTANCE_LONGITUDAL</span>
+                <span class="op">+</span> <span class="ident">MIDDLE_LEG_LONGITUDAL_OFFSET</span>
+                <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span>
+                <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">GROUND_LEG_HEIGHT</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+        ),
+        <span class="ident">Point3</span>::<span class="ident">new</span>(
+            <span class="op">-</span><span class="ident">LEG_DISTANCE_LATERAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">-</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">LEG_DISTANCE_LONGITUDAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">GROUND_LEG_HEIGHT</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+        ),
+        <span class="ident">Point3</span>::<span class="ident">new</span>(
+            <span class="ident">LEG_DISTANCE_LATERAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="op">-</span><span class="ident">LEG_DISTANCE_LONGITUDAL</span> <span class="op">+</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">-</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">GROUND_LEG_HEIGHT</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+        ),
+        <span class="ident">Point3</span>::<span class="ident">new</span>(
+            <span class="number">0.0</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="op">-</span><span class="ident">LEG_DISTANCE_LONGITUDAL</span>
+                <span class="op">-</span> <span class="ident">MIDDLE_LEG_LONGITUDAL_OFFSET</span>
+                <span class="op">-</span> <span class="ident">OFFSET_DISTANCE</span>
+                <span class="op">-</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">GROUND_LEG_HEIGHT</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+        ),
+        <span class="ident">Point3</span>::<span class="ident">new</span>(
+            <span class="op">-</span><span class="ident">LEG_DISTANCE_LATERAL</span> <span class="op">-</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="op">-</span><span class="ident">LEG_DISTANCE_LONGITUDAL</span> <span class="op">-</span> <span class="ident">OFFSET_DISTANCE</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+            <span class="ident">GROUND_LEG_HEIGHT</span> <span class="op">+</span> <span class="ident">random_float</span>(<span class="number">0.03</span>),
+        ),
+    )
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">save_basic</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
