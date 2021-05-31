@@ -30,6 +30,7 @@ impl MoveCommand {
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub(crate) enum Tripod {
     LRL,
     RLR,
