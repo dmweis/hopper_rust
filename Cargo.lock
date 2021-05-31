@@ -578,7 +578,7 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 [[package]]
 name = "dynamixel-driver"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/dynamixel-driver?branch=tokio-1.0#32b91606f0a8b64ef50cca7a70f71f0e29bc7adf"
+source = "git+https://github.com/dmweis/dynamixel-driver?branch=main#a8752c8bf17fb170a45d87fb768490f83d6f1d5d"
 dependencies = [
  "async-trait",
  "bytes",
