@@ -3,7 +3,9 @@ use clap::Clap;
 use log::*;
 use std::path::Path;
 
-use hopper_rust::{body_controller, hopper_config, ik_controller, udp_adaptor, utilities};
+use hopper_rust::{
+    body_controller, hopper_config, ik_controller, motion_controller, udp_adaptor, utilities,
+};
 
 /// Hopper body controller
 #[derive(Clap)]
@@ -42,6 +44,10 @@ async fn main() -> Result<()> {
 
     let ik_controller = ik_controller::IkController::new(Box::new(body_controller), hopper_config);
 
-    udp_adaptor::udp_ik_commander(ik_controller).await.unwrap();
+    let motion_controller = motion_controller::MotionController::new(ik_controller).await?;
+
+    udp_adaptor::udp_controller_handler(motion_controller)
+        .await
+        .unwrap();
     Ok(())
 }

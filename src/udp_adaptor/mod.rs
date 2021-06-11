@@ -1,8 +1,11 @@
 use crate::body_controller::{BodyController, BodyMotorPositions};
 use crate::ik_controller::leg_positions::*;
 use crate::ik_controller::IkControllable;
+use crate::motion_controller;
+use crate::motion_controller::walking::MoveCommand;
 use anyhow::Result;
 use log::*;
+use nalgebra::Vector2;
 use serde::Deserialize;
 use std::net::UdpSocket;
 use std::str::from_utf8;
@@ -128,6 +131,42 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Result
                         }
                     }
                 }
+            } else {
+                error!("Received malformed message {:?}", from_utf8(&received));
+            }
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ControllerData {
+    pub x: f32,
+    pub y: f32,
+    pub yaw: f32,
+    pub a_down: bool,
+    pub b_down: bool,
+}
+
+pub async fn udp_controller_handler(
+    mut controller: motion_controller::MotionController,
+) -> Result<()> {
+    let socket = UdpSocket::bind("0.0.0.0:6666")?;
+    let mut buffer = [0; 1024];
+    loop {
+        if let Ok((amt, _)) = socket.recv_from(&mut buffer) {
+            trace!("got new message");
+            let received = &mut buffer[..amt];
+            let message: Result<ControllerData, _> = serde_json::from_slice(&received);
+            if let Ok(message) = message {
+                if message.a_down {
+                    controller.set_body_state(motion_controller::BodyState::Standing);
+                } else if message.b_down {
+                    controller.set_body_state(motion_controller::BodyState::Grounded);
+                }
+
+                let move_command =
+                    MoveCommand::new(Vector2::new(message.x, message.y), message.yaw);
+                controller.set_command(move_command);
             } else {
                 error!("Received malformed message {:?}", from_utf8(&received));
             }
