@@ -48,13 +48,21 @@
 <span id="45">45</span>
 <span id="46">46</span>
 <span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">Path</span>;
 
-<span class="kw">use</span> <span class="ident">hopper_rust</span>::{<span class="ident">body_controller</span>, <span class="ident">hopper_config</span>, <span class="ident">ik_controller</span>, <span class="ident">udp_adaptor</span>, <span class="ident">utilities</span>};
+<span class="kw">use</span> <span class="ident">hopper_rust</span>::{
+    <span class="ident">body_controller</span>, <span class="ident">hopper_config</span>, <span class="ident">ik_controller</span>, <span class="ident">motion_controller</span>, <span class="ident">udp_adaptor</span>, <span class="ident">utilities</span>,
+};
 
 <span class="doccomment">/// Hopper body controller</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
@@ -93,7 +101,11 @@
 
     <span class="kw">let</span> <span class="ident">ik_controller</span> <span class="op">=</span> <span class="ident">ik_controller</span>::<span class="ident">IkController</span>::<span class="ident">new</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">body_controller</span>), <span class="ident">hopper_config</span>);
 
-    <span class="ident">udp_adaptor</span>::<span class="ident">udp_ik_commander</span>(<span class="ident">ik_controller</span>).<span class="kw">await</span>.<span class="ident">unwrap</span>();
+    <span class="kw">let</span> <span class="ident">motion_controller</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">new</span>(<span class="ident">ik_controller</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="ident">udp_adaptor</span>::<span class="ident">udp_controller_handler</span>(<span class="ident">motion_controller</span>)
+        .<span class="kw">await</span>
+        .<span class="ident">unwrap</span>();
     <span class="prelude-val">Ok</span>(())
 }
 </pre></div>

@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["hopper","hopper_rust","visualizer"];
+window.ALL_CRATES = ["hopper","hopper_rust","remote_controller","visualizer"];
