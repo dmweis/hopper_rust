@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
                 let y = -gamepad.value(gilrs::Axis::LeftStickX);
                 let y = if y.abs() > 0.2 { y } else { 0.0 };
 
-                let yaw = gamepad.value(gilrs::Axis::RightStickX);
+                let yaw = -gamepad.value(gilrs::Axis::RightStickX);
                 let yaw = if yaw.abs() > 0.2 { yaw } else { 0.0 };
 
                 let a_down = gamepad.is_pressed(gilrs::Button::South);
