@@ -15,7 +15,7 @@ required-features = ["visualizer"]
 
 [features]
 default = ["visualizer"]
-visualizer = ["kiss3d"]
+visualizer = ["kiss3d", "gilrs"]
 
 [dependencies]
 dynamixel-driver = { branch = "main", git = "https://github.com/dmweis/dynamixel-driver" }
@@ -33,7 +33,7 @@ async-trait = "0.1"
 kiss3d = { optional = true, version = "0.31" }
 lazy_static = "1.4"
 bitflags = "1.2"
-gilrs = "0.8"
+gilrs = { version = "0.8.0", optional = true }
 last-message-channel = { branch = "main", git = "https://github.com/dmweis/last-message-channel" }
 rand = "0.8"
 

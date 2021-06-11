@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o xtrace
+
+readonly TARGET_HOST=hopper.local
+readonly TARGET_PATH=/home/dweis/hopper_rust
+readonly TARGET_ARCH=armv7-unknown-linux-musleabihf
+readonly SOURCE_PATH=./target/${TARGET_ARCH}/release/hopper
+
+cargo build --release --target=${TARGET_ARCH} --no-default-features
