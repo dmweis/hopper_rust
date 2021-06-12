@@ -4,7 +4,8 @@ use log::*;
 use std::path::Path;
 
 use hopper_rust::{
-    body_controller, hopper_config, ik_controller, motion_controller, udp_adaptor, utilities,
+    body_controller, body_controller::BodyController, hopper_config, ik_controller,
+    motion_controller, udp_adaptor, utilities,
 };
 
 /// Hopper body controller
@@ -42,7 +43,13 @@ async fn main() -> Result<()> {
         body_controller::AsyncBodyController::new(&args.dynamixel_port, hopper_config.legs.clone())
             .unwrap();
 
-    let ik_controller = ik_controller::IkController::new(Box::new(body_controller), hopper_config);
+    let mut ik_controller =
+        ik_controller::IkController::new(Box::new(body_controller), hopper_config);
+
+    // TODO (David): Move to some settings system
+    // also maybe tune...
+    ik_controller.set_compliance(64).await?;
+    ik_controller.set_speed(1023).await?;
 
     let motion_controller = motion_controller::MotionController::new(ik_controller).await?;
 
