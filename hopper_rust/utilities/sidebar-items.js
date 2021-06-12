@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["start_loggers","Initializes loggers"]],"trait":[["MpscChannelHelper",""]]});
+initSidebarItems({"fn":[["start_loggers","Initializes loggers"],["start_prometheus_exporter",""]],"trait":[["MpscChannelHelper",""]]});

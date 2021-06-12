@@ -77,17 +77,19 @@
 <span id="74">74</span>
 <span id="75">75</span>
 <span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
+<span class="kw">use</span> <span class="ident">gilrs</span>::<span class="ident">Gilrs</span>;
 <span class="kw">use</span> <span class="ident">hopper_rust</span>::{<span class="ident">hopper_config</span>, <span class="ident">motion_controller</span>, <span class="ident">utilities</span>};
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">motion_controller</span>::{<span class="ident">visualizer</span>::<span class="ident">GroundType</span>, <span class="ident">walking</span>::<span class="ident">MoveCommand</span>};
 <span class="kw">use</span> <span class="ident">nalgebra</span>::<span class="ident">Vector2</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">Path</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">thread</span>::<span class="ident">sleep</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
-
-<span class="kw">use</span> <span class="ident">gilrs</span>::<span class="ident">Gilrs</span>;
 
 <span class="doccomment">/// Visualize Hopper</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
@@ -103,12 +105,16 @@
     <span class="doccomment">/// Sets the level of verbosity</span>
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">parse</span>(<span class="ident">from_occurrences</span>))]</span>
     <span class="ident">verbose</span>: <span class="ident">u8</span>,
+    <span class="doccomment">/// prometheus port</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;8686&quot;</span>)]</span>
+    <span class="ident">prometheus_port</span>: <span class="ident">u16</span>,
 }
 
 <span class="attribute">#[<span class="ident">tokio</span>::<span class="ident">main</span>]</span>
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">args</span>: <span class="ident">Args</span> <span class="op">=</span> <span class="ident">Args</span>::<span class="ident">parse</span>();
     <span class="ident">utilities</span>::<span class="ident">start_loggers</span>(<span class="prelude-val">None</span>, <span class="ident">args</span>.<span class="ident">verbose</span>)<span class="question-mark">?</span>;
+    <span class="ident">utilities</span>::<span class="ident">start_prometheus_exporter</span>(<span class="ident">args</span>.<span class="ident">prometheus_port</span>)<span class="question-mark">?</span>;
     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Started main visualizer&quot;</span>);
 
     <span class="kw">let</span> <span class="ident">_config</span> <span class="op">=</span> <span class="ident">args</span>

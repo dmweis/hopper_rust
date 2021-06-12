@@ -134,14 +134,56 @@
 <span id="131">131</span>
 <span id="132">132</span>
 <span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">motor_positions</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hopper_config</span>::{<span class="ident">BodyConfig</span>, <span class="ident">LegConfig</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">async_trait</span>::<span class="ident">async_trait</span>;
 <span class="kw">use</span> <span class="ident">dynamixel_driver</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">lazy_static</span>::<span class="ident">lazy_static</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">prometheus</span>::{<span class="ident">exponential_buckets</span>, <span class="ident">register_histogram_vec</span>, <span class="ident">HistogramVec</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">VecDeque</span>;
+
+<span class="macro">lazy_static</span><span class="macro">!</span> {
+    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">BODY_CONTROLLER_TIMER</span>: <span class="ident">HistogramVec</span> <span class="op">=</span> <span class="macro">register_histogram_vec</span><span class="macro">!</span>(
+        <span class="string">&quot;hopper_body_controller_action_duration_seconds&quot;</span>,
+        <span class="string">&quot;Duration of command send to dynamixel motors in seconds.&quot;</span>,
+        <span class="kw-2">&amp;</span>[<span class="string">&quot;method&quot;</span>],
+        <span class="ident">exponential_buckets</span>(<span class="number">0.005</span>, <span class="number">2.0</span>, <span class="number">10</span>).<span class="ident">unwrap</span>()
+    )
+    .<span class="ident">unwrap</span>();
+}
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BodyController</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> {
@@ -175,12 +217,18 @@
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">BodyController</span> <span class="kw">for</span> <span class="ident">AsyncBodyController</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">move_motors_to</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">positions</span>: <span class="kw-2">&amp;</span><span class="ident">BodyMotorPositions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">BODY_CONTROLLER_TIMER</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;move_motors_to&quot;</span>])
+            .<span class="ident">start_timer</span>();
         <span class="kw">let</span> <span class="ident">commands</span> <span class="op">=</span> <span class="ident">create_commands_for_body</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">body_config</span>, <span class="ident">positions</span>);
         <span class="self">self</span>.<span class="ident">driver</span>.<span class="ident">sync_write_position_rad</span>(<span class="ident">commands</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_speed</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">speed</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">BODY_CONTROLLER_TIMER</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;set_speed&quot;</span>])
+            .<span class="ident">start_timer</span>();
         <span class="kw">let</span> <span class="ident">commands</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">body_config</span>
             .<span class="ident">get_ids</span>()
@@ -192,6 +240,9 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_compliance</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">compliance</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">BODY_CONTROLLER_TIMER</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;set_compliance&quot;</span>])
+            .<span class="ident">start_timer</span>();
         <span class="kw">let</span> <span class="ident">commands</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">body_config</span>
             .<span class="ident">get_ids</span>()
@@ -203,6 +254,9 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_torque</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">torque</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">BODY_CONTROLLER_TIMER</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;set_torque&quot;</span>])
+            .<span class="ident">start_timer</span>();
         <span class="kw">let</span> <span class="ident">commands</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">body_config</span>
             .<span class="ident">get_ids</span>()
@@ -214,6 +268,9 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_mean_voltage</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">BODY_CONTROLLER_TIMER</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;read_mean_voltage&quot;</span>])
+            .<span class="ident">start_timer</span>();
         <span class="kw">let</span> <span class="ident">ids</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">body_config</span>.<span class="ident">get_ids</span>();
         <span class="comment">// Load all on first call</span>
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">last_voltages</span>.<span class="ident">is_empty</span>() {
@@ -238,6 +295,9 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_motor_positions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BodyMotorPositions</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">BODY_CONTROLLER_TIMER</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;read_motor_positions&quot;</span>])
+            .<span class="ident">start_timer</span>();
         <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_leg_positions</span>(
             <span class="ident">driver</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">DynamixelDriver</span>,
             <span class="ident">leg_config</span>: <span class="kw-2">&amp;</span><span class="ident">LegConfig</span>,
