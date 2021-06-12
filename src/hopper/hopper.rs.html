@@ -61,11 +61,15 @@
 <span id="58">58</span>
 <span id="59">59</span>
 <span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">Path</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">path</span>::<span class="ident">Path</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
 
 <span class="kw">use</span> <span class="ident">hopper_rust</span>::{
     <span class="ident">body_controller</span>, <span class="ident">body_controller</span>::<span class="ident">BodyController</span>, <span class="ident">hopper_config</span>, <span class="ident">ik_controller</span>,
@@ -115,11 +119,15 @@
     <span class="ident">ik_controller</span>.<span class="ident">set_compliance</span>(<span class="number">64</span>).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="ident">ik_controller</span>.<span class="ident">set_speed</span>(<span class="number">1023</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">motion_controller</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">new</span>(<span class="ident">ik_controller</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">motion_controller</span> <span class="op">=</span> <span class="ident">motion_controller</span>::<span class="ident">MotionController</span>::<span class="ident">new</span>(<span class="ident">ik_controller</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="ident">udp_adaptor</span>::<span class="ident">udp_controller_handler</span>(<span class="ident">motion_controller</span>)
+    <span class="ident">udp_adaptor</span>::<span class="ident">udp_controller_handler</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">motion_controller</span>)
         .<span class="kw">await</span>
         .<span class="ident">unwrap</span>();
+
+    <span class="ident">motion_controller</span>.<span class="ident">set_body_state</span>(<span class="ident">motion_controller</span>::<span class="ident">BodyState</span>::<span class="ident">Grounded</span>);
+    <span class="ident">tokio</span>::<span class="ident">time</span>::<span class="ident">sleep</span>(<span class="ident">Duration</span>::<span class="ident">from_secs_f32</span>(<span class="number">2.0</span>)).<span class="kw">await</span>;
+    <span class="ident">drop</span>(<span class="ident">motion_controller</span>);
     <span class="prelude-val">Ok</span>(())
 }
 </pre></div>
