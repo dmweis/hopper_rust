@@ -9,6 +9,8 @@ use nalgebra::Vector2;
 use serde::Deserialize;
 use std::net::UdpSocket;
 use std::str::from_utf8;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 enum Command {
@@ -148,11 +150,21 @@ pub struct ControllerData {
 }
 
 pub async fn udp_controller_handler(
-    mut controller: motion_controller::MotionController,
+    controller: &mut motion_controller::MotionController,
 ) -> Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
-    loop {
+
+    let keep_running = Arc::new(AtomicBool::new(true));
+
+    let keep_running_copy = keep_running.clone();
+    ctrlc::set_handler(move || {
+        info!("Received interrupt");
+        keep_running_copy.store(false, Ordering::SeqCst);
+    })
+    .expect("Failed to set Ctrl-C handler");
+
+    while keep_running.load(Ordering::SeqCst) {
         if let Ok((amt, _)) = socket.recv_from(&mut buffer) {
             trace!("got new message");
             let received = &mut buffer[..amt];
@@ -172,4 +184,6 @@ pub async fn udp_controller_handler(
             }
         }
     }
+    info!("Exiting control loop");
+    Ok(())
 }

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Clap;
 use log::*;
-use std::path::Path;
+use std::{path::Path, time::Duration};
 
 use hopper_rust::{
     body_controller, body_controller::BodyController, hopper_config, ik_controller,
@@ -51,10 +51,14 @@ async fn main() -> Result<()> {
     ik_controller.set_compliance(64).await?;
     ik_controller.set_speed(1023).await?;
 
-    let motion_controller = motion_controller::MotionController::new(ik_controller).await?;
+    let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
 
-    udp_adaptor::udp_controller_handler(motion_controller)
+    udp_adaptor::udp_controller_handler(&mut motion_controller)
         .await
         .unwrap();
+
+    motion_controller.set_body_state(motion_controller::BodyState::Grounded);
+    tokio::time::sleep(Duration::from_secs_f32(2.0)).await;
+    drop(motion_controller);
     Ok(())
 }

@@ -5,7 +5,10 @@ pub mod walking;
 
 use crate::ik_controller::leg_positions::LegPositions;
 use crate::ik_controller::{leg_positions::MoveTowards, IkControllable};
+use crate::utilities::MpscChannelHelper;
 use anyhow::Result;
+use log::trace;
+use std::sync::mpsc;
 use std::time::Duration;
 use tokio::time;
 use tokio::{spawn, task::JoinHandle};
@@ -25,6 +28,7 @@ impl Default for BodyState {
 
 pub struct MotionController {
     command_sender: last_message_channel::Sender<MotionControllerCommand>,
+    blocking_command_sender: mpsc::Sender<BlockingCommand>,
     command: MotionControllerCommand,
     _handle: JoinHandle<Result<()>>,
 }
@@ -34,10 +38,14 @@ impl MotionController {
         let (command_sender, receiver) = last_message_channel::latest_message_channel();
         let command = MotionControllerCommand::default();
 
-        let motion_controller_loop = MotionControllerLoop::new(ik_controller, receiver).await?;
+        let (blocking_command_sender, blocking_command_receiver) = mpsc::channel();
+
+        let motion_controller_loop =
+            MotionControllerLoop::new(ik_controller, receiver, blocking_command_receiver).await?;
         let handle = spawn(motion_controller_loop.run());
         Ok(MotionController {
             command_sender,
+            blocking_command_sender,
             command,
             _handle: handle,
         })
@@ -58,10 +66,23 @@ impl MotionController {
     }
 }
 
+impl Drop for MotionController {
+    fn drop(&mut self) {
+        self.blocking_command_sender
+            .send(BlockingCommand::Terminate)
+            .expect("Failed to send termination command");
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 struct MotionControllerCommand {
     move_command: MoveCommand,
     body_state: BodyState,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum BlockingCommand {
+    Terminate,
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
@@ -71,6 +92,7 @@ const STEP_HEIGHT: f32 = 0.03;
 struct MotionControllerLoop {
     ik_controller: Box<dyn IkControllable>,
     command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
+    blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
     command: MotionControllerCommand,
     move_duration: Duration,
     state: BodyState,
@@ -82,11 +104,13 @@ impl MotionControllerLoop {
     async fn new(
         mut ik_controller: Box<dyn IkControllable>,
         command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
+        blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
     ) -> Result<Self> {
         let last_written_pose = ik_controller.read_leg_positions().await?;
         Ok(Self {
             ik_controller,
             command_receiver,
+            blocking_command_receiver,
             command: MotionControllerCommand::default(),
             move_duration: Duration::from_secs_f32(0.4),
             state: BodyState::Grounded,
@@ -182,6 +206,16 @@ impl MotionControllerLoop {
             if let Some(command) = self.command_receiver.try_recv().unwrap() {
                 self.command = command;
             }
+            if let Some(blocking_command) =
+                self.blocking_command_receiver.try_recv_optional().unwrap()
+            {
+                match blocking_command {
+                    BlockingCommand::Terminate => {
+                        trace!("Exiting control loop");
+                        break;
+                    }
+                }
+            }
 
             if self.state != self.command.body_state {
                 match self.command.body_state {
@@ -212,5 +246,6 @@ impl MotionControllerLoop {
                 }
             }
         }
+        Ok(())
     }
 }

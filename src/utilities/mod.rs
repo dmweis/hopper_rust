@@ -1,7 +1,7 @@
 use anyhow::Result;
 use log::*;
 use simplelog::*;
-use std::fs::OpenOptions;
+use std::{fs::OpenOptions, sync::mpsc};
 
 /// Initializes loggers
 ///
@@ -38,4 +38,20 @@ pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> Result<()
     CombinedLogger::init(loggers)?;
     info!("Logging level set to {}", filter);
     Ok(())
+}
+
+pub trait MpscChannelHelper<T> {
+    fn try_recv_optional(&mut self) -> std::result::Result<Option<T>, mpsc::TryRecvError>;
+}
+
+impl<T> MpscChannelHelper<T> for mpsc::Receiver<T> {
+    fn try_recv_optional(&mut self) -> std::result::Result<Option<T>, mpsc::TryRecvError> {
+        match self.try_recv() {
+            Ok(value) => Ok(Some(value)),
+            Err(error) => match error {
+                mpsc::TryRecvError::Empty => Ok(None),
+                mpsc::TryRecvError::Disconnected => Err(error),
+            },
+        }
+    }
 }
