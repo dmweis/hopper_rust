@@ -1,13 +1,12 @@
 use anyhow::Result;
 use clap::Clap;
+use gilrs::Gilrs;
 use hopper_rust::{hopper_config, motion_controller, utilities};
 use log::*;
 use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;
 use std::path::Path;
 use std::{thread::sleep, time::Duration};
-
-use gilrs::Gilrs;
 
 /// Visualize Hopper
 #[derive(Clap)]
@@ -23,12 +22,16 @@ struct Args {
     /// Sets the level of verbosity
     #[clap(short, parse(from_occurrences))]
     verbose: u8,
+    /// prometheus port
+    #[clap(long, default_value = "8686")]
+    prometheus_port: u16,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
     utilities::start_loggers(None, args.verbose)?;
+    utilities::start_prometheus_exporter(args.prometheus_port)?;
     info!("Started main visualizer");
 
     let _config = args

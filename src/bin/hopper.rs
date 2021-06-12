@@ -26,12 +26,16 @@ struct Args {
     /// Sets the level of verbosity
     #[clap(short, parse(from_occurrences))]
     verbose: u8,
+    /// prometheus port
+    #[clap(long, default_value = "8686")]
+    prometheus_port: u16,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
     utilities::start_loggers(args.log_path, args.verbose)?;
+    utilities::start_prometheus_exporter(args.prometheus_port)?;
     info!("Started main controller");
 
     let hopper_config = args

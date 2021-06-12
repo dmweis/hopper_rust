@@ -11,6 +11,7 @@ use std::net::UdpSocket;
 use std::str::from_utf8;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Deserialize)]
 enum Command {
@@ -153,6 +154,7 @@ pub async fn udp_controller_handler(
     controller: &mut motion_controller::MotionController,
 ) -> Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
+    socket.set_read_timeout(Some(Duration::from_millis(500)))?;
     let mut buffer = [0; 1024];
 
     let keep_running = Arc::new(AtomicBool::new(true));
@@ -166,6 +168,9 @@ pub async fn udp_controller_handler(
 
     while keep_running.load(Ordering::SeqCst) {
         if let Ok((amt, _)) = socket.recv_from(&mut buffer) {
+            if amt == 0 {
+                continue;
+            }
             trace!("got new message");
             let received = &mut buffer[..amt];
             let message: Result<ControllerData, _> = serde_json::from_slice(&received);
