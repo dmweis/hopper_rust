@@ -53,6 +53,17 @@ impl<T> HexapodTypes<T> {
     pub fn right_rear(&self) -> &T {
         &self.right_rear
     }
+
+    pub fn all_legs(&self) -> [&T; 6] {
+        [
+            &self.left_front,
+            &self.right_front,
+            &self.left_middle,
+            &self.right_middle,
+            &self.left_rear,
+            &self.right_rear,
+        ]
+    }
 }
 
 bitflags! {

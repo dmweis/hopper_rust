@@ -1,5 +1,5 @@
 use crate::hexapod::{HexapodTypes, LegFlags};
-use nalgebra::{distance, Point3};
+use nalgebra::{distance, Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 use std::error::Error;
 
 pub type LegPositions = HexapodTypes<Point3<f32>>;
@@ -44,6 +44,33 @@ impl LegPositions {
             *right_middle,
             *right_rear,
         )
+    }
+
+    pub fn transform(
+        &self,
+        translation: Vector3<f32>,
+        rotation: UnitQuaternion<f32>,
+    ) -> LegPositions {
+        let translation = Translation3::from(translation);
+        let iso = Isometry3::from_parts(translation, rotation);
+        LegPositions::new(
+            iso.transform_point(self.left_front()),
+            iso.transform_point(self.left_middle()),
+            iso.transform_point(self.left_rear()),
+            iso.transform_point(self.right_front()),
+            iso.transform_point(self.right_middle()),
+            iso.transform_point(self.right_rear()),
+        )
+    }
+
+    pub fn longest_distance(&self, other: &LegPositions) -> f32 {
+        let self_legs = self.all_legs();
+        let other_legs = other.all_legs();
+        self_legs
+            .iter()
+            .zip(other_legs.iter())
+            .map(|(my, other)| distance(my, other))
+            .fold(std::f32::NAN, f32::max)
     }
 }
 
@@ -217,6 +244,9 @@ impl OptionalLegPositions {
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
+    use nalgebra::Vector3;
+
     use super::*;
 
     #[test]
@@ -439,5 +469,21 @@ mod tests {
         assert_eq!(merged.right_front(), a.right_front());
         assert_eq!(merged.left_middle(), a.left_middle());
         assert_eq!(merged.right_rear(), a.right_rear());
+    }
+
+    #[test]
+    fn apply_transformation_to_leg_positions() {
+        let point_a = Point3::new(0.0, 0.0, 0.0);
+        let a = LegPositions::new(point_a, point_a, point_a, point_a, point_a, point_a);
+        let point_b = Point3::new(1.0, 1.0, 1.0);
+        let b = LegPositions::new(point_b, point_b, point_b, point_b, point_b, point_b);
+
+        let transformed_a = a.transform(Vector3::new(1.0, 1.0, 1.0), UnitQuaternion::identity());
+        assert_relative_eq!(transformed_a.left_front(), b.left_front());
+        assert_relative_eq!(transformed_a.right_middle(), b.right_middle());
+        assert_relative_eq!(transformed_a.left_rear(), b.left_rear());
+        assert_relative_eq!(transformed_a.right_front(), b.right_front());
+        assert_relative_eq!(transformed_a.left_middle(), b.left_middle());
+        assert_relative_eq!(transformed_a.right_rear(), b.right_rear());
     }
 }

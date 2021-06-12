@@ -5,8 +5,8 @@ use crate::motion_controller;
 use crate::motion_controller::walking::MoveCommand;
 use anyhow::Result;
 use log::*;
-use nalgebra::Vector2;
-use serde::Deserialize;
+use nalgebra::{UnitQuaternion, Vector2, Vector3};
+use serde::{Deserialize, Serialize};
 use std::net::UdpSocket;
 use std::str::from_utf8;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -141,13 +141,77 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Result
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct ControllerData {
     pub x: f32,
     pub y: f32,
     pub yaw: f32,
+    pub translation_x: f32,
+    pub translation_y: f32,
+    pub translation_z: f32,
+    pub body_roll: f32,
+    pub body_pitch: f32,
+    pub body_yaw: f32,
     pub a_down: bool,
     pub b_down: bool,
+    pub x_down: bool,
+    pub y_down: bool,
+}
+
+impl ControllerData {
+    pub fn with_move(x: f32, y: f32, yaw: f32, a_down: bool, b_down: bool) -> Self {
+        ControllerData {
+            x,
+            y,
+            yaw,
+            a_down,
+            b_down,
+            ..Default::default()
+        }
+    }
+
+    pub fn with_translation(
+        translation_x: f32,
+        translation_y: f32,
+        translation_z: f32,
+        a_down: bool,
+        b_down: bool,
+    ) -> Self {
+        ControllerData {
+            translation_x,
+            translation_y,
+            translation_z,
+            a_down,
+            b_down,
+            ..Default::default()
+        }
+    }
+
+    pub fn with_rotation(
+        body_roll: f32,
+        body_pitch: f32,
+        body_yaw: f32,
+        a_down: bool,
+        b_down: bool,
+    ) -> Self {
+        ControllerData {
+            body_roll,
+            body_pitch,
+            body_yaw,
+            a_down,
+            b_down,
+            ..Default::default()
+        }
+    }
+
+    pub fn rotation_as_quaternion(&self) -> UnitQuaternion<f32> {
+        UnitQuaternion::from_euler_angles(self.body_roll, self.body_pitch, self.body_yaw)
+    }
+
+    pub fn to_json_bytes(&self) -> Result<Vec<u8>> {
+        let json = serde_json::to_string(self)?;
+        Ok(json.as_bytes().to_vec())
+    }
 }
 
 pub async fn udp_controller_handler(
@@ -184,6 +248,14 @@ pub async fn udp_controller_handler(
                 let move_command =
                     MoveCommand::new(Vector2::new(message.x, message.y), message.yaw);
                 controller.set_command(move_command);
+
+                let translation = Vector3::new(
+                    message.translation_x,
+                    message.translation_y,
+                    message.translation_z,
+                );
+                let rotation = message.rotation_as_quaternion();
+                controller.set_transformation(translation, rotation);
             } else {
                 error!("Received malformed message {:?}", from_utf8(&received));
             }

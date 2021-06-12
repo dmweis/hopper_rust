@@ -8,6 +8,7 @@ use crate::ik_controller::{leg_positions::MoveTowards, IkControllable};
 use crate::utilities::MpscChannelHelper;
 use anyhow::Result;
 use log::trace;
+use nalgebra::{UnitQuaternion, Vector3};
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::time;
@@ -60,6 +61,19 @@ impl MotionController {
         self.command.move_command
     }
 
+    pub fn set_transformation(&mut self, translation: Vector3<f32>, rotation: UnitQuaternion<f32>) {
+        self.command.linear_translation = translation;
+        self.command.body_rotation = rotation;
+        self.command_sender.send(self.command.clone()).unwrap()
+    }
+
+    pub fn set_transformation_euler(&mut self, translation: Vector3<f32>, rotation: Vector3<f32>) {
+        self.set_transformation(
+            translation,
+            UnitQuaternion::from_euler_angles(rotation.x, rotation.y, rotation.z),
+        )
+    }
+
     pub fn set_body_state(&mut self, state: BodyState) {
         self.command.body_state = state;
         self.command_sender.send(self.command.clone()).unwrap();
@@ -78,6 +92,8 @@ impl Drop for MotionController {
 struct MotionControllerCommand {
     move_command: MoveCommand,
     body_state: BodyState,
+    linear_translation: Vector3<f32>,
+    body_rotation: UnitQuaternion<f32>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -98,6 +114,7 @@ struct MotionControllerLoop {
     state: BodyState,
     last_tripod: Tripod,
     last_written_pose: LegPositions,
+    base_relaxed: LegPositions,
 }
 
 impl MotionControllerLoop {
@@ -116,6 +133,7 @@ impl MotionControllerLoop {
             state: BodyState::Grounded,
             last_tripod: Tripod::LRL,
             last_written_pose,
+            base_relaxed: stance::relaxed_stance().clone(),
         })
     }
 
@@ -199,6 +217,17 @@ impl MotionControllerLoop {
         Ok(())
     }
 
+    fn translated_relaxed(&self) -> LegPositions {
+        self.base_relaxed
+            .transform(self.command.linear_translation, self.command.body_rotation)
+    }
+
+    fn is_relaxed(&self) -> bool {
+        self.last_written_pose
+            .longest_distance(&self.translated_relaxed())
+            < 0.0001
+    }
+
     async fn control_loop(&mut self) -> Result<()> {
         let mut interval = time::interval(TICK_DURATION);
 
@@ -226,25 +255,39 @@ impl MotionControllerLoop {
 
             // only walk if standing
             if self.state == BodyState::Standing {
-                self.last_tripod.invert();
-                let target = step_with_relaxed_transformation(
-                    &self.last_written_pose,
-                    stance::relaxed_stance(),
-                    &self.last_tripod,
-                    self.command.move_command,
-                );
-                for new_pose in TimedStepIterator::step(
-                    self.last_written_pose.clone(),
-                    target.clone(),
-                    self.move_duration,
-                    STEP_HEIGHT,
-                    self.last_tripod.clone(),
-                ) {
-                    self.ik_controller.move_to_positions(&new_pose).await?;
-                    self.last_written_pose = new_pose;
-                    interval.tick().await;
+                // transform body
+                let transformed_pose = stance::relaxed_stance()
+                    .transform(self.command.linear_translation, self.command.body_rotation);
+                if self.last_written_pose != transformed_pose {
+                    self.ik_controller
+                        .move_to_positions(&transformed_pose)
+                        .await?;
+                    self.last_written_pose = transformed_pose;
+                }
+                // end transform
+
+                if self.command.move_command.should_move() || (!self.is_relaxed()) {
+                    self.last_tripod.invert();
+                    let target = step_with_relaxed_transformation(
+                        &self.last_written_pose,
+                        stance::relaxed_stance(),
+                        &self.last_tripod,
+                        self.command.move_command,
+                    );
+                    for new_pose in TimedStepIterator::step(
+                        self.last_written_pose.clone(),
+                        target.clone(),
+                        self.move_duration,
+                        STEP_HEIGHT,
+                        self.last_tripod.clone(),
+                    ) {
+                        self.ik_controller.move_to_positions(&new_pose).await?;
+                        self.last_written_pose = new_pose;
+                        interval.tick().await;
+                    }
                 }
             }
+            interval.tick().await;
         }
         Ok(())
     }

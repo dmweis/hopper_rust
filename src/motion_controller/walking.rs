@@ -27,6 +27,13 @@ impl MoveCommand {
     pub fn rotation(&self) -> f32 {
         self.rotation
     }
+
+    pub fn should_move(&self) -> bool {
+        let is_zero = self.rotation.abs() < std::f32::EPSILON
+            && self.direction.x.abs() < std::f32::EPSILON
+            && self.direction.y.abs() < std::f32::EPSILON;
+        !is_zero
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -818,5 +825,25 @@ mod tests {
                 last_written = new_pose;
             }
         }
+    }
+
+    #[test]
+    fn move_command_should_not_move() {
+        let move_command = MoveCommand::new(Vector2::new(0.0, 0.0), 0.0);
+        assert!(!move_command.should_move());
+    }
+
+    #[test]
+    fn move_command_should_move_rotation() {
+        let move_command = MoveCommand::new(Vector2::new(0.0, 0.0), 0.1);
+        assert!(move_command.should_move());
+    }
+
+    #[test]
+    fn move_command_should_move_translation() {
+        let move_command = MoveCommand::new(Vector2::new(0.1, 0.0), 0.0);
+        assert!(move_command.should_move());
+        let move_command = MoveCommand::new(Vector2::new(0.0, 0.1), 0.0);
+        assert!(move_command.should_move());
     }
 }

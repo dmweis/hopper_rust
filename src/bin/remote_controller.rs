@@ -1,12 +1,11 @@
 use anyhow::Result;
 use clap::Clap;
+use gilrs::Gilrs;
+use hopper_rust::udp_adaptor::ControllerData;
 use hopper_rust::utilities;
 use log::*;
-use serde::{Deserialize, Serialize};
 use std::net::UdpSocket;
 use std::{thread::sleep, time::Duration};
-
-use gilrs::Gilrs;
 
 /// Visualize Hopper
 #[derive(Clap)]
@@ -15,27 +14,12 @@ struct Args {
     /// addr:port of target
     #[clap()]
     target: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct ControllerData {
-    x: f32,
-    y: f32,
-    yaw: f32,
-    a_down: bool,
-    b_down: bool,
-}
-
-impl ControllerData {
-    fn new(x: f32, y: f32, yaw: f32, a_down: bool, b_down: bool) -> Self {
-        ControllerData {
-            x,
-            y,
-            yaw,
-            a_down,
-            b_down,
-        }
-    }
+    /// Translation mode
+    #[clap(long, short)]
+    translation_mode: bool,
+    /// Rotation mode
+    #[clap(long, short)]
+    rotation_mode: bool,
 }
 
 #[tokio::main]
@@ -60,23 +44,33 @@ async fn main() -> Result<()> {
                 let y = -gamepad.value(gilrs::Axis::LeftStickX);
                 let y = if y.abs() > 0.2 { y } else { 0.0 };
 
-                let yaw = -gamepad.value(gilrs::Axis::RightStickX);
-                let yaw = if yaw.abs() > 0.2 { yaw } else { 0.0 };
+                let z = -gamepad.value(gilrs::Axis::RightStickX);
+                let z = if z.abs() > 0.2 { z } else { 0.0 };
 
                 let a_down = gamepad.is_pressed(gilrs::Button::South);
                 let b_down = gamepad.is_pressed(gilrs::Button::East);
 
-                let move_command = ControllerData::new(
-                    0.06 * x,
-                    0.06 * y,
-                    10_f32.to_radians() * yaw,
-                    a_down,
-                    b_down,
-                );
-
-                trace!("{:?}", move_command);
-                let payload = serde_json::to_string(&move_command)?;
-                socket.send(payload.as_bytes())?;
+                let command = if args.translation_mode {
+                    ControllerData::with_translation(0.02 * x, 0.02 * y, 0.02 * z, a_down, b_down)
+                } else if args.rotation_mode {
+                    ControllerData::with_rotation(
+                        (10.0 * y).to_radians(),
+                        -(10.0 * x).to_radians(),
+                        -(10.0 * z).to_radians(),
+                        a_down,
+                        b_down,
+                    )
+                } else {
+                    ControllerData::with_move(
+                        0.06 * x,
+                        0.06 * y,
+                        10_f32.to_radians() * z,
+                        a_down,
+                        b_down,
+                    )
+                };
+                trace!("{:?}", command);
+                socket.send(&command.to_json_bytes()?)?;
             }
         }
         sleep(Duration::from_millis(20));
