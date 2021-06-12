@@ -1,0 +1,25 @@
+name: Arm cross compile
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Build arm cors compile
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install gcc for arm
+        run: sudo apt install gcc-arm-linux-gnueabihf
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: armv7-unknown-linux-musleabihf
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --no-default-features
