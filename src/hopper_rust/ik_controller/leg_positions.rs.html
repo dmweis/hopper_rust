@@ -444,9 +444,55 @@
 <span id="441">441</span>
 <span id="442">442</span>
 <span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hexapod</span>::{<span class="ident">HexapodTypes</span>, <span class="ident">LegFlags</span>};
-<span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">distance</span>, <span class="ident">Point3</span>};
+<span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">distance</span>, <span class="ident">Isometry3</span>, <span class="ident">Point3</span>, <span class="ident">Translation3</span>, <span class="ident">UnitQuaternion</span>, <span class="ident">Vector3</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">LegPositions</span> <span class="op">=</span> <span class="ident">HexapodTypes</span><span class="op">&lt;</span><span class="ident">Point3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span><span class="op">&gt;</span>;
@@ -491,6 +537,33 @@
             <span class="kw-2">*</span><span class="ident">right_middle</span>,
             <span class="kw-2">*</span><span class="ident">right_rear</span>,
         )
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transform</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">translation</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>,
+        <span class="ident">rotation</span>: <span class="ident">UnitQuaternion</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
+        <span class="kw">let</span> <span class="ident">translation</span> <span class="op">=</span> <span class="ident">Translation3</span>::<span class="ident">from</span>(<span class="ident">translation</span>);
+        <span class="kw">let</span> <span class="ident">iso</span> <span class="op">=</span> <span class="ident">Isometry3</span>::<span class="ident">from_parts</span>(<span class="ident">translation</span>, <span class="ident">rotation</span>);
+        <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+            <span class="ident">iso</span>.<span class="ident">transform_point</span>(<span class="self">self</span>.<span class="ident">left_front</span>()),
+            <span class="ident">iso</span>.<span class="ident">transform_point</span>(<span class="self">self</span>.<span class="ident">left_middle</span>()),
+            <span class="ident">iso</span>.<span class="ident">transform_point</span>(<span class="self">self</span>.<span class="ident">left_rear</span>()),
+            <span class="ident">iso</span>.<span class="ident">transform_point</span>(<span class="self">self</span>.<span class="ident">right_front</span>()),
+            <span class="ident">iso</span>.<span class="ident">transform_point</span>(<span class="self">self</span>.<span class="ident">right_middle</span>()),
+            <span class="ident">iso</span>.<span class="ident">transform_point</span>(<span class="self">self</span>.<span class="ident">right_rear</span>()),
+        )
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">longest_distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">LegPositions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f32</span> {
+        <span class="kw">let</span> <span class="ident">self_legs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">all_legs</span>();
+        <span class="kw">let</span> <span class="ident">other_legs</span> <span class="op">=</span> <span class="ident">other</span>.<span class="ident">all_legs</span>();
+        <span class="ident">self_legs</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">zip</span>(<span class="ident">other_legs</span>.<span class="ident">iter</span>())
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">my</span>, <span class="ident">other</span>)<span class="op">|</span> <span class="ident">distance</span>(<span class="ident">my</span>, <span class="ident">other</span>))
+            .<span class="ident">fold</span>(<span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">NAN</span>, <span class="ident">f32</span>::<span class="ident">max</span>)
     }
 }
 
@@ -664,6 +737,9 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="ident">approx</span>::<span class="ident">assert_relative_eq</span>;
+    <span class="kw">use</span> <span class="ident">nalgebra</span>::<span class="ident">Vector3</span>;
+
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -886,6 +962,22 @@
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">merged</span>.<span class="ident">right_front</span>(), <span class="ident">a</span>.<span class="ident">right_front</span>());
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">merged</span>.<span class="ident">left_middle</span>(), <span class="ident">a</span>.<span class="ident">left_middle</span>());
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">merged</span>.<span class="ident">right_rear</span>(), <span class="ident">a</span>.<span class="ident">right_rear</span>());
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">apply_transformation_to_leg_positions</span>() {
+        <span class="kw">let</span> <span class="ident">point_a</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(<span class="ident">point_a</span>, <span class="ident">point_a</span>, <span class="ident">point_a</span>, <span class="ident">point_a</span>, <span class="ident">point_a</span>, <span class="ident">point_a</span>);
+        <span class="kw">let</span> <span class="ident">point_b</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>);
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(<span class="ident">point_b</span>, <span class="ident">point_b</span>, <span class="ident">point_b</span>, <span class="ident">point_b</span>, <span class="ident">point_b</span>, <span class="ident">point_b</span>);
+
+        <span class="kw">let</span> <span class="ident">transformed_a</span> <span class="op">=</span> <span class="ident">a</span>.<span class="ident">transform</span>(<span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>), <span class="ident">UnitQuaternion</span>::<span class="ident">identity</span>());
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">transformed_a</span>.<span class="ident">left_front</span>(), <span class="ident">b</span>.<span class="ident">left_front</span>());
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">transformed_a</span>.<span class="ident">right_middle</span>(), <span class="ident">b</span>.<span class="ident">right_middle</span>());
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">transformed_a</span>.<span class="ident">left_rear</span>(), <span class="ident">b</span>.<span class="ident">left_rear</span>());
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">transformed_a</span>.<span class="ident">right_front</span>(), <span class="ident">b</span>.<span class="ident">right_front</span>());
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">transformed_a</span>.<span class="ident">left_middle</span>(), <span class="ident">b</span>.<span class="ident">left_middle</span>());
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">transformed_a</span>.<span class="ident">right_rear</span>(), <span class="ident">b</span>.<span class="ident">right_rear</span>());
     }
 }
 </pre></div>

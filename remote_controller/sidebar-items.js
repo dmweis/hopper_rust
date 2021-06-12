@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["main",""]],"struct":[["Args","Visualize Hopper"],["ControllerData",""]]});
+initSidebarItems({"fn":[["main",""]],"struct":[["Args","Visualize Hopper"]]});
