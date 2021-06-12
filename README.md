@@ -2,6 +2,7 @@
 
 [![codecov](https://codecov.io/gh/dmweis/hopper_rust/branch/main/graph/badge.svg)](https://codecov.io/gh/dmweis/hopper_rust)
 [![Rust](https://github.com/dmweis/hopper_rust/workflows/Rust/badge.svg)](https://github.com/dmweis/hopper_rust/actions)
+[![Arm cross compile](https://github.com/dmweis/hopper_rust/actions/workflows/arm-cross-compile.yml/badge.svg)](https://github.com/dmweis/hopper_rust/actions/workflows/arm-cross-compile.yml)
 [![Security audit](https://github.com/dmweis/hopper_rust/workflows/Security%20audit/badge.svg)](https://github.com/dmweis/hopper_rust/actions)
 [![Private docs](https://github.com/dmweis/hopper_rust/workflows/Deploy%20Docs%20to%20GitHub%20Pages/badge.svg)](https://davidweis.dev/hopper_rust/hopper_rust/index.html)
 
@@ -25,3 +26,24 @@ The platform is modeled and 3D printed by me and is still a work in progress. It
 
 CAD design files can be found [here](https://github.com/dmweis/hopper_design)  
 They may be outdated. If you'd like current file you can email me [here](mailto:dweis7@gmail.com)
+
+## Cross compilation
+
+To cross compile for raspberry pi you need to add `armv7-unknown-linux-musleabihf` target to rustup
+
+You will also need an arm compatible compiler. On debian that is `gcc-arm-linux-gnueabihf`
+
+To set this up run:
+
+```shell
+rustup target add armv7-unknown-linux-musleabihf
+sudo apt update
+sudo apt install gcc-arm-linux-gnueabihf
+```
+
+Then compile for arm with `cargo build --no-default-features --target=armv7-unknown-linux-musleabihf`
+
+You need to build without default features because you don't want the visualizer for ARM.
+The controller library also depends on `libuv`.
+
+The [deploy script](./deploy) and [cross_build script](./cross_build) sort of do it for you.
