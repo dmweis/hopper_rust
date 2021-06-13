@@ -55,8 +55,8 @@ async fn main() -> Result<()> {
 
                 let command = if args.translation_mode {
                     ControllerData::with_translation(
-                        0.05 * x,
-                        0.05 * y,
+                        0.05 * -x,
+                        0.05 * -y,
                         0.04 * height,
                         a_down,
                         b_down,
