@@ -73,7 +73,7 @@ async fn main() -> Result<()> {
                     ControllerData::with_move(
                         0.06 * x,
                         0.06 * y,
-                        10_f32.to_radians() * z,
+                        15_f32.to_radians() * z,
                         a_down,
                         b_down,
                     )
