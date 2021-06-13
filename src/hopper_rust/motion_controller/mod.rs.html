@@ -295,6 +295,23 @@
 <span id="292">292</span>
 <span id="293">293</span>
 <span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stance</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;visualizer&quot;</span>)]</span>
@@ -305,7 +322,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::{<span class="ident">leg_positions</span>::<span class="ident">MoveTowards</span>, <span class="ident">IkControllable</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utilities</span>::<span class="ident">MpscChannelHelper</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
-<span class="kw">use</span> <span class="ident">log</span>::<span class="ident">trace</span>;
+<span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">UnitQuaternion</span>, <span class="ident">Vector3</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">mpsc</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Duration</span>;
@@ -413,6 +430,8 @@
     <span class="ident">last_tripod</span>: <span class="ident">Tripod</span>,
     <span class="ident">last_written_pose</span>: <span class="ident">LegPositions</span>,
     <span class="ident">base_relaxed</span>: <span class="ident">LegPositions</span>,
+    <span class="ident">lrl_reset</span>: <span class="ident">bool</span>,
+    <span class="ident">rlr_reset</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">MotionControllerLoop</span> {
@@ -432,6 +451,8 @@
             <span class="ident">last_tripod</span>: <span class="ident">Tripod</span>::<span class="ident">LRL</span>,
             <span class="ident">last_written_pose</span>,
             <span class="ident">base_relaxed</span>: <span class="ident">stance</span>::<span class="ident">relaxed_stance</span>().<span class="ident">clone</span>(),
+            <span class="ident">lrl_reset</span>: <span class="bool-val">false</span>,
+            <span class="ident">rlr_reset</span>: <span class="bool-val">false</span>,
         })
     }
 
@@ -490,7 +511,7 @@
                 <span class="ident">target</span>.<span class="ident">clone</span>(),
                 <span class="ident">MAX_MOVE</span>,
                 <span class="ident">STEP_HEIGHT</span>,
-                <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">clone</span>(),
+                <span class="self">self</span>.<span class="ident">last_tripod</span>,
             ) {
                 <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">new_pose</span>;
@@ -505,7 +526,7 @@
                 <span class="ident">target</span>.<span class="ident">clone</span>(),
                 <span class="ident">MAX_MOVE</span>,
                 <span class="ident">STEP_HEIGHT</span>,
-                <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">clone</span>(),
+                <span class="self">self</span>.<span class="ident">last_tripod</span>,
             ) {
                 <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">new_pose</span>;
@@ -515,15 +536,13 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">translated_relaxed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
+    <span class="kw">fn</span> <span class="ident">transformed_relaxed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
         <span class="self">self</span>.<span class="ident">base_relaxed</span>
             .<span class="ident">transform</span>(<span class="self">self</span>.<span class="ident">command</span>.<span class="ident">linear_translation</span>, <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">body_rotation</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">is_relaxed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">last_written_pose</span>
-            .<span class="ident">longest_distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">translated_relaxed</span>())
-            <span class="op">&lt;</span> <span class="number">0.0001</span>
+    <span class="kw">fn</span> <span class="ident">should_reset_legs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="op">!</span>(<span class="self">self</span>.<span class="ident">lrl_reset</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">rlr_reset</span>)
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">control_loop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -554,21 +573,13 @@
             <span class="comment">// only walk if standing</span>
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BodyState</span>::<span class="ident">Standing</span> {
                 <span class="comment">// transform body</span>
-                <span class="kw">let</span> <span class="ident">transformed_pose</span> <span class="op">=</span> <span class="ident">stance</span>::<span class="ident">relaxed_stance</span>()
-                    .<span class="ident">transform</span>(<span class="self">self</span>.<span class="ident">command</span>.<span class="ident">linear_translation</span>, <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">body_rotation</span>);
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">!</span><span class="op">=</span> <span class="ident">transformed_pose</span> {
-                    <span class="self">self</span>.<span class="ident">ik_controller</span>
-                        .<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">transformed_pose</span>)
-                        .<span class="kw">await</span><span class="question-mark">?</span>;
-                    <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">transformed_pose</span>;
-                }
-                <span class="comment">// end transform</span>
 
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>.<span class="ident">should_move</span>() <span class="op">|</span><span class="op">|</span> (<span class="op">!</span><span class="self">self</span>.<span class="ident">is_relaxed</span>()) {
+                <span class="comment">// end transform</span>
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>.<span class="ident">should_move</span>() <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">should_reset_legs</span>() {
                     <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">invert</span>();
                     <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">step_with_relaxed_transformation</span>(
                         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">last_written_pose</span>,
-                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">translated_relaxed</span>(),
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">base_relaxed</span>,
                         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">last_tripod</span>,
                         <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>,
                     );
@@ -579,9 +590,32 @@
                         <span class="ident">STEP_HEIGHT</span>,
                         <span class="self">self</span>.<span class="ident">last_tripod</span>,
                     ) {
-                        <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                        <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">new_pose</span>;
+                        <span class="comment">// transform pose to current tilt</span>
+                        <span class="kw">let</span> <span class="ident">transformed_pose</span> <span class="op">=</span> <span class="ident">new_pose</span>
+                            .<span class="ident">transform</span>(<span class="self">self</span>.<span class="ident">command</span>.<span class="ident">linear_translation</span>, <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">body_rotation</span>);
+                        <span class="self">self</span>.<span class="ident">ik_controller</span>
+                            .<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">transformed_pose</span>)
+                            .<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">transformed_pose</span>;
                         <span class="ident">interval</span>.<span class="ident">tick</span>().<span class="kw">await</span>;
+                    }
+                    <span class="kw">match</span> <span class="self">self</span>.<span class="ident">last_tripod</span> {
+                        <span class="ident">Tripod</span>::<span class="ident">LRL</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">lrl_reset</span> <span class="op">=</span> <span class="bool-val">true</span>,
+                        <span class="ident">Tripod</span>::<span class="ident">RLR</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">rlr_reset</span> <span class="op">=</span> <span class="bool-val">true</span>,
+                    }
+                    <span class="kw">if</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>.<span class="ident">should_move</span>() {
+                        <span class="comment">// invalidate legs if moving</span>
+                        <span class="self">self</span>.<span class="ident">lrl_reset</span> <span class="op">=</span> <span class="bool-val">false</span>;
+                        <span class="self">self</span>.<span class="ident">rlr_reset</span> <span class="op">=</span> <span class="bool-val">false</span>;
+                    }
+                } <span class="kw">else</span> {
+                    <span class="comment">// we can do transformations here</span>
+                    <span class="kw">let</span> <span class="ident">transformed_pose</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">transformed_relaxed</span>();
+                    <span class="kw">if</span> <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">!</span><span class="op">=</span> <span class="ident">transformed_pose</span> {
+                        <span class="self">self</span>.<span class="ident">ik_controller</span>
+                            .<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">transformed_pose</span>)
+                            .<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">transformed_pose</span>;
                     }
                 }
             }
