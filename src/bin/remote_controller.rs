@@ -47,11 +47,20 @@ async fn main() -> Result<()> {
                 let z = -gamepad.value(gilrs::Axis::RightStickX);
                 let z = if z.abs() > 0.2 { z } else { 0.0 };
 
+                let height = -gamepad.value(gilrs::Axis::RightStickY);
+                let height = if height.abs() > 0.2 { height } else { 0.0 };
+
                 let a_down = gamepad.is_pressed(gilrs::Button::South);
                 let b_down = gamepad.is_pressed(gilrs::Button::East);
 
                 let command = if args.translation_mode {
-                    ControllerData::with_translation(0.02 * x, 0.02 * y, 0.02 * z, a_down, b_down)
+                    ControllerData::with_translation(
+                        0.05 * x,
+                        0.05 * y,
+                        0.04 * height,
+                        a_down,
+                        b_down,
+                    )
                 } else if args.rotation_mode {
                     ControllerData::with_rotation(
                         (10.0 * y).to_radians(),
