@@ -889,7 +889,7 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">upper_case_acronyms</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum</span> <span class="ident">Tripod</span> {
     <span class="ident">LRL</span>,
@@ -1536,7 +1536,7 @@
                 <span class="ident">step</span>.<span class="ident">clone</span>(),
                 <span class="ident">MAX_MOVE</span>,
                 <span class="ident">STEP_HEIGHT</span>,
-                <span class="ident">tripod</span>.<span class="ident">clone</span>(),
+                <span class="ident">tripod</span>,
             ) {
                 <span class="comment">// LRL tripod</span>
                 <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">new_pose</span>.<span class="ident">left_front</span>().<span class="ident">z</span>, <span class="ident">new_pose</span>.<span class="ident">right_middle</span>().<span class="ident">z</span>);
@@ -1572,7 +1572,7 @@
                 <span class="ident">step</span>.<span class="ident">clone</span>(),
                 <span class="ident">MAX_MOVE</span>,
                 <span class="ident">STEP_HEIGHT</span>,
-                <span class="ident">tripod</span>.<span class="ident">clone</span>(),
+                <span class="ident">tripod</span>,
             ) {
                 <span class="kw">match</span> <span class="ident">tripod</span> {
                     <span class="ident">Tripod</span>::<span class="ident">RLR</span> <span class="op">=</span><span class="op">&gt;</span> {
@@ -1641,7 +1641,7 @@
                 <span class="ident">step</span>.<span class="ident">clone</span>(),
                 <span class="ident">MAX_MOVE</span>,
                 <span class="ident">STEP_HEIGHT</span>,
-                <span class="ident">tripod</span>.<span class="ident">clone</span>(),
+                <span class="ident">tripod</span>,
             ) {
                 <span class="comment">// RLR tripod</span>
                 <span class="macro">assert_relative_eq</span><span class="macro">!</span>(
