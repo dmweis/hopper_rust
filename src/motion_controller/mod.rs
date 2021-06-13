@@ -7,7 +7,7 @@ use crate::ik_controller::leg_positions::LegPositions;
 use crate::ik_controller::{leg_positions::MoveTowards, IkControllable};
 use crate::utilities::MpscChannelHelper;
 use anyhow::Result;
-use log::trace;
+use log::*;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::sync::mpsc;
 use std::time::Duration;
@@ -115,6 +115,8 @@ struct MotionControllerLoop {
     last_tripod: Tripod,
     last_written_pose: LegPositions,
     base_relaxed: LegPositions,
+    lrl_reset: bool,
+    rlr_reset: bool,
 }
 
 impl MotionControllerLoop {
@@ -134,6 +136,8 @@ impl MotionControllerLoop {
             last_tripod: Tripod::LRL,
             last_written_pose,
             base_relaxed: stance::relaxed_stance().clone(),
+            lrl_reset: false,
+            rlr_reset: false,
         })
     }
 
@@ -192,7 +196,7 @@ impl MotionControllerLoop {
                 target.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
-                self.last_tripod.clone(),
+                self.last_tripod,
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
                 self.last_written_pose = new_pose;
@@ -207,7 +211,7 @@ impl MotionControllerLoop {
                 target.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
-                self.last_tripod.clone(),
+                self.last_tripod,
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
                 self.last_written_pose = new_pose;
@@ -217,15 +221,13 @@ impl MotionControllerLoop {
         Ok(())
     }
 
-    fn translated_relaxed(&self) -> LegPositions {
+    fn transformed_relaxed(&self) -> LegPositions {
         self.base_relaxed
             .transform(self.command.linear_translation, self.command.body_rotation)
     }
 
-    fn is_relaxed(&self) -> bool {
-        self.last_written_pose
-            .longest_distance(&self.translated_relaxed())
-            < 0.0001
+    fn should_reset_legs(&self) -> bool {
+        !(self.lrl_reset && self.rlr_reset)
     }
 
     async fn control_loop(&mut self) -> Result<()> {
@@ -256,21 +258,13 @@ impl MotionControllerLoop {
             // only walk if standing
             if self.state == BodyState::Standing {
                 // transform body
-                let transformed_pose = stance::relaxed_stance()
-                    .transform(self.command.linear_translation, self.command.body_rotation);
-                if self.last_written_pose != transformed_pose {
-                    self.ik_controller
-                        .move_to_positions(&transformed_pose)
-                        .await?;
-                    self.last_written_pose = transformed_pose;
-                }
-                // end transform
 
-                if self.command.move_command.should_move() || (!self.is_relaxed()) {
+                // end transform
+                if self.command.move_command.should_move() || self.should_reset_legs() {
                     self.last_tripod.invert();
                     let target = step_with_relaxed_transformation(
                         &self.last_written_pose,
-                        &self.translated_relaxed(),
+                        &self.base_relaxed,
                         &self.last_tripod,
                         self.command.move_command,
                     );
@@ -281,9 +275,32 @@ impl MotionControllerLoop {
                         STEP_HEIGHT,
                         self.last_tripod,
                     ) {
-                        self.ik_controller.move_to_positions(&new_pose).await?;
-                        self.last_written_pose = new_pose;
+                        // transform pose to current tilt
+                        let transformed_pose = new_pose
+                            .transform(self.command.linear_translation, self.command.body_rotation);
+                        self.ik_controller
+                            .move_to_positions(&transformed_pose)
+                            .await?;
+                        self.last_written_pose = transformed_pose;
                         interval.tick().await;
+                    }
+                    match self.last_tripod {
+                        Tripod::LRL => self.lrl_reset = true,
+                        Tripod::RLR => self.rlr_reset = true,
+                    }
+                    if self.command.move_command.should_move() {
+                        // invalidate legs if moving
+                        self.lrl_reset = false;
+                        self.rlr_reset = false;
+                    }
+                } else {
+                    // we can do transformations here
+                    let transformed_pose = self.transformed_relaxed();
+                    if self.last_written_pose != transformed_pose {
+                        self.ik_controller
+                            .move_to_positions(&transformed_pose)
+                            .await?;
+                        self.last_written_pose = transformed_pose;
                     }
                 }
             }
