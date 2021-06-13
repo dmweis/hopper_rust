@@ -270,7 +270,7 @@ impl MotionControllerLoop {
                     self.last_tripod.invert();
                     let target = step_with_relaxed_transformation(
                         &self.last_written_pose,
-                        stance::relaxed_stance(),
+                        &self.translated_relaxed(),
                         &self.last_tripod,
                         self.command.move_command,
                     );
@@ -279,7 +279,7 @@ impl MotionControllerLoop {
                         target.clone(),
                         self.move_duration,
                         STEP_HEIGHT,
-                        self.last_tripod.clone(),
+                        self.last_tripod,
                     ) {
                         self.ik_controller.move_to_positions(&new_pose).await?;
                         self.last_written_pose = new_pose;

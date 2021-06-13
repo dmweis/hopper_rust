@@ -36,7 +36,7 @@ impl MoveCommand {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum Tripod {
     LRL,
@@ -683,7 +683,7 @@ mod tests {
                 step.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
-                tripod.clone(),
+                tripod,
             ) {
                 // LRL tripod
                 assert_relative_eq!(new_pose.left_front().z, new_pose.right_middle().z);
@@ -719,7 +719,7 @@ mod tests {
                 step.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
-                tripod.clone(),
+                tripod,
             ) {
                 match tripod {
                     Tripod::RLR => {
@@ -788,7 +788,7 @@ mod tests {
                 step.clone(),
                 MAX_MOVE,
                 STEP_HEIGHT,
-                tripod.clone(),
+                tripod,
             ) {
                 // RLR tripod
                 assert_relative_eq!(
