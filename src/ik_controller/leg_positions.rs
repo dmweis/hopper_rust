@@ -184,6 +184,34 @@ impl MoveTowards for Point3<f32> {
     }
 }
 
+impl MoveTowards for Vector3<f32> {
+    type Item = Vector3<f32>;
+
+    fn move_towards(&self, target: &Vector3<f32>, max_move: &f32) -> (Vector3<f32>, bool) {
+        if self == target {
+            return (*target, false);
+        }
+        let distance = (self - target).magnitude();
+        if &distance <= max_move {
+            return (*target, true);
+        }
+        let vector = target - self;
+        (self + vector.normalize() * *max_move, true)
+    }
+
+    fn to_move_towards_iter(
+        &self,
+        target: &Self,
+        max_move: f32,
+    ) -> MovingTowardsIterator<Self::Item> {
+        MovingTowardsIterator::<Vector3<f32>> {
+            target: *target,
+            max_move,
+            last_state: *self,
+        }
+    }
+}
+
 impl MoveTowards for LegPositions {
     type Item = LegPositions;
 

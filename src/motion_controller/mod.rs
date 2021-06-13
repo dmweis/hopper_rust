@@ -3,8 +3,10 @@ pub mod stance;
 pub mod visualizer;
 pub mod walking;
 
-use crate::ik_controller::leg_positions::LegPositions;
-use crate::ik_controller::{leg_positions::MoveTowards, IkControllable};
+use crate::ik_controller::{
+    leg_positions::{LegPositions, MoveTowards},
+    IkControllable,
+};
 use crate::utilities::MpscChannelHelper;
 use anyhow::Result;
 use log::*;
@@ -103,6 +105,8 @@ enum BlockingCommand {
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
 const MAX_MOVE: f32 = 0.001;
+const MAX_TRANSLATION_STEP: f32 = 0.005;
+const MAX_ROTATION_STEP: f32 = std::f32::consts::PI / 180.0;
 const STEP_HEIGHT: f32 = 0.03;
 
 struct MotionControllerLoop {
@@ -114,6 +118,8 @@ struct MotionControllerLoop {
     state: BodyState,
     last_tripod: Tripod,
     last_written_pose: LegPositions,
+    current_rotation: UnitQuaternion<f32>,
+    current_translation: Vector3<f32>,
     base_relaxed: LegPositions,
     lrl_reset: bool,
     rlr_reset: bool,
@@ -135,6 +141,8 @@ impl MotionControllerLoop {
             state: BodyState::Grounded,
             last_tripod: Tripod::LRL,
             last_written_pose,
+            current_rotation: UnitQuaternion::identity(),
+            current_translation: Vector3::zeros(),
             base_relaxed: stance::relaxed_stance().clone(),
             lrl_reset: false,
             rlr_reset: false,
@@ -223,7 +231,7 @@ impl MotionControllerLoop {
 
     fn transformed_relaxed(&self) -> LegPositions {
         self.base_relaxed
-            .transform(self.command.linear_translation, self.command.body_rotation)
+            .transform(self.current_translation, self.current_rotation)
     }
 
     fn should_reset_legs(&self) -> bool {
@@ -257,9 +265,17 @@ impl MotionControllerLoop {
 
             // only walk if standing
             if self.state == BodyState::Standing {
-                // transform body
+                // shift transformation
+                let (new_translation, _moved) = self
+                    .current_translation
+                    .move_towards(&self.command.linear_translation, &MAX_TRANSLATION_STEP);
+                self.current_translation = new_translation;
 
-                // end transform
+                let (new_rotation, _moved) = self
+                    .current_rotation
+                    .rotate_towards(&self.command.body_rotation, MAX_ROTATION_STEP);
+                self.current_rotation = new_rotation;
+
                 if self.command.move_command.should_move() || self.should_reset_legs() {
                     self.last_tripod.invert();
                     let target = step_with_relaxed_transformation(
@@ -276,8 +292,8 @@ impl MotionControllerLoop {
                         self.last_tripod,
                     ) {
                         // transform pose to current tilt
-                        let transformed_pose = new_pose
-                            .transform(self.command.linear_translation, self.command.body_rotation);
+                        let transformed_pose =
+                            new_pose.transform(self.current_translation, self.current_rotation);
                         self.ik_controller
                             .move_to_positions(&transformed_pose)
                             .await?;
@@ -307,5 +323,86 @@ impl MotionControllerLoop {
             interval.tick().await;
         }
         Ok(())
+    }
+}
+
+pub trait RotateTowards {
+    type Item;
+
+    fn rotate_towards(&self, target: &Self, max_rotation: f32) -> (Self::Item, bool);
+}
+
+impl RotateTowards for UnitQuaternion<f32> {
+    type Item = UnitQuaternion<f32>;
+
+    fn rotate_towards(
+        &self,
+        target: &UnitQuaternion<f32>,
+        max_rotation: f32,
+    ) -> (UnitQuaternion<f32>, bool) {
+        if self == target {
+            return (*target, false);
+        }
+        let angle = self.angle_to(&target);
+        if angle <= max_rotation {
+            return (*target, true);
+        }
+        (self.nlerp(target, max_rotation / angle), true)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use approx::assert_relative_eq;
+
+    use super::*;
+
+    #[test]
+    fn rotate_towards_single_step() {
+        let a = UnitQuaternion::<f32>::identity();
+        let b = UnitQuaternion::from_euler_angles(std::f32::consts::PI, 0.0, 0.0);
+        let (res, rotated) = a.rotate_towards(&b, std::f32::consts::PI);
+        assert!(rotated);
+        assert_relative_eq!(b, res);
+    }
+
+    #[test]
+    fn rotate_towards_no_overshoot() {
+        let a = UnitQuaternion::<f32>::identity();
+        let b = UnitQuaternion::from_euler_angles(std::f32::consts::PI, 0.0, 0.0);
+        let (res, rotated) = a.rotate_towards(&b, std::f32::consts::PI * 2.0);
+        assert!(rotated);
+        assert_relative_eq!(b, res);
+    }
+
+    #[test]
+    fn rotate_towards_already_rotated() {
+        let a = UnitQuaternion::<f32>::identity();
+        let (res, rotated) = a.rotate_towards(&a, std::f32::consts::PI);
+        assert!(!rotated);
+        assert_relative_eq!(a, res);
+    }
+
+    #[test]
+    fn rotate_towards_half_hardcoded() {
+        let start = UnitQuaternion::<f32>::identity();
+        let target =
+            UnitQuaternion::from_axis_angle(&Vector3::y_axis(), std::f32::consts::PI * 0.5);
+        let expected =
+            UnitQuaternion::from_axis_angle(&Vector3::y_axis(), std::f32::consts::PI * 0.25);
+        let (res, rotated) = start.rotate_towards(&target, std::f32::consts::PI * 0.25);
+        assert!(rotated);
+        assert_relative_eq!(expected, res);
+    }
+
+    #[test]
+    fn rotate_towards_half_with_nlerp() {
+        let start = UnitQuaternion::<f32>::identity();
+        let target =
+            UnitQuaternion::from_axis_angle(&Vector3::y_axis(), std::f32::consts::PI * 0.5);
+        let expected = start.nlerp(&target, 0.5);
+        let (res, rotated) = start.rotate_towards(&target, std::f32::consts::PI * 0.25);
+        assert!(rotated);
+        assert_relative_eq!(expected, res);
     }
 }
