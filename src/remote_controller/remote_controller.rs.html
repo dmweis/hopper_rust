@@ -146,8 +146,8 @@
 
                 <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">translation_mode</span> {
                     <span class="ident">ControllerData</span>::<span class="ident">with_translation</span>(
-                        <span class="number">0.05</span> <span class="op">*</span> <span class="ident">x</span>,
-                        <span class="number">0.05</span> <span class="op">*</span> <span class="ident">y</span>,
+                        <span class="number">0.05</span> <span class="op">*</span> <span class="op">-</span><span class="ident">x</span>,
+                        <span class="number">0.05</span> <span class="op">*</span> <span class="op">-</span><span class="ident">y</span>,
                         <span class="number">0.04</span> <span class="op">*</span> <span class="ident">height</span>,
                         <span class="ident">a_down</span>,
                         <span class="ident">b_down</span>,
@@ -164,7 +164,7 @@
                     <span class="ident">ControllerData</span>::<span class="ident">with_move</span>(
                         <span class="number">0.06</span> <span class="op">*</span> <span class="ident">x</span>,
                         <span class="number">0.06</span> <span class="op">*</span> <span class="ident">y</span>,
-                        <span class="number">10_f32</span>.<span class="ident">to_radians</span>() <span class="op">*</span> <span class="ident">z</span>,
+                        <span class="number">15_f32</span>.<span class="ident">to_radians</span>() <span class="op">*</span> <span class="ident">z</span>,
                         <span class="ident">a_down</span>,
                         <span class="ident">b_down</span>,
                     )
