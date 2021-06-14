@@ -1,0 +1,2 @@
+sudo docker rm monitoring_grafana
+sudo docker rm monitoring_prometheus
