@@ -439,6 +439,8 @@
 <span id="436">436</span>
 <span id="437">437</span>
 <span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stance</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;visualizer&quot;</span>)]</span>
@@ -561,6 +563,7 @@
 <span class="kw">const</span> <span class="ident">MAX_TRANSLATION_STEP</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.005</span>;
 <span class="kw">const</span> <span class="ident">MAX_ROTATION_STEP</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">/</span> <span class="number">180.0</span>;
 <span class="kw">const</span> <span class="ident">STEP_HEIGHT</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.03</span>;
+<span class="kw">const</span> <span class="ident">GROUNDED_STEP_HEIGHT</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="op">-</span><span class="number">0.0</span>;
 <span class="kw">const</span> <span class="ident">VOLTAGE_READ_PERIOD</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">200</span>);
 
 <span class="kw">struct</span> <span class="ident">MotionControllerLoop</span> {
@@ -760,6 +763,7 @@
                         <span class="ident">target</span>.<span class="ident">clone</span>(),
                         <span class="self">self</span>.<span class="ident">move_duration</span>,
                         <span class="ident">STEP_HEIGHT</span>,
+                        <span class="ident">GROUNDED_STEP_HEIGHT</span>,
                         <span class="self">self</span>.<span class="ident">last_tripod</span>,
                     ) {
                         <span class="self">self</span>.<span class="ident">shift_transformation</span>();
