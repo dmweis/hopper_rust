@@ -229,6 +229,19 @@ impl MotionControllerLoop {
         Ok(())
     }
 
+    /// shifts transformation towards desired pose
+    fn shift_transformation(&mut self) {
+        let (new_translation, _moved) = self
+            .current_translation
+            .move_towards(&self.command.linear_translation, &MAX_TRANSLATION_STEP);
+        self.current_translation = new_translation;
+
+        let (new_rotation, _moved) = self
+            .current_rotation
+            .rotate_towards(&self.command.body_rotation, MAX_ROTATION_STEP);
+        self.current_rotation = new_rotation;
+    }
+
     fn transformed_relaxed(&self) -> LegPositions {
         self.base_relaxed
             .transform(self.current_translation, self.current_rotation)
@@ -266,16 +279,7 @@ impl MotionControllerLoop {
             // only walk if standing
             if self.state == BodyState::Standing {
                 // shift transformation
-                let (new_translation, _moved) = self
-                    .current_translation
-                    .move_towards(&self.command.linear_translation, &MAX_TRANSLATION_STEP);
-                self.current_translation = new_translation;
-
-                let (new_rotation, _moved) = self
-                    .current_rotation
-                    .rotate_towards(&self.command.body_rotation, MAX_ROTATION_STEP);
-                self.current_rotation = new_rotation;
-
+                self.shift_transformation();
                 if self.command.move_command.should_move() || self.should_reset_legs() {
                     self.last_tripod.invert();
                     let target = step_with_relaxed_transformation(
@@ -291,6 +295,7 @@ impl MotionControllerLoop {
                         STEP_HEIGHT,
                         self.last_tripod,
                     ) {
+                        self.shift_transformation();
                         // transform pose to current tilt
                         let transformed_pose =
                             new_pose.transform(self.current_translation, self.current_rotation);
