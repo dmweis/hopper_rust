@@ -4,11 +4,11 @@ use lazy_static::lazy_static;
 use nalgebra::Point3;
 use std::fs;
 
-const LEG_HEIGHT: f32 = -0.09;
-const LEG_DISTANCE_LONGITUDAL: f32 = 0.15;
+const LEG_HEIGHT: f32 = -0.10;
+const LEG_DISTANCE_LONGITUDAL: f32 = 0.13;
 const MIDDLE_LEG_LONGITUDAL_OFFSET: f32 = 0.07;
 const LEG_DISTANCE_LATERAL: f32 = 0.18;
-const OFFSET_DISTANCE: f32 = 0.015;
+const OFFSET_DISTANCE: f32 = 0.017;
 const GROUND_LEG_HEIGHT: f32 = -0.03;
 
 lazy_static! {
