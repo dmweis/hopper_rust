@@ -409,6 +409,11 @@
 <span id="406">406</span>
 <span id="407">407</span>
 <span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stance</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;visualizer&quot;</span>)]</span>
@@ -641,6 +646,19 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="doccomment">/// shifts transformation towards desired pose</span>
+    <span class="kw">fn</span> <span class="ident">shift_transformation</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+        <span class="kw">let</span> (<span class="ident">new_translation</span>, <span class="ident">_moved</span>) <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">current_translation</span>
+            .<span class="ident">move_towards</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">command</span>.<span class="ident">linear_translation</span>, <span class="kw-2">&amp;</span><span class="ident">MAX_TRANSLATION_STEP</span>);
+        <span class="self">self</span>.<span class="ident">current_translation</span> <span class="op">=</span> <span class="ident">new_translation</span>;
+
+        <span class="kw">let</span> (<span class="ident">new_rotation</span>, <span class="ident">_moved</span>) <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">current_rotation</span>
+            .<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">command</span>.<span class="ident">body_rotation</span>, <span class="ident">MAX_ROTATION_STEP</span>);
+        <span class="self">self</span>.<span class="ident">current_rotation</span> <span class="op">=</span> <span class="ident">new_rotation</span>;
+    }
+
     <span class="kw">fn</span> <span class="ident">transformed_relaxed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LegPositions</span> {
         <span class="self">self</span>.<span class="ident">base_relaxed</span>
             .<span class="ident">transform</span>(<span class="self">self</span>.<span class="ident">current_translation</span>, <span class="self">self</span>.<span class="ident">current_rotation</span>)
@@ -678,16 +696,7 @@
             <span class="comment">// only walk if standing</span>
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BodyState</span>::<span class="ident">Standing</span> {
                 <span class="comment">// shift transformation</span>
-                <span class="kw">let</span> (<span class="ident">new_translation</span>, <span class="ident">_moved</span>) <span class="op">=</span> <span class="self">self</span>
-                    .<span class="ident">current_translation</span>
-                    .<span class="ident">move_towards</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">command</span>.<span class="ident">linear_translation</span>, <span class="kw-2">&amp;</span><span class="ident">MAX_TRANSLATION_STEP</span>);
-                <span class="self">self</span>.<span class="ident">current_translation</span> <span class="op">=</span> <span class="ident">new_translation</span>;
-
-                <span class="kw">let</span> (<span class="ident">new_rotation</span>, <span class="ident">_moved</span>) <span class="op">=</span> <span class="self">self</span>
-                    .<span class="ident">current_rotation</span>
-                    .<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">command</span>.<span class="ident">body_rotation</span>, <span class="ident">MAX_ROTATION_STEP</span>);
-                <span class="self">self</span>.<span class="ident">current_rotation</span> <span class="op">=</span> <span class="ident">new_rotation</span>;
-
+                <span class="self">self</span>.<span class="ident">shift_transformation</span>();
                 <span class="kw">if</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>.<span class="ident">should_move</span>() <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">should_reset_legs</span>() {
                     <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">invert</span>();
                     <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">step_with_relaxed_transformation</span>(
@@ -703,6 +712,7 @@
                         <span class="ident">STEP_HEIGHT</span>,
                         <span class="self">self</span>.<span class="ident">last_tripod</span>,
                     ) {
+                        <span class="self">self</span>.<span class="ident">shift_transformation</span>();
                         <span class="comment">// transform pose to current tilt</span>
                         <span class="kw">let</span> <span class="ident">transformed_pose</span> <span class="op">=</span>
                             <span class="ident">new_pose</span>.<span class="ident">transform</span>(<span class="self">self</span>.<span class="ident">current_translation</span>, <span class="self">self</span>.<span class="ident">current_rotation</span>);
