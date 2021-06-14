@@ -437,6 +437,8 @@
 <span id="434">434</span>
 <span id="435">435</span>
 <span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stance</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;visualizer&quot;</span>)]</span>
@@ -609,6 +611,7 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">stand_up</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">read_leg_positions</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">transition_direct</span>(<span class="kw-2">&amp;</span>[
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
             <span class="ident">stance</span>::<span class="ident">grounded_stance</span>(),
@@ -626,6 +629,7 @@
             .<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">transition_direct</span>(<span class="kw-2">&amp;</span>[<span class="ident">stance</span>::<span class="ident">relaxed_wide_stance</span>(), <span class="ident">stance</span>::<span class="ident">grounded_stance</span>()])
             .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">disable_motors</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">BodyState</span>::<span class="ident">Grounded</span>;
         <span class="prelude-val">Ok</span>(())
     }
