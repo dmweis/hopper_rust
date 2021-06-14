@@ -9,10 +9,12 @@ use crate::ik_controller::{
 };
 use crate::utilities::MpscChannelHelper;
 use anyhow::Result;
+use lazy_static::lazy_static;
 use log::*;
 use nalgebra::{UnitQuaternion, Vector3};
-use std::sync::mpsc;
+use prometheus::{labels, opts, register_gauge, Gauge};
 use std::time::Duration;
+use std::{sync::mpsc, time::Instant};
 use tokio::time;
 use tokio::{spawn, task::JoinHandle};
 use walking::*;
@@ -103,11 +105,21 @@ enum BlockingCommand {
     Terminate,
 }
 
+lazy_static! {
+    static ref VOLTAGE_GAUGE: Gauge = register_gauge!(opts!(
+        "hopper_legs_voltage",
+        "Mean rolling voltage of dynamixel motors",
+        labels! {"hi" => "bye",}
+    ))
+    .unwrap();
+}
+
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
 const MAX_MOVE: f32 = 0.001;
 const MAX_TRANSLATION_STEP: f32 = 0.005;
 const MAX_ROTATION_STEP: f32 = std::f32::consts::PI / 180.0;
 const STEP_HEIGHT: f32 = 0.03;
+const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(200);
 
 struct MotionControllerLoop {
     ik_controller: Box<dyn IkControllable>,
@@ -123,6 +135,7 @@ struct MotionControllerLoop {
     base_relaxed: LegPositions,
     lrl_reset: bool,
     rlr_reset: bool,
+    last_voltage_read: Instant,
 }
 
 impl MotionControllerLoop {
@@ -146,6 +159,7 @@ impl MotionControllerLoop {
             base_relaxed: stance::relaxed_stance().clone(),
             lrl_reset: false,
             rlr_reset: false,
+            last_voltage_read: Instant::now(),
         })
     }
 
@@ -274,6 +288,11 @@ impl MotionControllerLoop {
                     BodyState::Standing => self.stand_up().await?,
                     BodyState::Grounded => self.sit_down().await?,
                 }
+            }
+
+            if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
+                self.last_voltage_read = Instant::now();
+                VOLTAGE_GAUGE.set(self.ik_controller.read_mean_voltage().await? as f64);
             }
 
             // only walk if standing

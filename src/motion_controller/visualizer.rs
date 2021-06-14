@@ -89,7 +89,7 @@ impl BodyController for HopperVisualizer {
     }
 
     async fn read_mean_voltage(&mut self) -> Result<f32> {
-        unimplemented!("shouldn't be called on a mock");
+        Ok(12.0)
     }
 }
 
