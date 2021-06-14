@@ -292,7 +292,11 @@ impl MotionControllerLoop {
 
             if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
                 self.last_voltage_read = Instant::now();
-                VOLTAGE_GAUGE.set(self.ik_controller.read_mean_voltage().await? as f64);
+                if let Ok(voltage) = self.ik_controller.read_mean_voltage().await {
+                    VOLTAGE_GAUGE.set(voltage as f64);
+                } else {
+                    error!("Failed to read voltage");
+                }
             }
 
             // only walk if standing
