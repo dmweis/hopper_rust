@@ -97,6 +97,8 @@
 <span id="94">94</span>
 <span id="95">95</span>
 <span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
@@ -121,7 +123,9 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// * `log_file` - Path to the optional file to log into</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">start_loggers</span>(<span class="ident">log_file</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">verbosity_level</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ConfigBuilder</span>::<span class="ident">new</span>().<span class="ident">add_filter_ignore_str</span>(<span class="string">&quot;gilrs&quot;</span>).<span class="ident">build</span>();
+    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ConfigBuilder</span>::<span class="ident">new</span>()
+        .<span class="ident">add_filter_allow_str</span>(<span class="string">&quot;hopper_rust&quot;</span>)
+        .<span class="ident">build</span>();
     <span class="kw">let</span> <span class="ident">filter</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">verbosity_level</span> {
         <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LevelFilter</span>::<span class="ident">Warn</span>,
         <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LevelFilter</span>::<span class="ident">Info</span>,
