@@ -26,7 +26,7 @@ struct Args {
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
     utilities::start_loggers(None, 1)?;
-    info!("Started main visualizer");
+    info!("Started remote controller");
 
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     socket.connect(args.target)?;
