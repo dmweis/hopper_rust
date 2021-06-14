@@ -169,6 +169,7 @@ impl MotionControllerLoop {
     }
 
     async fn stand_up(&mut self) -> Result<()> {
+        self.last_written_pose = self.ik_controller.read_leg_positions().await?;
         self.transition_direct(&[
             &self.last_written_pose.clone(),
             stance::grounded_stance(),
@@ -186,6 +187,7 @@ impl MotionControllerLoop {
             .await?;
         self.transition_direct(&[stance::relaxed_wide_stance(), stance::grounded_stance()])
             .await?;
+        self.ik_controller.disable_motors().await?;
         self.state = BodyState::Grounded;
         Ok(())
     }
