@@ -433,6 +433,10 @@
 <span id="430">430</span>
 <span id="431">431</span>
 <span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stance</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;visualizer&quot;</span>)]</span>
@@ -728,7 +732,11 @@
 
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">last_voltage_read</span>.<span class="ident">elapsed</span>() <span class="op">&gt;</span> <span class="ident">VOLTAGE_READ_PERIOD</span> {
                 <span class="self">self</span>.<span class="ident">last_voltage_read</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
-                <span class="ident">VOLTAGE_GAUGE</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">read_mean_voltage</span>().<span class="kw">await</span><span class="question-mark">?</span> <span class="kw">as</span> <span class="ident">f64</span>);
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">voltage</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">read_mean_voltage</span>().<span class="kw">await</span> {
+                    <span class="ident">VOLTAGE_GAUGE</span>.<span class="ident">set</span>(<span class="ident">voltage</span> <span class="kw">as</span> <span class="ident">f64</span>);
+                } <span class="kw">else</span> {
+                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Failed to read voltage&quot;</span>);
+                }
             }
 
             <span class="comment">// only walk if standing</span>
