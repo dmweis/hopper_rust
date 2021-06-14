@@ -136,7 +136,7 @@ impl LegVisualizer {
     fn new(window: &mut Window) -> Self {
         const FOOT_SPHERE_SIZE: f32 = 0.01;
         let mut root = window.add_group();
-        root.set_local_translation(Vector3::new(0., 0., 0.1).yzx().into());
+        root.set_local_translation(Vector3::new(0., 0., 0.15).yzx().into());
         let mut body = root.add_cube(0.05, 0.05, 0.15);
         body.set_color(1.0, 0.0, 0.0);
         let mut left_front = root.add_sphere(FOOT_SPHERE_SIZE);
@@ -181,35 +181,36 @@ impl LegVisualizer {
     fn draw_tripod_lines(&self, leg_positions: &LegPositions, window: &mut Window) {
         let purple = Point3::new(1.0, 0.5, 1.0);
         let greenish = Point3::new(0.0, 0.5, 0.5);
+        let translation = Vector3::new(0., 0., 0.15).yzx();
         window.draw_line(
-            &(leg_positions.left_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
-            &(leg_positions.right_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.left_front().yzx() + translation),
+            &(leg_positions.right_middle().yzx() + translation),
             &purple,
         );
         window.draw_line(
-            &(leg_positions.left_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
-            &(leg_positions.right_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.left_rear().yzx() + translation),
+            &(leg_positions.right_middle().yzx() + translation),
             &purple,
         );
         window.draw_line(
-            &(leg_positions.left_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
-            &(leg_positions.left_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.left_front().yzx() + translation),
+            &(leg_positions.left_rear().yzx() + translation),
             &purple,
         );
 
         window.draw_line(
-            &(leg_positions.right_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
-            &(leg_positions.left_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.right_front().yzx() + translation),
+            &(leg_positions.left_middle().yzx() + translation),
             &greenish,
         );
         window.draw_line(
-            &(leg_positions.right_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
-            &(leg_positions.left_middle().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.right_rear().yzx() + translation),
+            &(leg_positions.left_middle().yzx() + translation),
             &greenish,
         );
         window.draw_line(
-            &(leg_positions.right_front().yzx() + Vector3::new(0., 0., 0.1).yzx()),
-            &(leg_positions.right_rear().yzx() + Vector3::new(0., 0., 0.1).yzx()),
+            &(leg_positions.right_front().yzx() + translation),
+            &(leg_positions.right_rear().yzx() + translation),
             &greenish,
         );
     }
