@@ -222,6 +222,7 @@ pub(crate) struct TimedStepIterator {
     target: LegPositions,
     period: Duration,
     step_height: f32,
+    grounded_leg_descent: f32,
     tripod: Tripod,
     start_time: Instant,
 }
@@ -232,6 +233,7 @@ impl TimedStepIterator {
         target: LegPositions,
         period: Duration,
         step_height: f32,
+        grounded_leg_descent: f32,
         tripod: Tripod,
     ) -> Self {
         Self {
@@ -240,6 +242,7 @@ impl TimedStepIterator {
             target,
             period,
             step_height,
+            grounded_leg_descent,
             tripod,
             start_time: Instant::now(),
         }
@@ -283,22 +286,25 @@ impl Iterator for TimedStepIterator {
                     progress,
                 );
                 // grounded
-                let (right_front, rf_moved) = step_grounded_leg(
+                let (right_front, rf_moved) = step_lifted_leg(
                     self.start.right_front(),
                     self.last.right_front(),
                     self.target.right_front(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (left_middle, lm_moved) = step_grounded_leg(
+                let (left_middle, lm_moved) = step_lifted_leg(
                     self.start.left_middle(),
                     self.last.left_middle(),
                     self.target.left_middle(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (right_rear, rr_moved) = step_grounded_leg(
+                let (right_rear, rr_moved) = step_lifted_leg(
                     self.start.right_rear(),
                     self.last.right_rear(),
                     self.target.right_rear(),
+                    self.grounded_leg_descent,
                     progress,
                 );
                 let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
@@ -314,22 +320,25 @@ impl Iterator for TimedStepIterator {
             }
             Tripod::RLR => {
                 // grounded
-                let (left_front, lf_moved) = step_grounded_leg(
+                let (left_front, lf_moved) = step_lifted_leg(
                     self.start.left_front(),
                     self.last.left_front(),
                     self.target.left_front(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (right_middle, rm_moved) = step_grounded_leg(
+                let (right_middle, rm_moved) = step_lifted_leg(
                     self.start.right_middle(),
                     self.last.right_middle(),
                     self.target.right_middle(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (left_rear, lr_moved) = step_grounded_leg(
+                let (left_rear, lr_moved) = step_lifted_leg(
                     self.start.left_rear(),
                     self.last.left_rear(),
                     self.target.left_rear(),
+                    self.grounded_leg_descent,
                     progress,
                 );
                 // lifted
@@ -845,5 +854,23 @@ mod tests {
         assert!(move_command.should_move());
         let move_command = MoveCommand::new(Vector2::new(0.0, 0.1), 0.0);
         assert!(move_command.should_move());
+    }
+
+    #[test]
+    fn grounded_and_zero_lifte_step_are_same() {
+        let start = Point3::new(0.0, 0.0, 0.0);
+        let target = Point3::new(1.0, 0.0, 0.0);
+        #[allow(clippy::clone_on_copy)]
+        let mut last_written = start.clone();
+        for progress in 0..=100 {
+            let (grounded_position, grounded_moved) =
+                step_grounded_leg(&start, &last_written, &target, progress as f32 * 0.01);
+            let (lifted_position, lifted_moved) =
+                step_lifted_leg(&start, &last_written, &target, 0.0, progress as f32 * 0.01);
+            assert_relative_eq!(grounded_position, lifted_position);
+            assert_eq!(grounded_moved, lifted_moved);
+            last_written = grounded_position;
+        }
+        assert_relative_eq!(last_written, target);
     }
 }

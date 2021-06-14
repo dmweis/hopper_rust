@@ -119,6 +119,7 @@ const MAX_MOVE: f32 = 0.001;
 const MAX_TRANSLATION_STEP: f32 = 0.005;
 const MAX_ROTATION_STEP: f32 = std::f32::consts::PI / 180.0;
 const STEP_HEIGHT: f32 = 0.03;
+const GROUNDED_STEP_HEIGHT: f32 = -0.0;
 const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(200);
 
 struct MotionControllerLoop {
@@ -318,6 +319,7 @@ impl MotionControllerLoop {
                         target.clone(),
                         self.move_duration,
                         STEP_HEIGHT,
+                        GROUNDED_STEP_HEIGHT,
                         self.last_tripod,
                     ) {
                         self.shift_transformation();
