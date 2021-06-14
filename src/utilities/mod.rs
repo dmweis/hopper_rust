@@ -21,7 +21,9 @@ use warp::Filter;
 ///
 /// * `log_file` - Path to the optional file to log into
 pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> Result<()> {
-    let config = ConfigBuilder::new().add_filter_ignore_str("gilrs").build();
+    let config = ConfigBuilder::new()
+        .add_filter_allow_str("hopper_rust")
+        .build();
     let filter = match verbosity_level {
         0 => LevelFilter::Warn,
         1 => LevelFilter::Info,
