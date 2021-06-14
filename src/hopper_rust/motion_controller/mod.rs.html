@@ -414,6 +414,25 @@
 <span id="411">411</span>
 <span id="412">412</span>
 <span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stance</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;visualizer&quot;</span>)]</span>
@@ -426,10 +445,12 @@
 };
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utilities</span>::<span class="ident">MpscChannelHelper</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
+<span class="kw">use</span> <span class="ident">lazy_static</span>::<span class="ident">lazy_static</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">UnitQuaternion</span>, <span class="ident">Vector3</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">mpsc</span>;
+<span class="kw">use</span> <span class="ident">prometheus</span>::{<span class="ident">labels</span>, <span class="ident">opts</span>, <span class="ident">register_gauge</span>, <span class="ident">Gauge</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Duration</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::<span class="ident">mpsc</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">time</span>;
 <span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">spawn</span>, <span class="ident">task</span>::<span class="ident">JoinHandle</span>};
 <span class="kw">use</span> <span class="ident">walking</span>::<span class="kw-2">*</span>;
@@ -520,11 +541,21 @@
     <span class="ident">Terminate</span>,
 }
 
+<span class="macro">lazy_static</span><span class="macro">!</span> {
+    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">VOLTAGE_GAUGE</span>: <span class="ident">Gauge</span> <span class="op">=</span> <span class="macro">register_gauge</span><span class="macro">!</span>(<span class="macro">opts</span><span class="macro">!</span>(
+        <span class="string">&quot;hopper_legs_voltage&quot;</span>,
+        <span class="string">&quot;Mean rolling voltage of dynamixel motors&quot;</span>,
+        <span class="macro">labels</span><span class="macro">!</span> {<span class="string">&quot;hi&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;bye&quot;</span>,}
+    ))
+    .<span class="ident">unwrap</span>();
+}
+
 <span class="kw">const</span> <span class="ident">TICK_DURATION</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">1000</span> <span class="op">/</span> <span class="number">50</span>);
 <span class="kw">const</span> <span class="ident">MAX_MOVE</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.001</span>;
 <span class="kw">const</span> <span class="ident">MAX_TRANSLATION_STEP</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.005</span>;
 <span class="kw">const</span> <span class="ident">MAX_ROTATION_STEP</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">/</span> <span class="number">180.0</span>;
 <span class="kw">const</span> <span class="ident">STEP_HEIGHT</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.03</span>;
+<span class="kw">const</span> <span class="ident">VOLTAGE_READ_PERIOD</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">200</span>);
 
 <span class="kw">struct</span> <span class="ident">MotionControllerLoop</span> {
     <span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">IkControllable</span><span class="op">&gt;</span>,
@@ -540,6 +571,7 @@
     <span class="ident">base_relaxed</span>: <span class="ident">LegPositions</span>,
     <span class="ident">lrl_reset</span>: <span class="ident">bool</span>,
     <span class="ident">rlr_reset</span>: <span class="ident">bool</span>,
+    <span class="ident">last_voltage_read</span>: <span class="ident">Instant</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">MotionControllerLoop</span> {
@@ -563,6 +595,7 @@
             <span class="ident">base_relaxed</span>: <span class="ident">stance</span>::<span class="ident">relaxed_stance</span>().<span class="ident">clone</span>(),
             <span class="ident">lrl_reset</span>: <span class="bool-val">false</span>,
             <span class="ident">rlr_reset</span>: <span class="bool-val">false</span>,
+            <span class="ident">last_voltage_read</span>: <span class="ident">Instant</span>::<span class="ident">now</span>(),
         })
     }
 
@@ -691,6 +724,11 @@
                     <span class="ident">BodyState</span>::<span class="ident">Standing</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">stand_up</span>().<span class="kw">await</span><span class="question-mark">?</span>,
                     <span class="ident">BodyState</span>::<span class="ident">Grounded</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">sit_down</span>().<span class="kw">await</span><span class="question-mark">?</span>,
                 }
+            }
+
+            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">last_voltage_read</span>.<span class="ident">elapsed</span>() <span class="op">&gt;</span> <span class="ident">VOLTAGE_READ_PERIOD</span> {
+                <span class="self">self</span>.<span class="ident">last_voltage_read</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
+                <span class="ident">VOLTAGE_GAUGE</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">read_mean_voltage</span>().<span class="kw">await</span><span class="question-mark">?</span> <span class="kw">as</span> <span class="ident">f64</span>);
             }
 
             <span class="comment">// only walk if standing</span>
