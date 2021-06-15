@@ -65,6 +65,7 @@ pub(crate) struct StepIterator {
     target: LegPositions,
     max_move: f32,
     step_height: f32,
+    grounded_leg_descent: f32,
     tripod: Tripod,
 }
 
@@ -82,6 +83,7 @@ impl StepIterator {
             target,
             max_move,
             step_height,
+            grounded_leg_descent: 0.0,
             tripod,
         }
     }
@@ -123,22 +125,25 @@ impl Iterator for StepIterator {
                     progress,
                 );
                 // grounded
-                let (right_front, rf_moved) = step_grounded_leg(
+                let (right_front, rf_moved) = step_lifted_leg(
                     self.start.right_front(),
                     self.last.right_front(),
                     self.target.right_front(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (left_middle, lm_moved) = step_grounded_leg(
+                let (left_middle, lm_moved) = step_lifted_leg(
                     self.start.left_middle(),
                     self.last.left_middle(),
                     self.target.left_middle(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (right_rear, rr_moved) = step_grounded_leg(
+                let (right_rear, rr_moved) = step_lifted_leg(
                     self.start.right_rear(),
                     self.last.right_rear(),
                     self.target.right_rear(),
+                    self.grounded_leg_descent,
                     progress,
                 );
                 let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
@@ -154,22 +159,25 @@ impl Iterator for StepIterator {
             }
             Tripod::RLR => {
                 // grounded
-                let (left_front, lf_moved) = step_grounded_leg(
+                let (left_front, lf_moved) = step_lifted_leg(
                     self.start.left_front(),
                     self.last.left_front(),
                     self.target.left_front(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (right_middle, rm_moved) = step_grounded_leg(
+                let (right_middle, rm_moved) = step_lifted_leg(
                     self.start.right_middle(),
                     self.last.right_middle(),
                     self.target.right_middle(),
+                    self.grounded_leg_descent,
                     progress,
                 );
-                let (left_rear, lr_moved) = step_grounded_leg(
+                let (left_rear, lr_moved) = step_lifted_leg(
                     self.start.left_rear(),
                     self.last.left_rear(),
                     self.target.left_rear(),
+                    self.grounded_leg_descent,
                     progress,
                 );
                 // lifted
@@ -400,23 +408,6 @@ pub(crate) fn step_lifted_leg(
     let current_translation = start.xy() + full_ground_translation * progress;
     let height = (progress * f32::consts::PI).sin() * step_height + start.z;
     let new_position = Point3::new(current_translation.x, current_translation.y, height);
-    (new_position, true)
-}
-
-pub(crate) fn step_grounded_leg(
-    start: &Point3<f32>,
-    last_written: &Point3<f32>,
-    target: &Point3<f32>,
-    progress: f32,
-) -> (Point3<f32>, bool) {
-    if last_written == target {
-        return (*target, false);
-    }
-    if progress >= 1.0 {
-        return (*target, true);
-    }
-    let full_translation = target - start;
-    let new_position = start + full_translation * progress;
     (new_position, true)
 }
 
@@ -870,14 +861,19 @@ mod tests {
         #[allow(clippy::clone_on_copy)]
         let mut last_written = start.clone();
         for progress in 0..=100 {
-            let (grounded_position, grounded_moved) =
-                step_grounded_leg(&start, &last_written, &target, progress as f32 * 0.01);
             let (lifted_position, lifted_moved) =
                 step_lifted_leg(&start, &last_written, &target, 0.0, progress as f32 * 0.01);
-            assert_relative_eq!(grounded_position, lifted_position);
-            assert_eq!(grounded_moved, lifted_moved);
-            last_written = grounded_position;
+            let lerped = Point3::from(start.coords.lerp(&target.coords, progress as f32 * 0.01));
+            assert_relative_eq!(lifted_position, lerped);
+            assert!(lifted_moved);
+            last_written = lifted_position;
         }
+        // check that if we overstep progress result is clamped
+        let (lifted_position, lifted_moved) =
+            step_lifted_leg(&start, &last_written, &target, 0.0, 1.0 + 0.01);
+        assert_relative_eq!(lifted_position, target);
+        assert!(!lifted_moved);
+        // check that last result is correct
         assert_relative_eq!(last_written, target);
     }
 }
