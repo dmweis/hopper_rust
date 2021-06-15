@@ -837,6 +837,14 @@ mod tests {
     }
 
     #[test]
+    fn step_iterator_handles_zero_steps() {
+        let initial_pose = relaxed_stance().clone();
+        let target = initial_pose.clone();
+        let mut step_iterator = StepIterator::step(initial_pose, target, 1.0, 0.003, Tripod::LRL);
+        assert_eq!(step_iterator.next(), None);
+    }
+
+    #[test]
     fn move_command_should_not_move() {
         let move_command = MoveCommand::new(Vector2::new(0.0, 0.0), 0.0);
         assert!(!move_command.should_move());
