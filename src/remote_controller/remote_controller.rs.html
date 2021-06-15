@@ -88,6 +88,8 @@
 <span id="85">85</span>
 <span id="86">86</span>
 <span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
@@ -170,7 +172,9 @@
                     )
                 };
                 <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">command</span>);
-                <span class="ident">socket</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">to_json_bytes</span>()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+                <span class="kw">if</span> <span class="ident">socket</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">to_json_bytes</span>()<span class="question-mark">?</span>).<span class="ident">is_err</span>() {
+                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Failed to send datagram&quot;</span>);
+                }
             }
         }
         <span class="ident">sleep</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">20</span>));
