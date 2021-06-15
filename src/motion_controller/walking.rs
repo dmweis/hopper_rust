@@ -61,7 +61,7 @@ impl Tripod {
 
 pub(crate) struct StepIterator {
     start: LegPositions,
-    current: LegPositions,
+    last: LegPositions,
     target: LegPositions,
     max_move: f32,
     step_height: f32,
@@ -78,7 +78,7 @@ impl StepIterator {
     ) -> StepIterator {
         StepIterator {
             start: start.clone(),
-            current: start,
+            last: start,
             target,
             max_move,
             step_height,
@@ -92,9 +92,8 @@ impl Iterator for StepIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         let full_distance = max_horizontal_distance(&self.start, &self.target);
-        let current_distance = (max_horizontal_distance(&self.current, &self.start)
-            + self.max_move)
-            .min(full_distance);
+        let current_distance =
+            (max_horizontal_distance(&self.last, &self.start) + self.max_move).min(full_distance);
         let mut progress = current_distance / full_distance;
         if !progress.is_finite() {
             progress = 0.0;
@@ -104,21 +103,21 @@ impl Iterator for StepIterator {
                 // lifted
                 let (left_front, lf_moved) = step_lifted_leg(
                     self.start.left_front(),
-                    self.current.left_front(),
+                    self.last.left_front(),
                     self.target.left_front(),
                     self.step_height,
                     progress,
                 );
                 let (right_middle, rm_moved) = step_lifted_leg(
                     self.start.right_middle(),
-                    self.current.right_middle(),
+                    self.last.right_middle(),
                     self.target.right_middle(),
                     self.step_height,
                     progress,
                 );
                 let (left_rear, lr_moved) = step_lifted_leg(
                     self.start.left_rear(),
-                    self.current.left_rear(),
+                    self.last.left_rear(),
                     self.target.left_rear(),
                     self.step_height,
                     progress,
@@ -126,19 +125,19 @@ impl Iterator for StepIterator {
                 // grounded
                 let (right_front, rf_moved) = step_grounded_leg(
                     self.start.right_front(),
-                    self.current.right_front(),
+                    self.last.right_front(),
                     self.target.right_front(),
                     progress,
                 );
                 let (left_middle, lm_moved) = step_grounded_leg(
                     self.start.left_middle(),
-                    self.current.left_middle(),
+                    self.last.left_middle(),
                     self.target.left_middle(),
                     progress,
                 );
                 let (right_rear, rr_moved) = step_grounded_leg(
                     self.start.right_rear(),
-                    self.current.right_rear(),
+                    self.last.right_rear(),
                     self.target.right_rear(),
                     progress,
                 );
@@ -157,40 +156,40 @@ impl Iterator for StepIterator {
                 // grounded
                 let (left_front, lf_moved) = step_grounded_leg(
                     self.start.left_front(),
-                    self.current.left_front(),
+                    self.last.left_front(),
                     self.target.left_front(),
                     progress,
                 );
                 let (right_middle, rm_moved) = step_grounded_leg(
                     self.start.right_middle(),
-                    self.current.right_middle(),
+                    self.last.right_middle(),
                     self.target.right_middle(),
                     progress,
                 );
                 let (left_rear, lr_moved) = step_grounded_leg(
                     self.start.left_rear(),
-                    self.current.left_rear(),
+                    self.last.left_rear(),
                     self.target.left_rear(),
                     progress,
                 );
                 // lifted
                 let (right_front, rf_moved) = step_lifted_leg(
                     self.start.right_front(),
-                    self.current.right_front(),
+                    self.last.right_front(),
                     self.target.right_front(),
                     self.step_height,
                     progress,
                 );
                 let (left_middle, lm_moved) = step_lifted_leg(
                     self.start.left_middle(),
-                    self.current.left_middle(),
+                    self.last.left_middle(),
                     self.target.left_middle(),
                     self.step_height,
                     progress,
                 );
                 let (right_rear, rr_moved) = step_lifted_leg(
                     self.start.right_rear(),
-                    self.current.right_rear(),
+                    self.last.right_rear(),
                     self.target.right_rear(),
                     self.step_height,
                     progress,
@@ -208,8 +207,8 @@ impl Iterator for StepIterator {
             }
         };
         if moved {
-            self.current = positions;
-            Some(self.current.clone())
+            self.last = positions;
+            Some(self.last.clone())
         } else {
             None
         }
