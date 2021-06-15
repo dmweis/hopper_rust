@@ -884,7 +884,6 @@
 <span id="881">881</span>
 <span id="882">882</span>
 <span id="883">883</span>
-<span id="884">884</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hexapod</span>::<span class="ident">LegFlags</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::<span class="ident">leg_positions</span>::<span class="ident">LegPositions</span>;
@@ -949,7 +948,7 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">StepIterator</span> {
     <span class="ident">start</span>: <span class="ident">LegPositions</span>,
-    <span class="ident">current</span>: <span class="ident">LegPositions</span>,
+    <span class="ident">last</span>: <span class="ident">LegPositions</span>,
     <span class="ident">target</span>: <span class="ident">LegPositions</span>,
     <span class="ident">max_move</span>: <span class="ident">f32</span>,
     <span class="ident">step_height</span>: <span class="ident">f32</span>,
@@ -966,7 +965,7 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StepIterator</span> {
         <span class="ident">StepIterator</span> {
             <span class="ident">start</span>: <span class="ident">start</span>.<span class="ident">clone</span>(),
-            <span class="ident">current</span>: <span class="ident">start</span>,
+            <span class="ident">last</span>: <span class="ident">start</span>,
             <span class="ident">target</span>,
             <span class="ident">max_move</span>,
             <span class="ident">step_height</span>,
@@ -980,9 +979,8 @@
 
     <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">full_distance</span> <span class="op">=</span> <span class="ident">max_horizontal_distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">start</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">target</span>);
-        <span class="kw">let</span> <span class="ident">current_distance</span> <span class="op">=</span> (<span class="ident">max_horizontal_distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">current</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">start</span>)
-            <span class="op">+</span> <span class="self">self</span>.<span class="ident">max_move</span>)
-            .<span class="ident">min</span>(<span class="ident">full_distance</span>);
+        <span class="kw">let</span> <span class="ident">current_distance</span> <span class="op">=</span>
+            (<span class="ident">max_horizontal_distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">last</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">start</span>) <span class="op">+</span> <span class="self">self</span>.<span class="ident">max_move</span>).<span class="ident">min</span>(<span class="ident">full_distance</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">progress</span> <span class="op">=</span> <span class="ident">current_distance</span> <span class="op">/</span> <span class="ident">full_distance</span>;
         <span class="kw">if</span> <span class="op">!</span><span class="ident">progress</span>.<span class="ident">is_finite</span>() {
             <span class="ident">progress</span> <span class="op">=</span> <span class="number">0.0</span>;
@@ -992,21 +990,21 @@
                 <span class="comment">// lifted</span>
                 <span class="kw">let</span> (<span class="ident">left_front</span>, <span class="ident">lf_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_front</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">left_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_front</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_front</span>(),
                     <span class="self">self</span>.<span class="ident">step_height</span>,
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">right_middle</span>, <span class="ident">rm_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_middle</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">right_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_middle</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_middle</span>(),
                     <span class="self">self</span>.<span class="ident">step_height</span>,
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">left_rear</span>, <span class="ident">lr_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_rear</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">left_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_rear</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_rear</span>(),
                     <span class="self">self</span>.<span class="ident">step_height</span>,
                     <span class="ident">progress</span>,
@@ -1014,19 +1012,19 @@
                 <span class="comment">// grounded</span>
                 <span class="kw">let</span> (<span class="ident">right_front</span>, <span class="ident">rf_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_front</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">right_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_front</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_front</span>(),
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">left_middle</span>, <span class="ident">lm_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_middle</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">left_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_middle</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_middle</span>(),
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">right_rear</span>, <span class="ident">rr_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_rear</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">right_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_rear</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_rear</span>(),
                     <span class="ident">progress</span>,
                 );
@@ -1045,40 +1043,40 @@
                 <span class="comment">// grounded</span>
                 <span class="kw">let</span> (<span class="ident">left_front</span>, <span class="ident">lf_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_front</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">left_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_front</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_front</span>(),
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">right_middle</span>, <span class="ident">rm_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_middle</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">right_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_middle</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_middle</span>(),
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">left_rear</span>, <span class="ident">lr_moved</span>) <span class="op">=</span> <span class="ident">step_grounded_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_rear</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">left_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_rear</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_rear</span>(),
                     <span class="ident">progress</span>,
                 );
                 <span class="comment">// lifted</span>
                 <span class="kw">let</span> (<span class="ident">right_front</span>, <span class="ident">rf_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_front</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">right_front</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_front</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_front</span>(),
                     <span class="self">self</span>.<span class="ident">step_height</span>,
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">left_middle</span>, <span class="ident">lm_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">left_middle</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">left_middle</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">left_middle</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">left_middle</span>(),
                     <span class="self">self</span>.<span class="ident">step_height</span>,
                     <span class="ident">progress</span>,
                 );
                 <span class="kw">let</span> (<span class="ident">right_rear</span>, <span class="ident">rr_moved</span>) <span class="op">=</span> <span class="ident">step_lifted_leg</span>(
                     <span class="self">self</span>.<span class="ident">start</span>.<span class="ident">right_rear</span>(),
-                    <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">right_rear</span>(),
+                    <span class="self">self</span>.<span class="ident">last</span>.<span class="ident">right_rear</span>(),
                     <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">right_rear</span>(),
                     <span class="self">self</span>.<span class="ident">step_height</span>,
                     <span class="ident">progress</span>,
@@ -1096,8 +1094,8 @@
             }
         };
         <span class="kw">if</span> <span class="ident">moved</span> {
-            <span class="self">self</span>.<span class="ident">current</span> <span class="op">=</span> <span class="ident">positions</span>;
-            <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">current</span>.<span class="ident">clone</span>())
+            <span class="self">self</span>.<span class="ident">last</span> <span class="op">=</span> <span class="ident">positions</span>;
+            <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">last</span>.<span class="ident">clone</span>())
         } <span class="kw">else</span> {
             <span class="prelude-val">None</span>
         }
