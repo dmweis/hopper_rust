@@ -23,6 +23,9 @@ use warp::Filter;
 pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> Result<()> {
     let config = ConfigBuilder::new()
         .add_filter_allow_str("hopper_rust")
+        .add_filter_allow_str("remote_controller")
+        .add_filter_allow_str("visualizer")
+        .add_filter_allow_str("hopper")
         .build();
     let filter = match verbosity_level {
         0 => LevelFilter::Warn,
