@@ -100,120 +100,15 @@ impl Iterator for StepIterator {
         if !progress.is_finite() {
             progress = 0.0;
         }
-        let (positions, moved) = match self.tripod {
-            Tripod::LRL => {
-                // lifted
-                let (left_front, lf_moved) = step_lifted_leg(
-                    self.start.left_front(),
-                    self.last.left_front(),
-                    self.target.left_front(),
-                    self.step_height,
-                    progress,
-                );
-                let (right_middle, rm_moved) = step_lifted_leg(
-                    self.start.right_middle(),
-                    self.last.right_middle(),
-                    self.target.right_middle(),
-                    self.step_height,
-                    progress,
-                );
-                let (left_rear, lr_moved) = step_lifted_leg(
-                    self.start.left_rear(),
-                    self.last.left_rear(),
-                    self.target.left_rear(),
-                    self.step_height,
-                    progress,
-                );
-                // grounded
-                let (right_front, rf_moved) = step_lifted_leg(
-                    self.start.right_front(),
-                    self.last.right_front(),
-                    self.target.right_front(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (left_middle, lm_moved) = step_lifted_leg(
-                    self.start.left_middle(),
-                    self.last.left_middle(),
-                    self.target.left_middle(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (right_rear, rr_moved) = step_lifted_leg(
-                    self.start.right_rear(),
-                    self.last.right_rear(),
-                    self.target.right_rear(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
-                let positions = LegPositions::new(
-                    left_front,
-                    left_middle,
-                    left_rear,
-                    right_front,
-                    right_middle,
-                    right_rear,
-                );
-                (positions, moved)
-            }
-            Tripod::RLR => {
-                // grounded
-                let (left_front, lf_moved) = step_lifted_leg(
-                    self.start.left_front(),
-                    self.last.left_front(),
-                    self.target.left_front(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (right_middle, rm_moved) = step_lifted_leg(
-                    self.start.right_middle(),
-                    self.last.right_middle(),
-                    self.target.right_middle(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (left_rear, lr_moved) = step_lifted_leg(
-                    self.start.left_rear(),
-                    self.last.left_rear(),
-                    self.target.left_rear(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                // lifted
-                let (right_front, rf_moved) = step_lifted_leg(
-                    self.start.right_front(),
-                    self.last.right_front(),
-                    self.target.right_front(),
-                    self.step_height,
-                    progress,
-                );
-                let (left_middle, lm_moved) = step_lifted_leg(
-                    self.start.left_middle(),
-                    self.last.left_middle(),
-                    self.target.left_middle(),
-                    self.step_height,
-                    progress,
-                );
-                let (right_rear, rr_moved) = step_lifted_leg(
-                    self.start.right_rear(),
-                    self.last.right_rear(),
-                    self.target.right_rear(),
-                    self.step_height,
-                    progress,
-                );
-                let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
-                let positions = LegPositions::new(
-                    left_front,
-                    left_middle,
-                    left_rear,
-                    right_front,
-                    right_middle,
-                    right_rear,
-                );
-                (positions, moved)
-            }
-        };
+        let (positions, moved) = shift_legs(
+            &self.start,
+            &self.last,
+            &self.target,
+            self.step_height,
+            self.grounded_leg_descent,
+            self.tripod,
+            progress,
+        );
         if moved {
             self.last = positions;
             Some(self.last.clone())
@@ -268,125 +163,145 @@ impl Iterator for TimedStepIterator {
         if !progress.is_finite() {
             progress = 0.0;
         }
-        let (positions, moved) = match self.tripod {
-            Tripod::LRL => {
-                // lifted
-                let (left_front, lf_moved) = step_lifted_leg(
-                    self.start.left_front(),
-                    self.last.left_front(),
-                    self.target.left_front(),
-                    self.step_height,
-                    progress,
-                );
-                let (right_middle, rm_moved) = step_lifted_leg(
-                    self.start.right_middle(),
-                    self.last.right_middle(),
-                    self.target.right_middle(),
-                    self.step_height,
-                    progress,
-                );
-                let (left_rear, lr_moved) = step_lifted_leg(
-                    self.start.left_rear(),
-                    self.last.left_rear(),
-                    self.target.left_rear(),
-                    self.step_height,
-                    progress,
-                );
-                // grounded
-                let (right_front, rf_moved) = step_lifted_leg(
-                    self.start.right_front(),
-                    self.last.right_front(),
-                    self.target.right_front(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (left_middle, lm_moved) = step_lifted_leg(
-                    self.start.left_middle(),
-                    self.last.left_middle(),
-                    self.target.left_middle(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (right_rear, rr_moved) = step_lifted_leg(
-                    self.start.right_rear(),
-                    self.last.right_rear(),
-                    self.target.right_rear(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
-                let positions = LegPositions::new(
-                    left_front,
-                    left_middle,
-                    left_rear,
-                    right_front,
-                    right_middle,
-                    right_rear,
-                );
-                (positions, moved)
-            }
-            Tripod::RLR => {
-                // grounded
-                let (left_front, lf_moved) = step_lifted_leg(
-                    self.start.left_front(),
-                    self.last.left_front(),
-                    self.target.left_front(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (right_middle, rm_moved) = step_lifted_leg(
-                    self.start.right_middle(),
-                    self.last.right_middle(),
-                    self.target.right_middle(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                let (left_rear, lr_moved) = step_lifted_leg(
-                    self.start.left_rear(),
-                    self.last.left_rear(),
-                    self.target.left_rear(),
-                    self.grounded_leg_descent,
-                    progress,
-                );
-                // lifted
-                let (right_front, rf_moved) = step_lifted_leg(
-                    self.start.right_front(),
-                    self.last.right_front(),
-                    self.target.right_front(),
-                    self.step_height,
-                    progress,
-                );
-                let (left_middle, lm_moved) = step_lifted_leg(
-                    self.start.left_middle(),
-                    self.last.left_middle(),
-                    self.target.left_middle(),
-                    self.step_height,
-                    progress,
-                );
-                let (right_rear, rr_moved) = step_lifted_leg(
-                    self.start.right_rear(),
-                    self.last.right_rear(),
-                    self.target.right_rear(),
-                    self.step_height,
-                    progress,
-                );
-                let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
-                let positions = LegPositions::new(
-                    left_front,
-                    left_middle,
-                    left_rear,
-                    right_front,
-                    right_middle,
-                    right_rear,
-                );
-                (positions, moved)
-            }
-        };
+        let (positions, moved) = shift_legs(
+            &self.start,
+            &self.last,
+            &self.target,
+            self.step_height,
+            self.grounded_leg_descent,
+            self.tripod,
+            progress,
+        );
         if moved {
             self.last = positions;
             Some(self.last.clone())
         } else {
             None
+        }
+    }
+}
+
+fn shift_legs(
+    start: &LegPositions,
+    last: &LegPositions,
+    target: &LegPositions,
+    step_height: f32,
+    grounded_leg_descent: f32,
+    tripod: Tripod,
+    progress: f32,
+) -> (LegPositions, bool) {
+    match tripod {
+        Tripod::LRL => {
+            // lifted
+            let (left_front, lf_moved) = step_lifted_leg(
+                start.left_front(),
+                last.left_front(),
+                target.left_front(),
+                step_height,
+                progress,
+            );
+            let (right_middle, rm_moved) = step_lifted_leg(
+                start.right_middle(),
+                last.right_middle(),
+                target.right_middle(),
+                step_height,
+                progress,
+            );
+            let (left_rear, lr_moved) = step_lifted_leg(
+                start.left_rear(),
+                last.left_rear(),
+                target.left_rear(),
+                step_height,
+                progress,
+            );
+            // grounded
+            let (right_front, rf_moved) = step_lifted_leg(
+                start.right_front(),
+                last.right_front(),
+                target.right_front(),
+                grounded_leg_descent,
+                progress,
+            );
+            let (left_middle, lm_moved) = step_lifted_leg(
+                start.left_middle(),
+                last.left_middle(),
+                target.left_middle(),
+                grounded_leg_descent,
+                progress,
+            );
+            let (right_rear, rr_moved) = step_lifted_leg(
+                start.right_rear(),
+                last.right_rear(),
+                target.right_rear(),
+                grounded_leg_descent,
+                progress,
+            );
+            let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
+            let positions = LegPositions::new(
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            );
+            (positions, moved)
+        }
+        Tripod::RLR => {
+            // grounded
+            let (left_front, lf_moved) = step_lifted_leg(
+                start.left_front(),
+                last.left_front(),
+                target.left_front(),
+                grounded_leg_descent,
+                progress,
+            );
+            let (right_middle, rm_moved) = step_lifted_leg(
+                start.right_middle(),
+                last.right_middle(),
+                target.right_middle(),
+                grounded_leg_descent,
+                progress,
+            );
+            let (left_rear, lr_moved) = step_lifted_leg(
+                start.left_rear(),
+                last.left_rear(),
+                target.left_rear(),
+                grounded_leg_descent,
+                progress,
+            );
+            // lifted
+            let (right_front, rf_moved) = step_lifted_leg(
+                start.right_front(),
+                last.right_front(),
+                target.right_front(),
+                step_height,
+                progress,
+            );
+            let (left_middle, lm_moved) = step_lifted_leg(
+                start.left_middle(),
+                last.left_middle(),
+                target.left_middle(),
+                step_height,
+                progress,
+            );
+            let (right_rear, rr_moved) = step_lifted_leg(
+                start.right_rear(),
+                last.right_rear(),
+                target.right_rear(),
+                step_height,
+                progress,
+            );
+            let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
+            let positions = LegPositions::new(
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            );
+            (positions, moved)
         }
     }
 }
