@@ -79,7 +79,9 @@ async fn main() -> Result<()> {
                     )
                 };
                 trace!("{:?}", command);
-                socket.send(&command.to_json_bytes()?)?;
+                if socket.send(&command.to_json_bytes()?).is_err() {
+                    error!("Failed to send datagram");
+                }
             }
         }
         sleep(Duration::from_millis(20));
