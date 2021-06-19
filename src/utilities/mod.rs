@@ -85,11 +85,11 @@ pub fn start_prometheus_exporter(port: u16) -> Result<()> {
 }
 
 pub trait MpscChannelHelper<T> {
-    fn try_recv_optional(&mut self) -> std::result::Result<Option<T>, mpsc::TryRecvError>;
+    fn try_recv_optional(&self) -> std::result::Result<Option<T>, mpsc::TryRecvError>;
 }
 
 impl<T> MpscChannelHelper<T> for mpsc::Receiver<T> {
-    fn try_recv_optional(&mut self) -> std::result::Result<Option<T>, mpsc::TryRecvError> {
+    fn try_recv_optional(&self) -> std::result::Result<Option<T>, mpsc::TryRecvError> {
         match self.try_recv() {
             Ok(value) => Ok(Some(value)),
             Err(error) => match error {
