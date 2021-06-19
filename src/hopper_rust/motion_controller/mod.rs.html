@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/motion_controller/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../hopper_rust/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../hopper_rust/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -447,20 +447,20 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">visualizer</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">walking</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ik_controller</span>::{
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::ik_controller</span>::{
     <span class="ident">leg_positions</span>::{<span class="ident">LegPositions</span>, <span class="ident">MoveTowards</span>},
     <span class="ident">IkControllable</span>,
 };
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">utilities</span>::<span class="ident">MpscChannelHelper</span>;
-<span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
-<span class="kw">use</span> <span class="ident">lazy_static</span>::<span class="ident">lazy_static</span>;
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::utilities::MpscChannelHelper</span>;
+<span class="kw">use</span> <span class="ident">anyhow::Result</span>;
+<span class="kw">use</span> <span class="ident">lazy_static::lazy_static</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">UnitQuaternion</span>, <span class="ident">Vector3</span>};
 <span class="kw">use</span> <span class="ident">prometheus</span>::{<span class="ident">labels</span>, <span class="ident">opts</span>, <span class="ident">register_gauge</span>, <span class="ident">Gauge</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Duration</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::<span class="ident">mpsc</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
-<span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">time</span>;
-<span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">spawn</span>, <span class="ident">task</span>::<span class="ident">JoinHandle</span>};
+<span class="kw">use</span> <span class="ident">std::time::Duration</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync::mpsc</span>, <span class="ident">time::Instant</span>};
+<span class="kw">use</span> <span class="ident">tokio::time</span>;
+<span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">spawn</span>, <span class="ident">task::JoinHandle</span>};
 <span class="kw">use</span> <span class="ident">walking</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
@@ -471,26 +471,26 @@
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">BodyState</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">BodyState</span>::<span class="ident">Grounded</span>
+        <span class="ident">BodyState::Grounded</span>
     }
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MotionController</span> {
-    <span class="ident">command_sender</span>: <span class="ident">last_message_channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">MotionControllerCommand</span><span class="op">&gt;</span>,
-    <span class="ident">blocking_command_sender</span>: <span class="ident">mpsc</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">BlockingCommand</span><span class="op">&gt;</span>,
+    <span class="ident">command_sender</span>: <span class="ident">last_message_channel::Sender</span><span class="op">&lt;</span><span class="ident">MotionControllerCommand</span><span class="op">&gt;</span>,
+    <span class="ident">blocking_command_sender</span>: <span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">BlockingCommand</span><span class="op">&gt;</span>,
     <span class="ident">command</span>: <span class="ident">MotionControllerCommand</span>,
     <span class="ident">_handle</span>: <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">MotionController</span> {
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">IkControllable</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">command_sender</span>, <span class="ident">receiver</span>) <span class="op">=</span> <span class="ident">last_message_channel</span>::<span class="ident">latest_message_channel</span>();
-        <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">MotionControllerCommand</span>::<span class="ident">default</span>();
+        <span class="kw">let</span> (<span class="ident">command_sender</span>, <span class="ident">receiver</span>) <span class="op">=</span> <span class="ident">last_message_channel::latest_message_channel</span>();
+        <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">MotionControllerCommand::default</span>();
 
-        <span class="kw">let</span> (<span class="ident">blocking_command_sender</span>, <span class="ident">blocking_command_receiver</span>) <span class="op">=</span> <span class="ident">mpsc</span>::<span class="ident">channel</span>();
+        <span class="kw">let</span> (<span class="ident">blocking_command_sender</span>, <span class="ident">blocking_command_receiver</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>();
 
         <span class="kw">let</span> <span class="ident">motion_controller_loop</span> <span class="op">=</span>
-            <span class="ident">MotionControllerLoop</span>::<span class="ident">new</span>(<span class="ident">ik_controller</span>, <span class="ident">receiver</span>, <span class="ident">blocking_command_receiver</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">MotionControllerLoop::new</span>(<span class="ident">ik_controller</span>, <span class="ident">receiver</span>, <span class="ident">blocking_command_receiver</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">spawn</span>(<span class="ident">motion_controller_loop</span>.<span class="ident">run</span>());
         <span class="prelude-val">Ok</span>(<span class="ident">MotionController</span> {
             <span class="ident">command_sender</span>,
@@ -518,7 +518,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_transformation_euler</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">translation</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>, <span class="ident">rotation</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>) {
         <span class="self">self</span>.<span class="ident">set_transformation</span>(
             <span class="ident">translation</span>,
-            <span class="ident">UnitQuaternion</span>::<span class="ident">from_euler_angles</span>(<span class="ident">rotation</span>.<span class="ident">x</span>, <span class="ident">rotation</span>.<span class="ident">y</span>, <span class="ident">rotation</span>.<span class="ident">z</span>),
+            <span class="ident">UnitQuaternion::from_euler_angles</span>(<span class="ident">rotation</span>.<span class="ident">x</span>, <span class="ident">rotation</span>.<span class="ident">y</span>, <span class="ident">rotation</span>.<span class="ident">z</span>),
         )
     }
 
@@ -531,7 +531,7 @@
 <span class="kw">impl</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">MotionController</span> {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="ident">blocking_command_sender</span>
-            .<span class="ident">send</span>(<span class="ident">BlockingCommand</span>::<span class="ident">Terminate</span>)
+            .<span class="ident">send</span>(<span class="ident">BlockingCommand::Terminate</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;Failed to send termination command&quot;</span>);
     }
 }
@@ -549,27 +549,27 @@
     <span class="ident">Terminate</span>,
 }
 
-<span class="macro">lazy_static</span><span class="macro">!</span> {
-    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">VOLTAGE_GAUGE</span>: <span class="ident">Gauge</span> <span class="op">=</span> <span class="macro">register_gauge</span><span class="macro">!</span>(<span class="macro">opts</span><span class="macro">!</span>(
+<span class="macro">lazy_static!</span> {
+    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">VOLTAGE_GAUGE</span>: <span class="ident">Gauge</span> <span class="op">=</span> <span class="macro">register_gauge!</span>(<span class="macro">opts!</span>(
         <span class="string">&quot;hopper_legs_voltage&quot;</span>,
         <span class="string">&quot;Mean rolling voltage of dynamixel motors&quot;</span>,
-        <span class="macro">labels</span><span class="macro">!</span> {<span class="string">&quot;hi&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;bye&quot;</span>,}
+        <span class="macro">labels!</span> {<span class="string">&quot;hi&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;bye&quot;</span>,}
     ))
     .<span class="ident">unwrap</span>();
 }
 
-<span class="kw">const</span> <span class="ident">TICK_DURATION</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">1000</span> <span class="op">/</span> <span class="number">50</span>);
+<span class="kw">const</span> <span class="ident">TICK_DURATION</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration::from_millis</span>(<span class="number">1000</span> <span class="op">/</span> <span class="number">50</span>);
 <span class="kw">const</span> <span class="ident">MAX_MOVE</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.001</span>;
 <span class="kw">const</span> <span class="ident">MAX_TRANSLATION_STEP</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.005</span>;
-<span class="kw">const</span> <span class="ident">MAX_ROTATION_STEP</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">/</span> <span class="number">180.0</span>;
+<span class="kw">const</span> <span class="ident">MAX_ROTATION_STEP</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="ident">std::f32::consts::PI</span> <span class="op">/</span> <span class="number">180.0</span>;
 <span class="kw">const</span> <span class="ident">STEP_HEIGHT</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="number">0.03</span>;
 <span class="kw">const</span> <span class="ident">GROUNDED_STEP_HEIGHT</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="op">-</span><span class="number">0.0</span>;
-<span class="kw">const</span> <span class="ident">VOLTAGE_READ_PERIOD</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">200</span>);
+<span class="kw">const</span> <span class="ident">VOLTAGE_READ_PERIOD</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration::from_millis</span>(<span class="number">200</span>);
 
 <span class="kw">struct</span> <span class="ident">MotionControllerLoop</span> {
     <span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">IkControllable</span><span class="op">&gt;</span>,
-    <span class="ident">command_receiver</span>: <span class="ident">last_message_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">MotionControllerCommand</span><span class="op">&gt;</span>,
-    <span class="ident">blocking_command_receiver</span>: <span class="ident">mpsc</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">BlockingCommand</span><span class="op">&gt;</span>,
+    <span class="ident">command_receiver</span>: <span class="ident">last_message_channel::Receiver</span><span class="op">&lt;</span><span class="ident">MotionControllerCommand</span><span class="op">&gt;</span>,
+    <span class="ident">blocking_command_receiver</span>: <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">BlockingCommand</span><span class="op">&gt;</span>,
     <span class="ident">command</span>: <span class="ident">MotionControllerCommand</span>,
     <span class="ident">move_duration</span>: <span class="ident">Duration</span>,
     <span class="ident">state</span>: <span class="ident">BodyState</span>,
@@ -586,25 +586,25 @@
 <span class="kw">impl</span> <span class="ident">MotionControllerLoop</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="kw-2">mut</span> <span class="ident">ik_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">IkControllable</span><span class="op">&gt;</span>,
-        <span class="ident">command_receiver</span>: <span class="ident">last_message_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">MotionControllerCommand</span><span class="op">&gt;</span>,
-        <span class="ident">blocking_command_receiver</span>: <span class="ident">mpsc</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">BlockingCommand</span><span class="op">&gt;</span>,
+        <span class="ident">command_receiver</span>: <span class="ident">last_message_channel::Receiver</span><span class="op">&lt;</span><span class="ident">MotionControllerCommand</span><span class="op">&gt;</span>,
+        <span class="ident">blocking_command_receiver</span>: <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">BlockingCommand</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">last_written_pose</span> <span class="op">=</span> <span class="ident">ik_controller</span>.<span class="ident">read_leg_positions</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">ik_controller</span>,
             <span class="ident">command_receiver</span>,
             <span class="ident">blocking_command_receiver</span>,
-            <span class="ident">command</span>: <span class="ident">MotionControllerCommand</span>::<span class="ident">default</span>(),
-            <span class="ident">move_duration</span>: <span class="ident">Duration</span>::<span class="ident">from_secs_f32</span>(<span class="number">0.4</span>),
-            <span class="ident">state</span>: <span class="ident">BodyState</span>::<span class="ident">Grounded</span>,
-            <span class="ident">last_tripod</span>: <span class="ident">Tripod</span>::<span class="ident">LRL</span>,
+            <span class="ident">command</span>: <span class="ident">MotionControllerCommand::default</span>(),
+            <span class="ident">move_duration</span>: <span class="ident">Duration::from_secs_f32</span>(<span class="number">0.4</span>),
+            <span class="ident">state</span>: <span class="ident">BodyState::Grounded</span>,
+            <span class="ident">last_tripod</span>: <span class="ident">Tripod::LRL</span>,
             <span class="ident">last_written_pose</span>,
-            <span class="ident">current_rotation</span>: <span class="ident">UnitQuaternion</span>::<span class="ident">identity</span>(),
-            <span class="ident">current_translation</span>: <span class="ident">Vector3</span>::<span class="ident">zeros</span>(),
-            <span class="ident">base_relaxed</span>: <span class="ident">stance</span>::<span class="ident">relaxed_stance</span>().<span class="ident">clone</span>(),
+            <span class="ident">current_rotation</span>: <span class="ident">UnitQuaternion::identity</span>(),
+            <span class="ident">current_translation</span>: <span class="ident">Vector3::zeros</span>(),
+            <span class="ident">base_relaxed</span>: <span class="ident">stance::relaxed_stance</span>().<span class="ident">clone</span>(),
             <span class="ident">lrl_reset</span>: <span class="bool-val">false</span>,
             <span class="ident">rlr_reset</span>: <span class="bool-val">false</span>,
-            <span class="ident">last_voltage_read</span>: <span class="ident">Instant</span>::<span class="ident">now</span>(),
+            <span class="ident">last_voltage_read</span>: <span class="ident">Instant::now</span>(),
         })
     }
 
@@ -617,29 +617,29 @@
         <span class="self">self</span>.<span class="ident">last_written_pose</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">read_leg_positions</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">transition_direct</span>(<span class="kw-2">&amp;</span>[
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
-            <span class="ident">stance</span>::<span class="ident">grounded_stance</span>(),
-            <span class="ident">stance</span>::<span class="ident">relaxed_wide_stance</span>(),
+            <span class="ident">stance::grounded_stance</span>(),
+            <span class="ident">stance::relaxed_wide_stance</span>(),
         ])
         .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">transition_step</span>(<span class="kw-2">&amp;</span>[<span class="ident">stance</span>::<span class="ident">relaxed_wide_stance</span>(), <span class="ident">stance</span>::<span class="ident">relaxed_stance</span>()])
+        <span class="self">self</span>.<span class="ident">transition_step</span>(<span class="kw-2">&amp;</span>[<span class="ident">stance::relaxed_wide_stance</span>(), <span class="ident">stance::relaxed_stance</span>()])
             .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">BodyState</span>::<span class="ident">Standing</span>;
+        <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">BodyState::Standing</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sit_down</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">transition_step</span>(<span class="kw-2">&amp;</span>[<span class="ident">stance</span>::<span class="ident">relaxed_stance</span>(), <span class="ident">stance</span>::<span class="ident">relaxed_wide_stance</span>()])
+        <span class="self">self</span>.<span class="ident">transition_step</span>(<span class="kw-2">&amp;</span>[<span class="ident">stance::relaxed_stance</span>(), <span class="ident">stance::relaxed_wide_stance</span>()])
             .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">transition_direct</span>(<span class="kw-2">&amp;</span>[<span class="ident">stance</span>::<span class="ident">relaxed_wide_stance</span>(), <span class="ident">stance</span>::<span class="ident">grounded_stance</span>()])
+        <span class="self">self</span>.<span class="ident">transition_direct</span>(<span class="kw-2">&amp;</span>[<span class="ident">stance::relaxed_wide_stance</span>(), <span class="ident">stance::grounded_stance</span>()])
             .<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">disable_motors</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">BodyState</span>::<span class="ident">Grounded</span>;
+        <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">BodyState::Grounded</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="doccomment">/// Move over sequence of LegPositions using direct motions</span>
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transition_direct</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">states</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">LegPositions</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">interval</span>(<span class="ident">TICK_DURATION</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time::interval</span>(<span class="ident">TICK_DURATION</span>);
         <span class="kw">for</span> <span class="ident">pose</span> <span class="kw">in</span> <span class="ident">states</span> {
             <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">last_written_pose</span>.<span class="ident">to_move_towards_iter</span>(<span class="ident">pose</span>, <span class="ident">MAX_MOVE</span>) {
                 <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">move_to_positions</span>(<span class="kw-2">&amp;</span><span class="ident">new_pose</span>).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -654,13 +654,13 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Uses the last tripod to alternate steps</span>
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transition_step</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">states</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">LegPositions</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">interval</span>(<span class="ident">TICK_DURATION</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time::interval</span>(<span class="ident">TICK_DURATION</span>);
         <span class="kw">for</span> <span class="ident">pose</span> <span class="kw">in</span> <span class="ident">states</span> {
             <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">invert</span>();
             <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="self">self</span>
                 .<span class="ident">last_written_pose</span>
                 .<span class="ident">merge_with</span>(<span class="ident">pose</span>, <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">as_flag</span>());
-            <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">StepIterator</span>::<span class="ident">step</span>(
+            <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">StepIterator::step</span>(
                 <span class="self">self</span>.<span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
                 <span class="ident">target</span>.<span class="ident">clone</span>(),
                 <span class="ident">MAX_MOVE</span>,
@@ -675,7 +675,7 @@
             <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="self">self</span>
                 .<span class="ident">last_written_pose</span>
                 .<span class="ident">merge_with</span>(<span class="ident">pose</span>, <span class="self">self</span>.<span class="ident">last_tripod</span>.<span class="ident">as_flag</span>());
-            <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">StepIterator</span>::<span class="ident">step</span>(
+            <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">StepIterator::step</span>(
                 <span class="self">self</span>.<span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
                 <span class="ident">target</span>.<span class="ident">clone</span>(),
                 <span class="ident">MAX_MOVE</span>,
@@ -713,7 +713,7 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">control_loop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">interval</span>(<span class="ident">TICK_DURATION</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">time::interval</span>(<span class="ident">TICK_DURATION</span>);
 
         <span class="kw">loop</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">command</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">command_receiver</span>.<span class="ident">try_recv</span>().<span class="ident">unwrap</span>() {
@@ -723,8 +723,8 @@
                 <span class="self">self</span>.<span class="ident">blocking_command_receiver</span>.<span class="ident">try_recv_optional</span>().<span class="ident">unwrap</span>()
             {
                 <span class="kw">match</span> <span class="ident">blocking_command</span> {
-                    <span class="ident">BlockingCommand</span>::<span class="ident">Terminate</span> <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Exiting control loop&quot;</span>);
+                    <span class="ident">BlockingCommand::Terminate</span> <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">trace!</span>(<span class="string">&quot;Exiting control loop&quot;</span>);
                         <span class="kw">break</span>;
                     }
                 }
@@ -732,22 +732,22 @@
 
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">state</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">body_state</span> {
                 <span class="kw">match</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">body_state</span> {
-                    <span class="ident">BodyState</span>::<span class="ident">Standing</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">stand_up</span>().<span class="kw">await</span><span class="question-mark">?</span>,
-                    <span class="ident">BodyState</span>::<span class="ident">Grounded</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">sit_down</span>().<span class="kw">await</span><span class="question-mark">?</span>,
+                    <span class="ident">BodyState::Standing</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">stand_up</span>().<span class="kw">await</span><span class="question-mark">?</span>,
+                    <span class="ident">BodyState::Grounded</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">sit_down</span>().<span class="kw">await</span><span class="question-mark">?</span>,
                 }
             }
 
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">last_voltage_read</span>.<span class="ident">elapsed</span>() <span class="op">&gt;</span> <span class="ident">VOLTAGE_READ_PERIOD</span> {
-                <span class="self">self</span>.<span class="ident">last_voltage_read</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
+                <span class="self">self</span>.<span class="ident">last_voltage_read</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">voltage</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ik_controller</span>.<span class="ident">read_mean_voltage</span>().<span class="kw">await</span> {
                     <span class="ident">VOLTAGE_GAUGE</span>.<span class="ident">set</span>(<span class="ident">voltage</span> <span class="kw">as</span> <span class="ident">f64</span>);
                 } <span class="kw">else</span> {
-                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Failed to read voltage&quot;</span>);
+                    <span class="macro">error!</span>(<span class="string">&quot;Failed to read voltage&quot;</span>);
                 }
             }
 
             <span class="comment">// only walk if standing</span>
-            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BodyState</span>::<span class="ident">Standing</span> {
+            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BodyState::Standing</span> {
                 <span class="comment">// shift transformation</span>
                 <span class="self">self</span>.<span class="ident">shift_transformation</span>();
                 <span class="kw">if</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>.<span class="ident">should_move</span>() <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">should_reset_legs</span>() {
@@ -758,7 +758,7 @@
                         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">last_tripod</span>,
                         <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>,
                     );
-                    <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">TimedStepIterator</span>::<span class="ident">step</span>(
+                    <span class="kw">for</span> <span class="ident">new_pose</span> <span class="kw">in</span> <span class="ident">TimedStepIterator::step</span>(
                         <span class="self">self</span>.<span class="ident">last_written_pose</span>.<span class="ident">clone</span>(),
                         <span class="ident">target</span>.<span class="ident">clone</span>(),
                         <span class="self">self</span>.<span class="ident">move_duration</span>,
@@ -777,8 +777,8 @@
                         <span class="ident">interval</span>.<span class="ident">tick</span>().<span class="kw">await</span>;
                     }
                     <span class="kw">match</span> <span class="self">self</span>.<span class="ident">last_tripod</span> {
-                        <span class="ident">Tripod</span>::<span class="ident">LRL</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">lrl_reset</span> <span class="op">=</span> <span class="bool-val">true</span>,
-                        <span class="ident">Tripod</span>::<span class="ident">RLR</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">rlr_reset</span> <span class="op">=</span> <span class="bool-val">true</span>,
+                        <span class="ident">Tripod::LRL</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">lrl_reset</span> <span class="op">=</span> <span class="bool-val">true</span>,
+                        <span class="ident">Tripod::RLR</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">rlr_reset</span> <span class="op">=</span> <span class="bool-val">true</span>,
                     }
                     <span class="kw">if</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">move_command</span>.<span class="ident">should_move</span>() {
                         <span class="comment">// invalidate legs if moving</span>
@@ -805,7 +805,7 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">RotateTowards</span> {
     <span class="kw">type</span> <span class="ident">Item</span>;
 
-    <span class="kw">fn</span> <span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">max_rotation</span>: <span class="ident">f32</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>::<span class="ident">Item</span>, <span class="ident">bool</span>);
+    <span class="kw">fn</span> <span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">max_rotation</span>: <span class="ident">f32</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span><span class="ident">::Item</span>, <span class="ident">bool</span>);
 }
 
 <span class="kw">impl</span> <span class="ident">RotateTowards</span> <span class="kw">for</span> <span class="ident">UnitQuaternion</span><span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span> {
@@ -829,59 +829,59 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">approx</span>::<span class="ident">assert_relative_eq</span>;
+    <span class="kw">use</span> <span class="ident">approx::assert_relative_eq</span>;
 
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">rotate_towards_single_step</span>() {
-        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>::<span class="ident">identity</span>();
-        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="ident">from_euler_angles</span>(<span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
-        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">a</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>, <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">rotated</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">b</span>, <span class="ident">res</span>);
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span><span class="ident">::identity</span>();
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">UnitQuaternion::from_euler_angles</span>(<span class="ident">std::f32::consts::PI</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
+        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">a</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>, <span class="ident">std::f32::consts::PI</span>);
+        <span class="macro">assert!</span>(<span class="ident">rotated</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">b</span>, <span class="ident">res</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">rotate_towards_no_overshoot</span>() {
-        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>::<span class="ident">identity</span>();
-        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="ident">from_euler_angles</span>(<span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
-        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">a</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>, <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">*</span> <span class="number">2.0</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">rotated</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">b</span>, <span class="ident">res</span>);
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span><span class="ident">::identity</span>();
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">UnitQuaternion::from_euler_angles</span>(<span class="ident">std::f32::consts::PI</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);
+        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">a</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>, <span class="ident">std::f32::consts::PI</span> <span class="op">*</span> <span class="number">2.0</span>);
+        <span class="macro">assert!</span>(<span class="ident">rotated</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">b</span>, <span class="ident">res</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">rotate_towards_already_rotated</span>() {
-        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>::<span class="ident">identity</span>();
-        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">a</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">a</span>, <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">rotated</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">a</span>, <span class="ident">res</span>);
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span><span class="ident">::identity</span>();
+        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">a</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">a</span>, <span class="ident">std::f32::consts::PI</span>);
+        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">rotated</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">a</span>, <span class="ident">res</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">rotate_towards_half_hardcoded</span>() {
-        <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>::<span class="ident">identity</span>();
+        <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span><span class="ident">::identity</span>();
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span>
-            <span class="ident">UnitQuaternion</span>::<span class="ident">from_axis_angle</span>(<span class="kw-2">&amp;</span><span class="ident">Vector3</span>::<span class="ident">y_axis</span>(), <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">*</span> <span class="number">0.5</span>);
+            <span class="ident">UnitQuaternion::from_axis_angle</span>(<span class="kw-2">&amp;</span><span class="ident">Vector3::y_axis</span>(), <span class="ident">std::f32::consts::PI</span> <span class="op">*</span> <span class="number">0.5</span>);
         <span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span>
-            <span class="ident">UnitQuaternion</span>::<span class="ident">from_axis_angle</span>(<span class="kw-2">&amp;</span><span class="ident">Vector3</span>::<span class="ident">y_axis</span>(), <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">*</span> <span class="number">0.25</span>);
-        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">start</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">*</span> <span class="number">0.25</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">rotated</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">expected</span>, <span class="ident">res</span>);
+            <span class="ident">UnitQuaternion::from_axis_angle</span>(<span class="kw-2">&amp;</span><span class="ident">Vector3::y_axis</span>(), <span class="ident">std::f32::consts::PI</span> <span class="op">*</span> <span class="number">0.25</span>);
+        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">start</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="ident">std::f32::consts::PI</span> <span class="op">*</span> <span class="number">0.25</span>);
+        <span class="macro">assert!</span>(<span class="ident">rotated</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">expected</span>, <span class="ident">res</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">rotate_towards_half_with_nlerp</span>() {
-        <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>::<span class="ident">identity</span>();
+        <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">UnitQuaternion</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span><span class="ident">::identity</span>();
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span>
-            <span class="ident">UnitQuaternion</span>::<span class="ident">from_axis_angle</span>(<span class="kw-2">&amp;</span><span class="ident">Vector3</span>::<span class="ident">y_axis</span>(), <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">*</span> <span class="number">0.5</span>);
+            <span class="ident">UnitQuaternion::from_axis_angle</span>(<span class="kw-2">&amp;</span><span class="ident">Vector3::y_axis</span>(), <span class="ident">std::f32::consts::PI</span> <span class="op">*</span> <span class="number">0.5</span>);
         <span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">nlerp</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="number">0.5</span>);
-        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">start</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="ident">std</span>::<span class="ident">f32</span>::<span class="ident">consts</span>::<span class="ident">PI</span> <span class="op">*</span> <span class="number">0.25</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">rotated</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">expected</span>, <span class="ident">res</span>);
+        <span class="kw">let</span> (<span class="ident">res</span>, <span class="ident">rotated</span>) <span class="op">=</span> <span class="ident">start</span>.<span class="ident">rotate_towards</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="ident">std::f32::consts::PI</span> <span class="op">*</span> <span class="number">0.25</span>);
+        <span class="macro">assert!</span>(<span class="ident">rotated</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">expected</span>, <span class="ident">res</span>);
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="hopper_rust" data-search-js="../../../search-index.js"></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="hopper_rust" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
     <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

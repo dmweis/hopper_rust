@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/ik_controller/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../hopper_rust/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../hopper_rust/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -403,21 +403,21 @@
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">leg_positions</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">body_controller</span>::{
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::body_controller</span>::{
     <span class="ident">motor_positions</span>::{<span class="ident">BodyMotorPositions</span>, <span class="ident">LegMotorPositions</span>},
     <span class="ident">BodyController</span>,
 };
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">hopper_config</span>::{<span class="ident">HopperConfig</span>, <span class="ident">LegConfig</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::hopper_config</span>::{<span class="ident">HopperConfig</span>, <span class="ident">LegConfig</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="prelude-ty">Result</span>};
-<span class="kw">use</span> <span class="ident">async_trait</span>::<span class="ident">async_trait</span>;
-<span class="kw">use</span> <span class="ident">lazy_static</span>::<span class="ident">lazy_static</span>;
+<span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
+<span class="kw">use</span> <span class="ident">lazy_static::lazy_static</span>;
 <span class="kw">use</span> <span class="ident">leg_positions</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">nalgebra</span>::{<span class="ident">Point3</span>, <span class="ident">Vector3</span>};
 <span class="kw">use</span> <span class="ident">prometheus</span>::{<span class="ident">exponential_buckets</span>, <span class="ident">register_histogram_vec</span>, <span class="ident">HistogramVec</span>};
 
-<span class="macro">lazy_static</span><span class="macro">!</span> {
-    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">IK_CONTROLLER_TIMER</span>: <span class="ident">HistogramVec</span> <span class="op">=</span> <span class="macro">register_histogram_vec</span><span class="macro">!</span>(
+<span class="macro">lazy_static!</span> {
+    <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">IK_CONTROLLER_TIMER</span>: <span class="ident">HistogramVec</span> <span class="op">=</span> <span class="macro">register_histogram_vec!</span>(
         <span class="string">&quot;hopper_ik_controller_action_duration_seconds&quot;</span>,
         <span class="string">&quot;Duration of command send to dynamixel motors in seconds.&quot;</span>,
         <span class="kw-2">&amp;</span>[<span class="string">&quot;method&quot;</span>],
@@ -443,7 +443,7 @@
         <span class="ident">body_controller</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BodyController</span><span class="op">&gt;</span>,
         <span class="ident">body_configuration</span>: <span class="ident">HopperConfig</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">IkController</span> {
+        <span class="ident">Box::new</span>(<span class="ident">IkController</span> {
             <span class="ident">body_controller</span>,
             <span class="ident">body_configuration</span>,
         })
@@ -542,7 +542,7 @@
         <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
         <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_rear</span>(),
     )<span class="question-mark">?</span>;
-    <span class="prelude-val">Ok</span>(<span class="ident">BodyMotorPositions</span>::<span class="ident">new</span>(
+    <span class="prelude-val">Ok</span>(<span class="ident">BodyMotorPositions::new</span>(
         <span class="ident">left_front</span>,
         <span class="ident">left_middle</span>,
         <span class="ident">left_rear</span>,
@@ -586,7 +586,7 @@
         <span class="kw-2">&amp;</span><span class="ident">body_config</span>,
         <span class="kw-2">&amp;</span><span class="ident">body_config</span>.<span class="ident">legs</span>.<span class="ident">right_rear</span>(),
     );
-    <span class="ident">LegPositions</span>::<span class="ident">new</span>(
+    <span class="ident">LegPositions::new</span>(
         <span class="ident">left_front</span>,
         <span class="ident">left_middle</span>,
         <span class="ident">left_rear</span>,
@@ -622,11 +622,11 @@
     <span class="comment">// we have angles of the SSS triangle. now we need angle for the servos</span>
     <span class="kw">let</span> <span class="ident">ground_target_angle</span> <span class="op">=</span> <span class="ident">horizontal_distance</span>.<span class="ident">atan2</span>(<span class="op">-</span><span class="ident">relative_vector</span>.<span class="ident">z</span>);
     <span class="kw">if</span> <span class="ident">target_angle</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">target_angle</span> <span class="op">&lt;</span><span class="op">=</span> (<span class="op">-</span><span class="number">90_f32</span>).<span class="ident">to_radians</span>() {
-        <span class="macro">warn</span><span class="macro">!</span>(
+        <span class="macro">warn!</span>(
             <span class="string">&quot;Failed IK for leg: {} target: {}&quot;</span>,
             <span class="ident">leg_config</span>.<span class="ident">position</span>, <span class="kw-2">&amp;</span><span class="ident">target</span>
         );
-        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;sad math for {}&quot;</span>, <span class="ident">target_angle</span>));
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">&quot;sad math for {}&quot;</span>, <span class="ident">target_angle</span>));
     }
     <span class="kw">let</span> <span class="ident">femur_angle</span> <span class="op">=</span> <span class="ident">angle_by_femur</span> <span class="op">+</span> <span class="ident">ground_target_angle</span>;
     <span class="kw">let</span> <span class="ident">corrected_femur</span> <span class="op">=</span>
@@ -634,7 +634,7 @@
     <span class="kw">let</span> <span class="ident">corrected_tibia</span> <span class="op">=</span>
         (<span class="ident">leg_config</span>.<span class="ident">tibia_correction</span> <span class="op">+</span> <span class="ident">body_config</span>.<span class="ident">tibia_offset</span> <span class="op">+</span> <span class="ident">angle_by_tibia</span>).<span class="ident">abs</span>();
     <span class="kw">let</span> <span class="ident">corrected_coxa</span> <span class="op">=</span> <span class="number">150_f32</span>.<span class="ident">to_radians</span>() <span class="op">+</span> <span class="ident">target_angle</span>;
-    <span class="prelude-val">Ok</span>(<span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(
+    <span class="prelude-val">Ok</span>(<span class="ident">LegMotorPositions::new</span>(
         <span class="ident">corrected_coxa</span>,
         <span class="ident">corrected_femur</span>,
         <span class="ident">corrected_tibia</span>,
@@ -655,10 +655,10 @@
     <span class="kw">let</span> <span class="ident">coxa_angle</span> <span class="op">=</span> <span class="ident">motor_positions</span>.<span class="ident">coxa</span>() <span class="op">-</span> <span class="number">150_f32</span>.<span class="ident">to_radians</span>() <span class="op">-</span> <span class="ident">leg_config</span>.<span class="ident">angle_offset</span>;
     <span class="kw">let</span> <span class="ident">base_x</span> <span class="op">=</span> <span class="ident">coxa_angle</span>.<span class="ident">cos</span>();
     <span class="kw">let</span> <span class="ident">base_y</span> <span class="op">=</span> <span class="ident">coxa_angle</span>.<span class="ident">sin</span>();
-    <span class="kw">let</span> <span class="ident">coxa_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span>, <span class="ident">base_y</span>, <span class="number">0.0</span>) <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">coxa_length</span>;
+    <span class="kw">let</span> <span class="ident">coxa_vector</span> <span class="op">=</span> <span class="ident">Vector3::new</span>(<span class="ident">base_x</span>, <span class="ident">base_y</span>, <span class="number">0.0</span>) <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">coxa_length</span>;
     <span class="kw">let</span> <span class="ident">femur_x</span> <span class="op">=</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()).<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">femur_length</span>;
     <span class="kw">let</span> <span class="ident">femur_y</span> <span class="op">=</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()).<span class="ident">cos</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">femur_length</span>;
-    <span class="kw">let</span> <span class="ident">femur_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">femur_x</span>);
+    <span class="kw">let</span> <span class="ident">femur_vector</span> <span class="op">=</span> <span class="ident">Vector3::new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">femur_y</span>, <span class="ident">femur_x</span>);
     <span class="comment">// to calculate tibia we need angle between tibia and a vertical line</span>
     <span class="comment">// we get this by calculating the angles formed by a horizontal line from femur</span>
     <span class="comment">// femur and part of tibia by knowing that the sum of angles is 180</span>
@@ -667,7 +667,7 @@
         <span class="ident">tibia_angle</span> <span class="op">-</span> (<span class="number">90_f32</span>.<span class="ident">to_radians</span>() <span class="op">-</span> (<span class="ident">femur_angle</span> <span class="op">-</span> <span class="number">90_f32</span>.<span class="ident">to_radians</span>()));
     <span class="kw">let</span> <span class="ident">tibia_x</span> <span class="op">=</span> <span class="ident">angle_tibia_vector</span>.<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">tibia_length</span>;
     <span class="kw">let</span> <span class="ident">tibia_y</span> <span class="op">=</span> <span class="ident">angle_tibia_vector</span>.<span class="ident">cos</span>() <span class="op">*</span> <span class="ident">body_config</span>.<span class="ident">tibia_length</span>;
-    <span class="kw">let</span> <span class="ident">tibia_vector</span> <span class="op">=</span> <span class="ident">Vector3</span>::<span class="ident">new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="op">-</span><span class="ident">tibia_y</span>);
+    <span class="kw">let</span> <span class="ident">tibia_vector</span> <span class="op">=</span> <span class="ident">Vector3::new</span>(<span class="ident">base_x</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="ident">base_y</span> <span class="op">*</span> <span class="ident">tibia_x</span>, <span class="op">-</span><span class="ident">tibia_y</span>);
     <span class="kw">let</span> <span class="ident">coxa_position</span> <span class="op">=</span> <span class="ident">leg_config</span>.<span class="ident">position</span>;
     <span class="ident">coxa_position</span> <span class="op">+</span> <span class="ident">coxa_vector</span> <span class="op">+</span> <span class="ident">femur_vector</span> <span class="op">+</span> <span class="ident">tibia_vector</span>
 }
@@ -682,12 +682,12 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use</span> <span class="ident">approx</span>::<span class="ident">assert_relative_eq</span>;
+    <span class="kw">use</span> <span class="ident">approx::assert_relative_eq</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">get_angle_equilateral_triangle</span>() {
         <span class="kw">let</span> <span class="ident">angle</span> <span class="op">=</span> <span class="ident">get_alpha_angle</span>(<span class="kw-2">&amp;</span><span class="number">1.0</span>, <span class="kw-2">&amp;</span><span class="number">1.0</span>, <span class="kw-2">&amp;</span><span class="number">1.0</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="number">60_f32</span>.<span class="ident">to_radians</span>(), <span class="ident">angle</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="number">60_f32</span>.<span class="ident">to_radians</span>(), <span class="ident">angle</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -696,31 +696,31 @@
         <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="number">2_f32</span>;
         <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> (<span class="ident">b</span>.<span class="ident">powi</span>(<span class="number">2</span>) <span class="op">+</span> <span class="ident">c</span>.<span class="ident">powi</span>(<span class="number">2</span>)).<span class="ident">sqrt</span>();
         <span class="kw">let</span> <span class="ident">angle</span> <span class="op">=</span> <span class="ident">get_alpha_angle</span>(<span class="kw-2">&amp;</span><span class="ident">a</span>, <span class="kw-2">&amp;</span><span class="ident">b</span>, <span class="kw-2">&amp;</span><span class="ident">c</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="number">90_f32</span>.<span class="ident">to_radians</span>(), <span class="ident">angle</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="number">90_f32</span>.<span class="ident">to_radians</span>(), <span class="ident">angle</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">basic_ik_left_front</span>() {
-        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
+        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig::default</span>();
+        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
             <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>())
                 .<span class="ident">unwrap</span>();
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">coxa</span>().<span class="ident">to_degrees</span>(), <span class="number">113.28124</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">femur</span>().<span class="ident">to_degrees</span>(), <span class="number">112.15929</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">tibia</span>().<span class="ident">to_degrees</span>(), <span class="number">196.29994</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">motor_positions</span>.<span class="ident">coxa</span>().<span class="ident">to_degrees</span>(), <span class="number">113.28124</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">motor_positions</span>.<span class="ident">femur</span>().<span class="ident">to_degrees</span>(), <span class="number">112.15929</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">motor_positions</span>.<span class="ident">tibia</span>().<span class="ident">to_degrees</span>(), <span class="number">196.29994</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">basic_ik_right_front</span>() {
-        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
+        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig::default</span>();
+        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
             <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>())
                 .<span class="ident">unwrap</span>();
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">coxa</span>().<span class="ident">to_degrees</span>(), <span class="number">186.71875</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">femur</span>().<span class="ident">to_degrees</span>(), <span class="number">188.0706</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>.<span class="ident">tibia</span>().<span class="ident">to_degrees</span>(), <span class="number">103.929955</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">motor_positions</span>.<span class="ident">coxa</span>().<span class="ident">to_degrees</span>(), <span class="number">186.71875</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">motor_positions</span>.<span class="ident">femur</span>().<span class="ident">to_degrees</span>(), <span class="number">188.0706</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">motor_positions</span>.<span class="ident">tibia</span>().<span class="ident">to_degrees</span>(), <span class="number">103.929955</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -728,31 +728,31 @@
         <span class="comment">// This is a magic number test for hoppers standard resting position</span>
         <span class="comment">// if it fails it&#39;s a good indicator something went wrong</span>
         <span class="comment">// but not a good indicator of what went wrong</span>
-        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">pose</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.0</span>, <span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.0</span>, <span class="op">-</span><span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig::default</span>();
+        <span class="kw">let</span> <span class="ident">pose</span> <span class="op">=</span> <span class="ident">LegPositions::new</span>(
+            <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="number">0.0</span>, <span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="number">0.0</span>, <span class="op">-</span><span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
         );
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="ident">calculate_ik</span>(<span class="kw-2">&amp;</span><span class="ident">pose</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">expected_motor_positions</span> <span class="op">=</span> <span class="ident">BodyMotorPositions</span>::<span class="ident">new</span>(
-            <span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="number">1.9771307</span>, <span class="number">1.9575489</span>, <span class="number">3.4260802</span>),
-            <span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="number">2.6187901</span>, <span class="number">1.9678993</span>, <span class="number">3.3529518</span>),
-            <span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="number">3.2604494</span>, <span class="number">1.9575489</span>, <span class="number">3.4260802</span>),
-            <span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="number">3.258857</span>, <span class="number">3.2824512</span>, <span class="number">1.8139199</span>),
-            <span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="number">2.6171975</span>, <span class="number">3.2721004</span>, <span class="number">1.8870485</span>),
-            <span class="ident">LegMotorPositions</span>::<span class="ident">new</span>(<span class="number">1.9755381</span>, <span class="number">3.2824512</span>, <span class="number">1.8139199</span>),
+        <span class="kw">let</span> <span class="ident">expected_motor_positions</span> <span class="op">=</span> <span class="ident">BodyMotorPositions::new</span>(
+            <span class="ident">LegMotorPositions::new</span>(<span class="number">1.9771307</span>, <span class="number">1.9575489</span>, <span class="number">3.4260802</span>),
+            <span class="ident">LegMotorPositions::new</span>(<span class="number">2.6187901</span>, <span class="number">1.9678993</span>, <span class="number">3.3529518</span>),
+            <span class="ident">LegMotorPositions::new</span>(<span class="number">3.2604494</span>, <span class="number">1.9575489</span>, <span class="number">3.4260802</span>),
+            <span class="ident">LegMotorPositions::new</span>(<span class="number">3.258857</span>, <span class="number">3.2824512</span>, <span class="number">1.8139199</span>),
+            <span class="ident">LegMotorPositions::new</span>(<span class="number">2.6171975</span>, <span class="number">3.2721004</span>, <span class="number">1.8870485</span>),
+            <span class="ident">LegMotorPositions::new</span>(<span class="number">1.9755381</span>, <span class="number">3.2824512</span>, <span class="number">1.8139199</span>),
         );
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">motor_positions</span>, <span class="ident">expected_motor_positions</span>);
+        <span class="macro">assert_eq!</span>(<span class="ident">motor_positions</span>, <span class="ident">expected_motor_positions</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_fk_against_ik_left_front</span>() {
-        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
+        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig::default</span>();
+        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
             <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>())
                 .<span class="ident">unwrap</span>();
@@ -761,13 +761,13 @@
             <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
             <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">left_front</span>(),
         );
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">fk_calculated</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">fk_calculated</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_fk_against_ik_right_front</span>() {
-        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
+        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig::default</span>();
+        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>);
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span>
             <span class="ident">calculate_ik_for_leg</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>())
                 .<span class="ident">unwrap</span>();
@@ -776,30 +776,30 @@
             <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>,
             <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>.<span class="ident">legs</span>.<span class="ident">right_front</span>(),
         );
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">fk_calculated</span>);
+        <span class="macro">assert_relative_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">target</span>, <span class="kw-2">&amp;</span><span class="ident">fk_calculated</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_full_fk_against_ik</span>() {
-        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="ident">LegPositions</span>::<span class="ident">new</span>(
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.0</span>, <span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="number">0.0</span>, <span class="op">-</span><span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
-            <span class="ident">Point3</span>::<span class="ident">new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+        <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">HopperConfig::default</span>();
+        <span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="ident">LegPositions::new</span>(
+            <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="number">0.0</span>, <span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="number">0.0</span>, <span class="op">-</span><span class="number">0.22</span>, <span class="op">-</span><span class="number">0.09</span>),
+            <span class="ident">Point3::new</span>(<span class="op">-</span><span class="number">0.18</span>, <span class="op">-</span><span class="number">0.15</span>, <span class="op">-</span><span class="number">0.09</span>),
         );
         <span class="kw">let</span> <span class="ident">motor_positions</span> <span class="op">=</span> <span class="ident">calculate_ik</span>(<span class="kw-2">&amp;</span><span class="ident">origin</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">calculate_fk</span>(<span class="kw-2">&amp;</span><span class="ident">motor_positions</span>, <span class="kw-2">&amp;</span><span class="ident">hopper_config</span>);
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">origin</span>.<span class="ident">left_front</span>(), <span class="ident">result</span>.<span class="ident">left_front</span>());
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">origin</span>.<span class="ident">left_middle</span>(), <span class="ident">result</span>.<span class="ident">left_middle</span>());
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">origin</span>.<span class="ident">left_rear</span>(), <span class="ident">result</span>.<span class="ident">left_rear</span>());
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">origin</span>.<span class="ident">right_front</span>(), <span class="ident">result</span>.<span class="ident">right_front</span>());
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">origin</span>.<span class="ident">right_middle</span>(), <span class="ident">result</span>.<span class="ident">right_middle</span>());
-        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">origin</span>.<span class="ident">right_rear</span>(), <span class="ident">result</span>.<span class="ident">right_rear</span>());
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">origin</span>.<span class="ident">left_front</span>(), <span class="ident">result</span>.<span class="ident">left_front</span>());
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">origin</span>.<span class="ident">left_middle</span>(), <span class="ident">result</span>.<span class="ident">left_middle</span>());
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">origin</span>.<span class="ident">left_rear</span>(), <span class="ident">result</span>.<span class="ident">left_rear</span>());
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">origin</span>.<span class="ident">right_front</span>(), <span class="ident">result</span>.<span class="ident">right_front</span>());
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">origin</span>.<span class="ident">right_middle</span>(), <span class="ident">result</span>.<span class="ident">right_middle</span>());
+        <span class="macro">assert_relative_eq!</span>(<span class="ident">origin</span>.<span class="ident">right_rear</span>(), <span class="ident">result</span>.<span class="ident">right_rear</span>());
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="hopper_rust" data-search-js="../../../search-index.js"></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="hopper_rust" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
     <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>
