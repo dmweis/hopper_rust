@@ -69,6 +69,13 @@
 <span id="66">66</span>
 <span id="67">67</span>
 <span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow::Result</span>;
 <span class="kw">use</span> <span class="ident">clap::Clap</span>;
@@ -95,6 +102,9 @@
     <span class="doccomment">/// Serial port name of the dynamixel port</span>
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">long</span>)]</span>
     <span class="ident">dynamixel_port</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// hopper face serial port</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;/dev/hopper_face&quot;</span>)]</span>
+    <span class="ident">face_port</span>: <span class="ident">String</span>,
     <span class="doccomment">/// Sets the level of verbosity</span>
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">parse</span>(<span class="ident">from_occurrences</span>))]</span>
     <span class="ident">verbose</span>: <span class="ident">u8</span>,
@@ -109,6 +119,9 @@
     <span class="ident">utilities::start_loggers</span>(<span class="ident">args</span>.<span class="ident">log_path</span>, <span class="ident">args</span>.<span class="ident">verbose</span>)<span class="question-mark">?</span>;
     <span class="ident">utilities::start_prometheus_exporter</span>(<span class="ident">args</span>.<span class="ident">prometheus_port</span>)<span class="question-mark">?</span>;
     <span class="macro">info!</span>(<span class="string">&quot;Started main controller&quot;</span>);
+
+    <span class="kw">let</span> <span class="ident">face_controller</span> <span class="op">=</span> <span class="ident">hopper_face::FaceController::open</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>.<span class="ident">face_port</span>)<span class="question-mark">?</span>;
+    <span class="ident">face_controller</span>.<span class="ident">larson_scanner</span>(<span class="ident">hopper_face::driver::PURPLE</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">hopper_config</span> <span class="op">=</span> <span class="ident">args</span>
         .<span class="ident">body_config</span>
@@ -135,6 +148,7 @@
 
     <span class="ident">motion_controller</span>.<span class="ident">set_body_state</span>(<span class="ident">motion_controller::BodyState::Grounded</span>);
     <span class="ident">tokio::time::sleep</span>(<span class="ident">Duration::from_secs_f32</span>(<span class="number">2.0</span>)).<span class="kw">await</span>;
+    <span class="ident">drop</span>(<span class="ident">face_controller</span>);
     <span class="ident">drop</span>(<span class="ident">motion_controller</span>);
     <span class="prelude-val">Ok</span>(())
 }
