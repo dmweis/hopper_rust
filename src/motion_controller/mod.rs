@@ -295,10 +295,9 @@ impl MotionControllerLoop {
 
             if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
                 self.last_voltage_read = Instant::now();
-                if let Ok(voltage) = self.ik_controller.read_mean_voltage().await {
-                    VOLTAGE_GAUGE.set(voltage as f64);
-                } else {
-                    error!("Failed to read voltage");
+                match self.ik_controller.read_mean_voltage().await {
+                    Ok(voltage) => VOLTAGE_GAUGE.set(voltage as f64),
+                    Err(error) => error!("Failed to read voltage: {}", error),
                 }
             }
 
