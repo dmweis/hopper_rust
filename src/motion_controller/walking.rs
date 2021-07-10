@@ -321,7 +321,12 @@ pub(crate) fn step_lifted_leg(
     }
     let full_ground_translation = target.xy() - start.xy();
     let current_translation = start.xy() + full_ground_translation * progress;
-    let height = (progress * f32::consts::PI).sin() * step_height + start.z;
+    // raise leg immediately then lower using sine curve
+    let height = if progress < 0.5 {
+        step_height + start.z
+    } else {
+        (progress * f32::consts::PI).sin() * step_height + start.z
+    };
     let new_position = Point3::new(current_translation.x, current_translation.y, height);
     (new_position, true)
 }
