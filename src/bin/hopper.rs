@@ -23,6 +23,9 @@ struct Args {
     /// Serial port name of the dynamixel port
     #[clap(short, long)]
     dynamixel_port: String,
+    /// hopper face serial port
+    #[clap(long, default_value = "/dev/hopper_face")]
+    face_port: String,
     /// Sets the level of verbosity
     #[clap(short, parse(from_occurrences))]
     verbose: u8,
@@ -37,6 +40,9 @@ async fn main() -> Result<()> {
     utilities::start_loggers(args.log_path, args.verbose)?;
     utilities::start_prometheus_exporter(args.prometheus_port)?;
     info!("Started main controller");
+
+    let face_controller = hopper_face::FaceController::open(&args.face_port)?;
+    face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
 
     let hopper_config = args
         .body_config
@@ -63,6 +69,7 @@ async fn main() -> Result<()> {
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
     tokio::time::sleep(Duration::from_secs_f32(2.0)).await;
+    drop(face_controller);
     drop(motion_controller);
     Ok(())
 }

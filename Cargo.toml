@@ -23,6 +23,7 @@ visualizer = ["kiss3d", "gilrs"]
 
 [dependencies]
 dynamixel-driver = { branch = "main", git = "https://github.com/dmweis/dynamixel-driver" }
+hopper_face = { branch = "main", git = "https://github.com/dmweis/hopper_face" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 toml = "0.5.8"
