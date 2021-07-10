@@ -795,6 +795,11 @@
 <span id="792">792</span>
 <span id="793">793</span>
 <span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::hexapod::LegFlags</span>;
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::ik_controller::leg_positions::LegPositions</span>;
@@ -1119,7 +1124,12 @@
     }
     <span class="kw">let</span> <span class="ident">full_ground_translation</span> <span class="op">=</span> <span class="ident">target</span>.<span class="ident">xy</span>() <span class="op">-</span> <span class="ident">start</span>.<span class="ident">xy</span>();
     <span class="kw">let</span> <span class="ident">current_translation</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">xy</span>() <span class="op">+</span> <span class="ident">full_ground_translation</span> <span class="op">*</span> <span class="ident">progress</span>;
-    <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> (<span class="ident">progress</span> <span class="op">*</span> <span class="ident">f32::consts::PI</span>).<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">step_height</span> <span class="op">+</span> <span class="ident">start</span>.<span class="ident">z</span>;
+    <span class="comment">// raise leg immediately then lower using sine curve</span>
+    <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">progress</span> <span class="op">&lt;</span> <span class="number">0.5</span> {
+        <span class="ident">step_height</span> <span class="op">+</span> <span class="ident">start</span>.<span class="ident">z</span>
+    } <span class="kw">else</span> {
+        (<span class="ident">progress</span> <span class="op">*</span> <span class="ident">f32::consts::PI</span>).<span class="ident">sin</span>() <span class="op">*</span> <span class="ident">step_height</span> <span class="op">+</span> <span class="ident">start</span>.<span class="ident">z</span>
+    };
     <span class="kw">let</span> <span class="ident">new_position</span> <span class="op">=</span> <span class="ident">Point3::new</span>(<span class="ident">current_translation</span>.<span class="ident">x</span>, <span class="ident">current_translation</span>.<span class="ident">y</span>, <span class="ident">height</span>);
     (<span class="ident">new_position</span>, <span class="bool-val">true</span>)
 }
