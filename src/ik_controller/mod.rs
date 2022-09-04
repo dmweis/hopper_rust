@@ -41,8 +41,8 @@ impl BodyController for IkController {
         self.body_controller.move_motors_to(positions).await
     }
 
-    async fn set_compliance(&mut self, compliance: u8) -> Result<()> {
-        self.body_controller.set_compliance(compliance).await
+    async fn set_compliance_slope(&mut self, compliance: u8) -> Result<()> {
+        self.body_controller.set_compliance_slope(compliance).await
     }
 
     async fn set_speed(&mut self, speed: u16) -> Result<()> {

@@ -72,7 +72,7 @@ impl BodyController for HopperVisualizer {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn set_compliance(&mut self, _compliance: u8) -> Result<()> {
+    async fn set_compliance_slope(&mut self, _compliance: u8) -> Result<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 

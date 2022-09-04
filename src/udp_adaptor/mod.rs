@@ -51,7 +51,7 @@ pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Res
                     }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
-                        controller.set_compliance(compliance).await?;
+                        controller.set_compliance_slope(compliance).await?;
                     }
                     Command::SetTorque(torque) => {
                         trace!("Setting torque");
@@ -118,7 +118,7 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Result
                     }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
-                        controller.set_compliance(compliance).await?;
+                        controller.set_compliance_slope(compliance).await?;
                     }
                     Command::SetTorque(torque) => {
                         trace!("Setting torque");
