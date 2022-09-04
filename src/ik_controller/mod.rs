@@ -280,8 +280,7 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front())
-                .unwrap();
+            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front()).unwrap();
         assert_relative_eq!(motor_positions.coxa().to_degrees(), 113.28124);
         assert_relative_eq!(motor_positions.femur().to_degrees(), 112.15929);
         assert_relative_eq!(motor_positions.tibia().to_degrees(), 196.29994);
@@ -330,8 +329,7 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front())
-                .unwrap();
+            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front()).unwrap();
         let fk_calculated = calculate_fk_for_leg(
             &motor_positions,
             &hopper_config,
