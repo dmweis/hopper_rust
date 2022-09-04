@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Clap;
+use clap::Parser;
 use gilrs::Gilrs;
 use hopper_rust::{hopper_config, motion_controller, utilities};
 use log::*;
@@ -9,8 +9,8 @@ use std::path::Path;
 use std::{thread::sleep, time::Duration};
 
 /// Visualize Hopper
-#[derive(Clap)]
-#[clap(version = "0.0.2", author = "David Weis <dweis7@gmail.com>")]
+#[derive(Parser)]
+#[clap(author, version)]
 struct Args {
     /// Sets path to body config file (.yaml)
     /// If unset uses default value.

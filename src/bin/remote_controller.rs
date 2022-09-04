@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Clap;
+use clap::Parser;
 use gilrs::Gilrs;
 use hopper_rust::udp_adaptor::ControllerData;
 use hopper_rust::utilities;
@@ -8,8 +8,8 @@ use std::net::UdpSocket;
 use std::{thread::sleep, time::Duration};
 
 /// Visualize Hopper
-#[derive(Clap)]
-#[clap(version = "0.0.2", author = "David Weis <dweis7@gmail.com>")]
+#[derive(Parser)]
+#[clap(author, version)]
 struct Args {
     /// addr:port of target
     #[clap()]
