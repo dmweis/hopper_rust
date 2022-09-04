@@ -105,12 +105,17 @@ enum BlockingCommand {
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
 const MAX_MOVE: f32 = 0.001;
-const MAX_TRANSLATION_STEP: f32 = 0.005;
+const MAX_TRANSLATION_STEP: f32 = 0.004;
+// TODO(David): Decide on this setting or make it configurable
+// const MAX_TRANSLATION_STEP: f32 = 0.005;
 const MAX_ROTATION_STEP: f32 = std::f32::consts::PI / 180.0;
 const STEP_HEIGHT: f32 = 0.03;
 const GROUNDED_STEP_HEIGHT: f32 = -0.0;
 const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(200);
 const MOVE_DURATION: Duration = Duration::from_millis(400);
+// TODO(David): this results in smoother motion
+// Step time should probably be a function of time?
+// const MOVE_DURATION: Duration = Duration::from_millis(700);
 
 struct MotionControllerLoop {
     ik_controller: Box<dyn IkControllable>,
