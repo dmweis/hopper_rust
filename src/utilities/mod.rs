@@ -1,6 +1,5 @@
 use anyhow::Result;
 use log::*;
-use prometheus::{Encoder, TextEncoder};
 use simplelog::*;
 use std::{
     fs::OpenOptions,
@@ -48,39 +47,6 @@ pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> Result<()
     ));
     CombinedLogger::init(loggers)?;
     info!("Logging level set to {}", filter);
-    Ok(())
-}
-
-// example histogram
-// lazy_static! {
-//     static ref HISTOGRAM_TEST: HistogramVec = register_histogram_vec!(
-//         "example_histogram_test",
-//         "Some speedy latencies",
-//         &["handler"]
-//     )
-//     .unwrap();
-// }
-
-pub fn start_prometheus_exporter(port: u16) -> Result<()> {
-    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), port);
-    let prometheus_endpoint = warp::path("metrics").map(|| -> Box<dyn warp::reply::Reply> {
-        let metric_families = prometheus::gather();
-        let mut buffer = vec![];
-        let encoder = TextEncoder::new();
-        encoder
-            .encode(&metric_families, &mut buffer)
-            .expect("Failed to encode prometheus metrics");
-
-        Box::new(warp::reply::with_header(
-            buffer,
-            "Content-Type",
-            encoder.format_type(),
-        ))
-    });
-    info!("Starting prometheus exporter");
-    tokio::task::spawn(async move {
-        warp::serve(prometheus_endpoint).run(address).await;
-    });
     Ok(())
 }
 

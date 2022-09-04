@@ -3,20 +3,8 @@ use crate::hopper_config::{BodyConfig, LegConfig};
 use anyhow::Result;
 use async_trait::async_trait;
 use dynamixel_driver::*;
-use lazy_static::lazy_static;
 use log::*;
-use prometheus::{exponential_buckets, register_histogram_vec, HistogramVec};
 use std::collections::VecDeque;
-
-lazy_static! {
-    static ref BODY_CONTROLLER_TIMER: HistogramVec = register_histogram_vec!(
-        "hopper_body_controller_action_duration_seconds",
-        "Duration of command send to dynamixel motors in seconds.",
-        &["method"],
-        exponential_buckets(0.005, 2.0, 10).unwrap()
-    )
-    .unwrap();
-}
 
 #[async_trait]
 pub trait BodyController: Send + Sync {
@@ -50,18 +38,12 @@ impl AsyncBodyController {
 #[async_trait]
 impl BodyController for AsyncBodyController {
     async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> Result<()> {
-        let _timer = BODY_CONTROLLER_TIMER
-            .with_label_values(&["move_motors_to"])
-            .start_timer();
         let commands = create_commands_for_body(&self.body_config, positions);
         self.driver.sync_write_position_rad(commands).await?;
         Ok(())
     }
 
     async fn set_speed(&mut self, speed: u16) -> Result<()> {
-        let _timer = BODY_CONTROLLER_TIMER
-            .with_label_values(&["set_speed"])
-            .start_timer();
         let commands = self
             .body_config
             .get_ids()
@@ -73,9 +55,6 @@ impl BodyController for AsyncBodyController {
     }
 
     async fn set_compliance(&mut self, compliance: u8) -> Result<()> {
-        let _timer = BODY_CONTROLLER_TIMER
-            .with_label_values(&["set_compliance"])
-            .start_timer();
         let commands = self
             .body_config
             .get_ids()
@@ -87,9 +66,6 @@ impl BodyController for AsyncBodyController {
     }
 
     async fn set_torque(&mut self, torque: bool) -> Result<()> {
-        let _timer = BODY_CONTROLLER_TIMER
-            .with_label_values(&["set_torque"])
-            .start_timer();
         let commands = self
             .body_config
             .get_ids()
@@ -101,9 +77,6 @@ impl BodyController for AsyncBodyController {
     }
 
     async fn read_mean_voltage(&mut self) -> Result<f32> {
-        let _timer = BODY_CONTROLLER_TIMER
-            .with_label_values(&["read_mean_voltage"])
-            .start_timer();
         let ids = self.body_config.get_ids();
         // Load all on first call
         if self.last_voltages.is_empty() {
@@ -128,9 +101,6 @@ impl BodyController for AsyncBodyController {
     }
 
     async fn read_motor_positions(&mut self) -> Result<BodyMotorPositions> {
-        let _timer = BODY_CONTROLLER_TIMER
-            .with_label_values(&["read_motor_positions"])
-            .start_timer();
         async fn read_leg_positions(
             driver: &mut DynamixelDriver,
             leg_config: &LegConfig,

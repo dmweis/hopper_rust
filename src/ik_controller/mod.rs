@@ -7,21 +7,9 @@ use crate::body_controller::{
 use crate::hopper_config::{HopperConfig, LegConfig};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
-use lazy_static::lazy_static;
 use leg_positions::*;
 use log::*;
 use nalgebra::{Point3, Vector3};
-use prometheus::{exponential_buckets, register_histogram_vec, HistogramVec};
-
-lazy_static! {
-    static ref IK_CONTROLLER_TIMER: HistogramVec = register_histogram_vec!(
-        "hopper_ik_controller_action_duration_seconds",
-        "Duration of command send to dynamixel motors in seconds.",
-        &["method"],
-        exponential_buckets(0.005, 2.0, 10).unwrap()
-    )
-    .unwrap();
-}
 
 #[async_trait]
 pub trait IkControllable: BodyController {
@@ -77,9 +65,6 @@ impl BodyController for IkController {
 #[async_trait]
 impl IkControllable for IkController {
     async fn move_to_positions(&mut self, positions: &LegPositions) -> Result<()> {
-        let _timer = IK_CONTROLLER_TIMER
-            .with_label_values(&["move_to_positions"])
-            .start_timer();
         let motor_positions = calculate_ik(&positions, &self.body_configuration)?;
         self.body_controller
             .move_motors_to(&motor_positions)
@@ -88,18 +73,12 @@ impl IkControllable for IkController {
     }
 
     async fn read_leg_positions(&mut self) -> Result<LegPositions> {
-        let _timer = IK_CONTROLLER_TIMER
-            .with_label_values(&["read_leg_positions"])
-            .start_timer();
         let motor_positions = self.body_controller.read_motor_positions().await?;
         let leg_positions = calculate_fk(&motor_positions, &self.body_configuration);
         Ok(leg_positions)
     }
 
     async fn disable_motors(&mut self) -> Result<()> {
-        let _timer = IK_CONTROLLER_TIMER
-            .with_label_values(&["disable_motors"])
-            .start_timer();
         self.body_controller.set_torque(false).await?;
         Ok(())
     }

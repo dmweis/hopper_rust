@@ -12,7 +12,6 @@ use anyhow::Result;
 use lazy_static::lazy_static;
 use log::*;
 use nalgebra::{UnitQuaternion, Vector3};
-use prometheus::{labels, opts, register_gauge, Gauge};
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
 use tokio::time;
@@ -103,15 +102,6 @@ struct MotionControllerCommand {
 #[derive(Debug, Clone, Copy)]
 enum BlockingCommand {
     Terminate,
-}
-
-lazy_static! {
-    static ref VOLTAGE_GAUGE: Gauge = register_gauge!(opts!(
-        "hopper_legs_voltage",
-        "Mean rolling voltage of dynamixel motors",
-        labels! {"hi" => "bye",}
-    ))
-    .unwrap();
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
@@ -296,7 +286,10 @@ impl MotionControllerLoop {
             if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
                 self.last_voltage_read = Instant::now();
                 match self.ik_controller.read_mean_voltage().await {
-                    Ok(voltage) => VOLTAGE_GAUGE.set(voltage as f64),
+                    Ok(voltage) => {
+                        // TODO(David): Figure out a better way to propagate this
+                        debug!("Voltage is {}", voltage)
+                    }
                     Err(error) => error!("Failed to read voltage: {}", error),
                 }
             }
