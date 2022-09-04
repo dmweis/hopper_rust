@@ -65,7 +65,7 @@ impl BodyController for IkController {
 #[async_trait]
 impl IkControllable for IkController {
     async fn move_to_positions(&mut self, positions: &LegPositions) -> Result<()> {
-        let motor_positions = calculate_ik(&positions, &self.body_configuration)?;
+        let motor_positions = calculate_ik(positions, &self.body_configuration)?;
         self.body_controller
             .move_motors_to(&motor_positions)
             .await?;
@@ -89,34 +89,34 @@ pub(crate) fn calculate_ik(
     body_config: &HopperConfig,
 ) -> Result<BodyMotorPositions> {
     let left_front = calculate_ik_for_leg(
-        &positions.left_front(),
-        &body_config,
-        &body_config.legs.left_front(),
+        positions.left_front(),
+        body_config,
+        body_config.legs.left_front(),
     )?;
     let right_front = calculate_ik_for_leg(
-        &positions.right_front(),
-        &body_config,
-        &body_config.legs.right_front(),
+        positions.right_front(),
+        body_config,
+        body_config.legs.right_front(),
     )?;
     let left_middle = calculate_ik_for_leg(
-        &positions.left_middle(),
-        &body_config,
-        &body_config.legs.left_middle(),
+        positions.left_middle(),
+        body_config,
+        body_config.legs.left_middle(),
     )?;
     let right_middle = calculate_ik_for_leg(
-        &positions.right_middle(),
-        &body_config,
-        &body_config.legs.right_middle(),
+        positions.right_middle(),
+        body_config,
+        body_config.legs.right_middle(),
     )?;
     let left_rear = calculate_ik_for_leg(
-        &positions.left_rear(),
-        &body_config,
-        &body_config.legs.left_rear(),
+        positions.left_rear(),
+        body_config,
+        body_config.legs.left_rear(),
     )?;
     let right_rear = calculate_ik_for_leg(
-        &positions.right_rear(),
-        &body_config,
-        &body_config.legs.right_rear(),
+        positions.right_rear(),
+        body_config,
+        body_config.legs.right_rear(),
     )?;
     Ok(BodyMotorPositions::new(
         left_front,
@@ -133,34 +133,34 @@ pub(crate) fn calculate_fk(
     body_config: &HopperConfig,
 ) -> LegPositions {
     let left_front = calculate_fk_for_leg(
-        &motor_positions.left_front(),
-        &body_config,
-        &body_config.legs.left_front(),
+        motor_positions.left_front(),
+        body_config,
+        body_config.legs.left_front(),
     );
     let right_front = calculate_fk_for_leg(
-        &motor_positions.right_front(),
-        &body_config,
-        &body_config.legs.right_front(),
+        motor_positions.right_front(),
+        body_config,
+        body_config.legs.right_front(),
     );
     let left_middle = calculate_fk_for_leg(
-        &motor_positions.left_middle(),
-        &body_config,
-        &body_config.legs.left_middle(),
+        motor_positions.left_middle(),
+        body_config,
+        body_config.legs.left_middle(),
     );
     let right_middle = calculate_fk_for_leg(
-        &motor_positions.right_middle(),
-        &body_config,
-        &body_config.legs.right_middle(),
+        motor_positions.right_middle(),
+        body_config,
+        body_config.legs.right_middle(),
     );
     let left_rear = calculate_fk_for_leg(
-        &motor_positions.left_rear(),
-        &body_config,
-        &body_config.legs.left_rear(),
+        motor_positions.left_rear(),
+        body_config,
+        body_config.legs.left_rear(),
     );
     let right_rear = calculate_fk_for_leg(
-        &motor_positions.right_rear(),
-        &body_config,
-        &body_config.legs.right_rear(),
+        motor_positions.right_rear(),
+        body_config,
+        body_config.legs.right_rear(),
     );
     LegPositions::new(
         left_front,
@@ -280,7 +280,7 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.left_front())
+            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front())
                 .unwrap();
         assert_relative_eq!(motor_positions.coxa().to_degrees(), 113.28124);
         assert_relative_eq!(motor_positions.femur().to_degrees(), 112.15929);
@@ -292,7 +292,7 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, -0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.right_front())
+            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.right_front())
                 .unwrap();
         assert_relative_eq!(motor_positions.coxa().to_degrees(), 186.71875);
         assert_relative_eq!(motor_positions.femur().to_degrees(), 188.0706);
@@ -330,12 +330,12 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.left_front())
+            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front())
                 .unwrap();
         let fk_calculated = calculate_fk_for_leg(
             &motor_positions,
             &hopper_config,
-            &hopper_config.legs.left_front(),
+            hopper_config.legs.left_front(),
         );
         assert_relative_eq!(&target, &fk_calculated);
     }
@@ -345,12 +345,12 @@ mod tests {
         let hopper_config = HopperConfig::default();
         let target = Point3::new(0.18, -0.15, -0.09);
         let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, &hopper_config.legs.right_front())
+            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.right_front())
                 .unwrap();
         let fk_calculated = calculate_fk_for_leg(
             &motor_positions,
             &hopper_config,
-            &hopper_config.legs.right_front(),
+            hopper_config.legs.right_front(),
         );
         assert_relative_eq!(&target, &fk_calculated);
     }

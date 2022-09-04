@@ -111,16 +111,16 @@ impl BodyController for AsyncBodyController {
             Ok(LegMotorPositions::new(coxa, femur, tibia))
         }
         let left_front =
-            read_leg_positions(&mut self.driver, &self.body_config.left_front()).await?;
+            read_leg_positions(&mut self.driver, self.body_config.left_front()).await?;
         let left_middle =
-            read_leg_positions(&mut self.driver, &self.body_config.left_middle()).await?;
-        let left_rear = read_leg_positions(&mut self.driver, &self.body_config.left_rear()).await?;
+            read_leg_positions(&mut self.driver, self.body_config.left_middle()).await?;
+        let left_rear = read_leg_positions(&mut self.driver, self.body_config.left_rear()).await?;
         let right_front =
-            read_leg_positions(&mut self.driver, &self.body_config.right_front()).await?;
+            read_leg_positions(&mut self.driver, self.body_config.right_front()).await?;
         let right_middle =
-            read_leg_positions(&mut self.driver, &self.body_config.right_middle()).await?;
+            read_leg_positions(&mut self.driver, self.body_config.right_middle()).await?;
         let right_rear =
-            read_leg_positions(&mut self.driver, &self.body_config.right_rear()).await?;
+            read_leg_positions(&mut self.driver, self.body_config.right_rear()).await?;
         Ok(BodyMotorPositions::new(
             left_front,
             left_middle,

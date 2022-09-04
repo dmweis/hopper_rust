@@ -105,27 +105,27 @@ impl Iterator for MovingTowardsIterator<LegPositions> {
         let (left_front, lf_moved) = self
             .last_state
             .left_front()
-            .move_towards(&self.target.left_front(), &self.max_move);
+            .move_towards(self.target.left_front(), &self.max_move);
         let (left_middle, lm_moved) = self
             .last_state
             .left_middle()
-            .move_towards(&self.target.left_middle(), &self.max_move);
+            .move_towards(self.target.left_middle(), &self.max_move);
         let (left_rear, lr_moved) = self
             .last_state
             .left_rear()
-            .move_towards(&self.target.left_rear(), &self.max_move);
+            .move_towards(self.target.left_rear(), &self.max_move);
         let (right_front, rf_moved) = self
             .last_state
             .right_front()
-            .move_towards(&self.target.right_front(), &self.max_move);
+            .move_towards(self.target.right_front(), &self.max_move);
         let (right_middle, rm_moved) = self
             .last_state
             .right_middle()
-            .move_towards(&self.target.right_middle(), &self.max_move);
+            .move_towards(self.target.right_middle(), &self.max_move);
         let (right_rear, rr_moved) = self
             .last_state
             .right_rear()
-            .move_towards(&self.target.right_rear(), &self.max_move);
+            .move_towards(self.target.right_rear(), &self.max_move);
 
         let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
         if moved {
@@ -218,20 +218,20 @@ impl MoveTowards for LegPositions {
     fn move_towards(&self, target: &LegPositions, max_move: &f32) -> (LegPositions, bool) {
         let (left_front, lf_moved) = self
             .left_front()
-            .move_towards(&target.left_front(), max_move);
+            .move_towards(target.left_front(), max_move);
         let (left_middle, lm_moved) = self
             .left_middle()
-            .move_towards(&target.left_middle(), max_move);
-        let (left_rear, lr_moved) = self.left_rear().move_towards(&target.left_rear(), max_move);
+            .move_towards(target.left_middle(), max_move);
+        let (left_rear, lr_moved) = self.left_rear().move_towards(target.left_rear(), max_move);
         let (right_front, rf_moved) = self
             .right_front()
-            .move_towards(&target.right_front(), max_move);
+            .move_towards(target.right_front(), max_move);
         let (right_middle, rm_moved) = self
             .right_middle()
-            .move_towards(&target.right_middle(), max_move);
+            .move_towards(target.right_middle(), max_move);
         let (right_rear, rr_moved) = self
             .right_rear()
-            .move_towards(&target.right_rear(), max_move);
+            .move_towards(target.right_rear(), max_move);
         let leg_positions = LegPositions::new(
             left_front,
             left_middle,
@@ -457,7 +457,7 @@ mod tests {
     #[test]
     fn optional_leg_positions_deserializes_with_or_without_none() {
         let json = "{\"left_front\":[0.15,0.15,0.15],\"right_front\":null,\"right_middle\":null,\"right_rear\":null}";
-        let positions = OptionalLegPositions::from_json(&json).unwrap();
+        let positions = OptionalLegPositions::from_json(json).unwrap();
         let expected = OptionalLegPositions::new(
             Some(Point3::new(0.15, 0.15, 0.15)),
             None,

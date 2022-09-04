@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct HexapodTypes<T> {
     left_front: T,
     left_middle: T,

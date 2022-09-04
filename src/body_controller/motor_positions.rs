@@ -49,28 +49,28 @@ pub fn create_commands_for_body(
 ) -> Vec<SyncCommandFloat> {
     let mut commands = Vec::with_capacity(18);
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.left_front(),
-        &positions.left_front(),
+        config.left_front(),
+        positions.left_front(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.right_front(),
-        &positions.right_front(),
+        config.right_front(),
+        positions.right_front(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.left_middle(),
-        &positions.left_middle(),
+        config.left_middle(),
+        positions.left_middle(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.right_middle(),
-        &positions.right_middle(),
+        config.right_middle(),
+        positions.right_middle(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.left_rear(),
-        &positions.left_rear(),
+        config.left_rear(),
+        positions.left_rear(),
     ));
     commands.extend_from_slice(&create_commands_for_leg(
-        &config.right_rear(),
-        &positions.right_rear(),
+        config.right_rear(),
+        positions.right_rear(),
     ));
     commands
 }

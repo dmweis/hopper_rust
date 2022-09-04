@@ -38,7 +38,7 @@ pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Res
         if let Ok((amt, addr)) = socket.recv_from(&mut buffer) {
             trace!("got new message");
             let received = &mut buffer[..amt];
-            let message: Result<Message, _> = serde_json::from_slice(&received);
+            let message: Result<Message, _> = serde_json::from_slice(received);
             if let Ok(message) = message {
                 match message.command {
                     Command::MoveMotorsTo(position) => {
@@ -85,7 +85,7 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Result
         if let Ok((amt, addr)) = socket.recv_from(&mut buffer) {
             trace!("got new message");
             let received = &mut buffer[..amt];
-            let message: Result<Message, _> = serde_json::from_slice(&received);
+            let message: Result<Message, _> = serde_json::from_slice(received);
             if let Ok(message) = message {
                 match message.command {
                     Command::MoveLegsTo(position) => {
@@ -135,7 +135,7 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Result
                     }
                 }
             } else {
-                error!("Received malformed message {:?}", from_utf8(&received));
+                error!("Received malformed message {:?}", from_utf8(received));
             }
         }
     }
@@ -237,7 +237,7 @@ pub async fn udp_controller_handler(
             }
             trace!("got new message");
             let received = &mut buffer[..amt];
-            let message: Result<ControllerData, _> = serde_json::from_slice(&received);
+            let message: Result<ControllerData, _> = serde_json::from_slice(received);
             if let Ok(message) = message {
                 if message.a_down {
                     controller.set_body_state(motion_controller::BodyState::Standing);
@@ -257,7 +257,7 @@ pub async fn udp_controller_handler(
                 let rotation = message.rotation_as_quaternion();
                 controller.set_transformation(translation, rotation);
             } else {
-                error!("Received malformed message {:?}", from_utf8(&received));
+                error!("Received malformed message {:?}", from_utf8(received));
             }
         }
     }

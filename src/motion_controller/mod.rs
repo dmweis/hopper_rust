@@ -366,7 +366,7 @@ impl RotateTowards for UnitQuaternion<f32> {
         if self == target {
             return (*target, false);
         }
-        let angle = self.angle_to(&target);
+        let angle = self.angle_to(target);
         if angle <= max_rotation {
             return (*target, true);
         }
