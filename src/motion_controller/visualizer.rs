@@ -1,5 +1,6 @@
 use crate::{
     body_controller::{BodyController, BodyMotorPositions},
+    error::HopperResult,
     ik_controller::leg_positions::*,
 };
 use anyhow::{anyhow, Result};
@@ -68,44 +69,44 @@ impl Default for HopperVisualizer {
 
 #[async_trait]
 impl BodyController for HopperVisualizer {
-    async fn move_motors_to(&mut self, _positions: &BodyMotorPositions) -> Result<()> {
+    async fn move_motors_to(&mut self, _positions: &BodyMotorPositions) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn set_compliance_slope(&mut self, _compliance: u8) -> Result<()> {
+    async fn set_compliance_slope(&mut self, _compliance: u8) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn set_speed(&mut self, _speed: u16) -> Result<()> {
+    async fn set_speed(&mut self, _speed: u16) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn set_torque(&mut self, _torque: bool) -> Result<()> {
+    async fn set_torque(&mut self, _torque: bool) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn read_motor_positions(&mut self) -> Result<BodyMotorPositions> {
+    async fn read_motor_positions(&mut self) -> HopperResult<BodyMotorPositions> {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn read_mean_voltage(&mut self) -> Result<f32> {
+    async fn read_mean_voltage(&mut self) -> HopperResult<f32> {
         Ok(12.0)
     }
 }
 
 #[async_trait]
 impl IkControllable for HopperVisualizer {
-    async fn move_to_positions(&mut self, positions: &LegPositions) -> Result<()> {
+    async fn move_to_positions(&mut self, positions: &LegPositions) -> HopperResult<()> {
         let mut guard = self.leg_positions.lock().unwrap();
         *guard = positions.clone();
         Ok(())
     }
 
-    async fn read_leg_positions(&mut self) -> Result<LegPositions> {
+    async fn read_leg_positions(&mut self) -> HopperResult<LegPositions> {
         Ok(self.leg_positions.lock().unwrap().clone())
     }
 
-    async fn disable_motors(&mut self) -> Result<()> {
+    async fn disable_motors(&mut self) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 }

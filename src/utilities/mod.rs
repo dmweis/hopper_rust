@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::error::HopperResult;
 use log::*;
 use simplelog::*;
 use std::{fs::OpenOptions, sync::mpsc};
@@ -14,7 +14,7 @@ use std::{fs::OpenOptions, sync::mpsc};
 /// # Arguments
 ///
 /// * `log_file` - Path to the optional file to log into
-pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> Result<()> {
+pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> HopperResult<()> {
     let config = ConfigBuilder::new()
         .add_filter_allow_str("hopper_rust")
         .add_filter_allow_str("remote_controller")

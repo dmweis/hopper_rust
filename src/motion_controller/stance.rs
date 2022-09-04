@@ -1,5 +1,4 @@
-use crate::ik_controller::leg_positions::LegPositions;
-use anyhow::Result;
+use crate::{error::HopperResult, ik_controller::leg_positions::LegPositions};
 use lazy_static::lazy_static;
 use nalgebra::Point3;
 use std::fs;
@@ -151,7 +150,7 @@ pub fn random_grounded_stance() -> LegPositions {
     )
 }
 
-pub fn save_basic() -> Result<()> {
+pub fn save_basic() -> HopperResult<()> {
     fs::write(
         "config/stance/relaxed.toml",
         toml::to_string_pretty(&*RELAXED)?,

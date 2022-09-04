@@ -1093,6 +1093,7 @@ dependencies = [
  "serde",
  "serde_json",
  "simplelog",
+ "thiserror",
  "tokio",
  "toml",
  "warp",

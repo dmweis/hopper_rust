@@ -1,9 +1,9 @@
 use crate::body_controller::{BodyController, BodyMotorPositions};
+use crate::error::HopperResult;
 use crate::ik_controller::leg_positions::*;
 use crate::ik_controller::IkControllable;
 use crate::motion_controller;
 use crate::motion_controller::walking::MoveCommand;
-use anyhow::Result;
 use log::*;
 use nalgebra::{UnitQuaternion, Vector2, Vector3};
 use serde::{Deserialize, Serialize};
@@ -31,7 +31,7 @@ struct Message {
 }
 
 #[allow(dead_code)]
-pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Result<()> {
+pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> HopperResult<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {
@@ -78,7 +78,7 @@ pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Res
     }
 }
 
-pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Result<()> {
+pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> HopperResult<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
     loop {
@@ -208,7 +208,7 @@ impl ControllerData {
         UnitQuaternion::from_euler_angles(self.body_roll, self.body_pitch, self.body_yaw)
     }
 
-    pub fn to_json_bytes(&self) -> Result<Vec<u8>> {
+    pub fn to_json_bytes(&self) -> HopperResult<Vec<u8>> {
         let json = serde_json::to_string(self)?;
         Ok(json.as_bytes().to_vec())
     }
@@ -216,7 +216,7 @@ impl ControllerData {
 
 pub async fn udp_controller_handler(
     controller: &mut motion_controller::MotionController,
-) -> Result<()> {
+) -> HopperResult<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     socket.set_read_timeout(Some(Duration::from_millis(500)))?;
     let mut buffer = [0; 1024];

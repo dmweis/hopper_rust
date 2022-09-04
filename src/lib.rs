@@ -1,4 +1,5 @@
 pub mod body_controller;
+pub mod error;
 mod hexapod;
 pub mod hopper_config;
 pub mod ik_controller;
