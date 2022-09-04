@@ -1,12 +1,7 @@
 use anyhow::Result;
 use log::*;
 use simplelog::*;
-use std::{
-    fs::OpenOptions,
-    net::{IpAddr, Ipv4Addr, SocketAddr},
-    sync::mpsc,
-};
-use warp::Filter;
+use std::{fs::OpenOptions, sync::mpsc};
 
 /// Initializes loggers
 ///

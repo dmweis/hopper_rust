@@ -9,7 +9,6 @@ use crate::ik_controller::{
 };
 use crate::utilities::MpscChannelHelper;
 use anyhow::Result;
-use lazy_static::lazy_static;
 use log::*;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::time::Duration;
