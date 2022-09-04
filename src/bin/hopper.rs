@@ -5,7 +5,7 @@ use std::{path::Path, time::Duration};
 
 use hopper_rust::{
     body_controller, body_controller::BodyController, hopper_config, ik_controller,
-    motion_controller, udp_adaptor, utilities,
+    lidar::LidarDriver, motion_controller, udp_adaptor, utilities,
 };
 
 /// Hopper body controller
@@ -26,6 +26,9 @@ struct Args {
     /// hopper face serial port
     #[clap(long, default_value = "/dev/hopper_face")]
     face_port: String,
+    /// hopper lidar serial port
+    #[clap(long, default_value = "/dev/rplidar")]
+    lidar: String,
     /// Sets the level of verbosity
     #[clap(short, parse(from_occurrences))]
     verbose: u8,
@@ -39,6 +42,9 @@ async fn main() -> Result<()> {
 
     let face_controller = hopper_face::FaceController::open(&args.face_port)?;
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
+
+    let mut lidar_driver = LidarDriver::new(&args.lidar)?;
+    lidar_driver.stop()?;
 
     let hopper_config = args
         .body_config

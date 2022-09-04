@@ -19,4 +19,6 @@ pub enum HopperError {
     JsonError(#[from] serde_json::Error),
     #[error("Failed to set logger")]
     SetLoggerError(#[from] log::SetLoggerError),
+    #[error("Lidar error")]
+    LidarError(#[from] rplidar_driver::RposError),
 }

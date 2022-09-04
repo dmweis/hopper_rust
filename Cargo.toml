@@ -48,6 +48,7 @@ ctrlc = "3.1"
 warp = "0.3"
 kiss3d = { optional = true, version = "0.35" }
 gilrs = { version = "0.9", optional = true }
+rplidar_driver = { git = "https://github.com/dmweis/rplidar_driver", branch = "main" }
 
 [dev-dependencies]
 approx = "0.5.1"
