@@ -6,6 +6,10 @@ use serde::{Deserialize, Serialize};
 use std::f32;
 use std::time::{Duration, Instant};
 
+// In this mode the legs will immediately lift to full height
+// this prevents dragging of feet but also results in a very choppy movement
+const AGGRESSIVE_LEG_LIFT: bool = false;
+
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Default)]
 pub struct MoveCommand {
     direction: Vector2<f32>,
@@ -322,7 +326,7 @@ pub(crate) fn step_lifted_leg(
     let full_ground_translation = target.xy() - start.xy();
     let current_translation = start.xy() + full_ground_translation * progress;
     // raise leg immediately then lower using sine curve
-    let height = if progress < 0.5 {
+    let height = if AGGRESSIVE_LEG_LIFT && progress < 0.5 {
         step_height + start.z
     } else {
         (progress * f32::consts::PI).sin() * step_height + start.z
