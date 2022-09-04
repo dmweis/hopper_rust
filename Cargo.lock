@@ -714,7 +714,7 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 [[package]]
 name = "dynamixel-driver"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/dynamixel-driver?branch=main#99a0b7adc9ccd6487f5ee245f07e7d4919df7f24"
+source = "git+https://github.com/dmweis/dynamixel-driver?branch=main#05d9e765bf577d64524860c9a1aa54e0aa09bb99"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1108,7 +1108,7 @@ dependencies = [
 [[package]]
 name = "hopper_face"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/hopper_face?branch=main#d142faf0b0ea7427aef78bdef41f2507ce1bd6ea"
+source = "git+https://github.com/dmweis/hopper_face?branch=main#46745a07c705ecb1232e81c096d8702bf1da07b2"
 dependencies = [
  "clap",
  "cobs-rs",
