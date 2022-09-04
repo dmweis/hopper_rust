@@ -14,12 +14,6 @@ struct Args {
     /// addr:port of target
     #[clap()]
     target: String,
-    /// Translation mode
-    #[clap(long, short)]
-    translation_mode: bool,
-    /// Rotation mode
-    #[clap(long, short)]
-    rotation_mode: bool,
 }
 
 #[tokio::main]
@@ -53,7 +47,13 @@ async fn main() -> Result<()> {
                 let a_down = gamepad.is_pressed(gilrs::Button::South);
                 let b_down = gamepad.is_pressed(gilrs::Button::East);
 
-                let command = if args.translation_mode {
+                let lb_down = gamepad.is_pressed(gilrs::Button::LeftTrigger);
+                let rb_down = gamepad.is_pressed(gilrs::Button::RightTrigger);
+
+                let translation_mode = lb_down;
+                let rotation_mode = rb_down;
+
+                let command = if translation_mode {
                     ControllerData::with_translation(
                         0.05 * -x,
                         0.05 * -y,
@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
                         a_down,
                         b_down,
                     )
-                } else if args.rotation_mode {
+                } else if rotation_mode {
                     ControllerData::with_rotation(
                         (10.0 * y).to_radians(),
                         -(10.0 * x).to_radians(),
