@@ -2,7 +2,7 @@ use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct HexapodTypes<T> {
+pub struct HexapodTypes<T: Clone> {
     left_front: T,
     left_middle: T,
     left_rear: T,
@@ -11,7 +11,7 @@ pub struct HexapodTypes<T> {
     right_rear: T,
 }
 
-impl<T> HexapodTypes<T> {
+impl<T: Clone> HexapodTypes<T> {
     pub fn new(
         left_front: T,
         left_middle: T,
@@ -52,6 +52,42 @@ impl<T> HexapodTypes<T> {
 
     pub fn right_rear(&self) -> &T {
         &self.right_rear
+    }
+
+    pub fn updated_left_front(&self, change: T) -> Self {
+        let mut new = (*self).clone();
+        new.left_front = change;
+        new
+    }
+
+    pub fn updated_left_middle(&self, change: T) -> Self {
+        let mut new = (*self).clone();
+        new.left_middle = change;
+        new
+    }
+
+    pub fn updated_left_rear(&self, change: T) -> Self {
+        let mut new = (*self).clone();
+        new.left_rear = change;
+        new
+    }
+
+    pub fn updated_right_front(&self, change: T) -> Self {
+        let mut new = (*self).clone();
+        new.right_front = change;
+        new
+    }
+
+    pub fn updated_right_middle(&self, change: T) -> Self {
+        let mut new = (*self).clone();
+        new.right_middle = change;
+        new
+    }
+
+    pub fn updated_right_rear(&self, change: T) -> Self {
+        let mut new = (*self).clone();
+        new.right_rear = change;
+        new
     }
 
     pub fn all_legs(&self) -> [&T; 6] {
