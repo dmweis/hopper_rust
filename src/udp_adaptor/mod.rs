@@ -159,13 +159,23 @@ pub struct ControllerData {
 }
 
 impl ControllerData {
-    pub fn with_move(x: f32, y: f32, yaw: f32, a_down: bool, b_down: bool) -> Self {
+    pub fn with_move(
+        x: f32,
+        y: f32,
+        yaw: f32,
+        a_down: bool,
+        b_down: bool,
+        x_down: bool,
+        y_down: bool,
+    ) -> Self {
         ControllerData {
             x,
             y,
             yaw,
             a_down,
             b_down,
+            x_down,
+            y_down,
             ..Default::default()
         }
     }
@@ -176,6 +186,8 @@ impl ControllerData {
         translation_z: f32,
         a_down: bool,
         b_down: bool,
+        x_down: bool,
+        y_down: bool,
     ) -> Self {
         ControllerData {
             translation_x,
@@ -183,6 +195,8 @@ impl ControllerData {
             translation_z,
             a_down,
             b_down,
+            x_down,
+            y_down,
             ..Default::default()
         }
     }
@@ -193,6 +207,8 @@ impl ControllerData {
         body_yaw: f32,
         a_down: bool,
         b_down: bool,
+        x_down: bool,
+        y_down: bool,
     ) -> Self {
         ControllerData {
             body_roll,
@@ -200,6 +216,8 @@ impl ControllerData {
             body_yaw,
             a_down,
             b_down,
+            x_down,
+            y_down,
             ..Default::default()
         }
     }
@@ -211,6 +229,22 @@ impl ControllerData {
     pub fn to_json_bytes(&self) -> HopperResult<Vec<u8>> {
         let json = serde_json::to_string(self)?;
         Ok(json.as_bytes().to_vec())
+    }
+
+    pub fn was_x_pressed(&self, previous: &ControllerData) -> bool {
+        self.x_down && !previous.x_down
+    }
+
+    pub fn was_y_pressed(&self, previous: &ControllerData) -> bool {
+        self.y_down && !previous.y_down
+    }
+
+    pub fn was_a_pressed(&self, previous: &ControllerData) -> bool {
+        self.a_down && !previous.a_down
+    }
+
+    pub fn was_b_pressed(&self, previous: &ControllerData) -> bool {
+        self.b_down && !previous.b_down
     }
 }
 
@@ -230,6 +264,7 @@ pub async fn udp_controller_handler(
     })
     .expect("Failed to set Ctrl-C handler");
 
+    let mut previous_controller_data = ControllerData::default();
     while keep_running.load(Ordering::SeqCst) {
         if let Ok((amt, _)) = socket.recv_from(&mut buffer) {
             if amt == 0 {
@@ -243,6 +278,8 @@ pub async fn udp_controller_handler(
                     controller.set_body_state(motion_controller::BodyState::Standing);
                 } else if message.b_down {
                     controller.set_body_state(motion_controller::BodyState::Grounded);
+                } else if message.was_y_pressed(&previous_controller_data) {
+                    controller.start_sequence(motion_controller::DanceMove::HappyDance);
                 }
 
                 let move_command =
@@ -256,6 +293,7 @@ pub async fn udp_controller_handler(
                 );
                 let rotation = message.rotation_as_quaternion();
                 controller.set_transformation(translation, rotation);
+                previous_controller_data = message;
             } else {
                 error!("Received malformed message {:?}", from_utf8(received));
             }

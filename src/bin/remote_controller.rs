@@ -46,6 +46,8 @@ async fn main() -> Result<()> {
 
                 let a_down = gamepad.is_pressed(gilrs::Button::South);
                 let b_down = gamepad.is_pressed(gilrs::Button::East);
+                let x_down = gamepad.is_pressed(gilrs::Button::West);
+                let y_down = gamepad.is_pressed(gilrs::Button::North);
 
                 let lb_down = gamepad.is_pressed(gilrs::Button::LeftTrigger);
                 let rb_down = gamepad.is_pressed(gilrs::Button::RightTrigger);
@@ -60,6 +62,8 @@ async fn main() -> Result<()> {
                         0.04 * height,
                         a_down,
                         b_down,
+                        x_down,
+                        y_down,
                     )
                 } else if rotation_mode {
                     ControllerData::with_rotation(
@@ -68,6 +72,8 @@ async fn main() -> Result<()> {
                         -(10.0 * z).to_radians(),
                         a_down,
                         b_down,
+                        x_down,
+                        y_down,
                     )
                 } else {
                     ControllerData::with_move(
@@ -76,6 +82,8 @@ async fn main() -> Result<()> {
                         15_f32.to_radians() * z,
                         a_down,
                         b_down,
+                        x_down,
+                        y_down,
                     )
                 };
                 trace!("{:?}", command);

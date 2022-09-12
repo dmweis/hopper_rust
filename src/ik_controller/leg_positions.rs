@@ -63,6 +63,16 @@ impl LegPositions {
         )
     }
 
+    pub fn transform_selected_legs(
+        &self,
+        translation: Vector3<f32>,
+        rotation: UnitQuaternion<f32>,
+        legs: LegFlags,
+    ) -> LegPositions {
+        let new_positions = self.transform(translation, rotation);
+        self.merge_with(&new_positions, legs)
+    }
+
     pub fn longest_distance(&self, other: &LegPositions) -> f32 {
         let self_legs = self.all_legs();
         let other_legs = other.all_legs();

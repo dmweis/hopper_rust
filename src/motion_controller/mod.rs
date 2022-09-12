@@ -1,3 +1,4 @@
+mod choreographer;
 pub mod stance;
 #[cfg(feature = "visualizer")]
 pub mod visualizer;
@@ -9,6 +10,7 @@ use crate::ik_controller::{
 };
 use crate::utilities::MpscChannelHelper;
 use anyhow::Result;
+pub use choreographer::DanceMove;
 use log::*;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::time::Duration;
@@ -80,6 +82,13 @@ impl MotionController {
         self.command.body_state = state;
         self.command_sender.send(self.command.clone()).unwrap();
     }
+
+    pub fn start_sequence(&mut self, dance_move: DanceMove) {
+        info!("Starting dance sequence");
+        self.blocking_command_sender
+            .send(BlockingCommand::Choreography(dance_move))
+            .unwrap();
+    }
 }
 
 impl Drop for MotionController {
@@ -101,6 +110,7 @@ struct MotionControllerCommand {
 #[derive(Debug, Clone, Copy)]
 enum BlockingCommand {
     Terminate,
+    Choreography(DanceMove),
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
@@ -132,6 +142,7 @@ struct MotionControllerLoop {
     lrl_reset: bool,
     rlr_reset: bool,
     last_voltage_read: Instant,
+    dance_moves: Vec<LegPositions>,
 }
 
 impl MotionControllerLoop {
@@ -156,6 +167,7 @@ impl MotionControllerLoop {
             lrl_reset: false,
             rlr_reset: false,
             last_voltage_read: Instant::now(),
+            dance_moves: vec![],
         })
     }
 
@@ -278,6 +290,15 @@ impl MotionControllerLoop {
                         trace!("Exiting control loop");
                         break;
                     }
+                    BlockingCommand::Choreography(dance_move) => {
+                        let moves: Vec<_> =
+                            dance_move.to_iterator(self.base_relaxed.clone()).collect();
+                        if self.dance_moves.is_empty() {
+                            self.dance_moves = moves;
+                        } else {
+                            warn!("Already executing a dance move");
+                        }
+                    }
                 }
             }
 
@@ -346,6 +367,10 @@ impl MotionControllerLoop {
                             .move_to_positions(&transformed_pose)
                             .await?;
                         self.last_written_pose = transformed_pose;
+                    }
+                    if let Some(dance_move) = self.dance_moves.pop() {
+                        self.ik_controller.move_to_positions(&dance_move).await?;
+                        self.last_written_pose = dance_move;
                     }
                 }
             }
