@@ -280,6 +280,8 @@ pub async fn udp_controller_handler(
                     controller.set_body_state(motion_controller::BodyState::Grounded);
                 } else if message.was_y_pressed(&previous_controller_data) {
                     controller.start_sequence(motion_controller::DanceMove::HappyDance);
+                } else if message.was_x_pressed(&previous_controller_data) {
+                    controller.start_sequence(motion_controller::DanceMove::SadEmote);
                 }
 
                 let move_command =
