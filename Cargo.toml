@@ -1,10 +1,34 @@
 [package]
 name = "hopper_rust"
-version = "0.1.0"
+description = "Hopper hexapod robot"
+version = "0.1.1"
 authors = ["David Weis <davidmichaelweis@gmail.com>"]
 edition = "2021"
+publish = false
+readme = "README.md"
+license = "MIT OR APACHE"
+repository = "https://github.com/dmweis/hopper_rust"
+default-run = "hopper"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.deb]
+maintainer = "David Weis <dweis7@gmail.com>"
+maintainer-scripts = "debian/"
+conf-files = ["/etc/home_speak/settings.yaml"]
+assets = [
+    [
+        "target/release/hopper",
+        "/usr/bin/",
+        "755",
+    ],
+    [
+        "config/settings.yaml",
+        "/etc/hopper/settings.yaml",
+        "644",
+    ],
+]
+
+[package.metadata.deb.systemd-units]
+
 
 [[bin]]
 name = "hopper"
@@ -49,6 +73,12 @@ warp = "0.3"
 kiss3d = { optional = true, version = "0.35" }
 gilrs = { version = "0.9", optional = true }
 rplidar_driver = { git = "https://github.com/dmweis/rplidar_driver", branch = "main" }
+azure_tts = { git = "https://github.com/dmweis/azure_tts", branch = "main" }
+# fix weird bug with mp3 not playing from start
+# rodio = "0.15"
+rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9" }
+sha2 = "0.10"
+config = "0.13.2"
 
 [dev-dependencies]
 approx = "0.5.1"

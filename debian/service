@@ -1,0 +1,18 @@
+[Unit]
+Description=hopper_rust
+After=network-online.target nss-lookup.target sound.target
+Wants=network-online.target
+
+[Service]
+User=hopper
+DynamicUser=yes
+Group=audio
+StateDirectory=home_speak
+CacheDirectory=home_speak
+Type=simple
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/bin/hopper_rust --dynamixel-port /dev/ttyACM0
+
+[Install]
+WantedBy=default.target

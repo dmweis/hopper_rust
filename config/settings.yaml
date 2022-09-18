@@ -1,0 +1,3 @@
+tts_service_config:
+  azure_api_key: ""
+  cache_dir_path: "/var/cache/hopper/audio_cache"
