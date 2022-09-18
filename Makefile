@@ -21,7 +21,7 @@ MENDER_ARTIFACT_OUTPUT_PATH := target/mender
 build:
 	cargo build --release --no-default-features --bin hopper
 
-.PHONY: deploy-build
+.PHONY: deploy-binary
 deploy-binary: build
 	rsync -c ${RELEASE_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH}
 
@@ -72,3 +72,12 @@ push-to-hub:
 install-dependencies:
 	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev -y
 	cargo install cargo-deb cargo-get
+
+.PHONY: cursed
+cursed: push-to-hub
+	# this is nasty
+	ssh -t $(HUB_HOST) "cd src/hopper_rust && \
+		/home/pi/.cargo/bin/cargo build --release --no-default-features --bin hopper && \
+		rsync -c ${RELEASE_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH} && \
+		ssh -t $(TARGET_HOST) 'cd src/hopper_rust && ./hopper'"
+
