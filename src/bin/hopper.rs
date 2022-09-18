@@ -28,7 +28,7 @@ struct Args {
     #[clap(long)]
     log_path: Option<String>,
     /// Serial port name of the dynamixel port
-    #[clap(short, long)]
+    #[clap(short, long, default_value = "/dev/dynamixel")]
     dynamixel_port: String,
     /// hopper face serial port
     #[clap(long, default_value = "/dev/hopper_face")]
@@ -77,10 +77,15 @@ async fn main() -> Result<()> {
     let mut speech_service = SpeechService::new(
         app_config.tts_service_config.azure_api_key,
         app_config.tts_service_config.cache_dir_path,
+        app_config.tts_service_config.audio_repository_path,
     )
     .unwrap();
 
     speech_service.say_azure("Good morning!").await.unwrap();
+    speech_service
+        .play_sound("Turret_turret_deploy_3.wav")
+        .await
+        .unwrap();
 
     udp_adaptor::udp_controller_handler(&mut motion_controller)
         .await
