@@ -1,11 +1,15 @@
 use anyhow::Result;
 use clap::Parser;
 use log::*;
-use std::{path::Path, time::Duration};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use hopper_rust::{
-    body_controller, body_controller::BodyController, hopper_config, ik_controller,
-    lidar::LidarDriver, motion_controller, udp_adaptor, utilities,
+    app_config::get_configuration, body_controller, body_controller::BodyController, hopper_config,
+    ik_controller, lidar::LidarDriver, motion_controller, speech::SpeechService, udp_adaptor,
+    utilities,
 };
 
 /// Hopper body controller
@@ -16,6 +20,9 @@ struct Args {
     /// If unset uses default value.
     #[clap(long)]
     body_config: Option<String>,
+    /// application configuration
+    #[clap(long)]
+    config: Option<PathBuf>,
     /// Path for external log file.
     /// If no give will only log to out
     #[clap(long)]
@@ -39,6 +46,8 @@ async fn main() -> Result<()> {
     let args: Args = Args::parse();
     utilities::start_loggers(args.log_path, args.verbose)?;
     info!("Started main controller");
+
+    let app_config = get_configuration(args.config)?;
 
     let face_controller = hopper_face::FaceController::open(&args.face_port)?;
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
@@ -64,6 +73,14 @@ async fn main() -> Result<()> {
     ik_controller.set_speed(1023).await?;
 
     let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
+
+    let mut speech_service = SpeechService::new(
+        app_config.tts_service_config.azure_api_key,
+        app_config.tts_service_config.cache_dir_path,
+    )
+    .unwrap();
+
+    speech_service.say_azure("Good morning!").await.unwrap();
 
     udp_adaptor::udp_controller_handler(&mut motion_controller)
         .await
