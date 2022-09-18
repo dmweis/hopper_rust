@@ -1,3 +1,9 @@
 /target
+
+# Local dev sample cache
+audio_cache/*
+dev_settings.yaml
+
+
 .vscode
 python_test/
