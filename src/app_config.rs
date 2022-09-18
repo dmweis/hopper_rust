@@ -36,4 +36,5 @@ pub struct AppConfig {
 pub struct TtsServiceConfig {
     pub azure_api_key: String,
     pub cache_dir_path: Option<String>,
+    pub audio_repository_path: Option<String>,
 }

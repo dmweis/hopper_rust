@@ -1,3 +1,4 @@
 tts_service_config:
   azure_api_key: ""
   cache_dir_path: "/var/cache/hopper/audio_cache"
+  audio_repository_path: "/etc/hopper/audio/robot_sounds"

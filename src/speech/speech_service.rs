@@ -1,4 +1,5 @@
 use super::audio_cache::AudioCache;
+use super::audio_repository::AudioRepository;
 use crate::error::{HopperError, HopperResult};
 use log::*;
 use sha2::{Digest, Sha256};
@@ -105,6 +106,7 @@ fn create_player() -> Sender<AudioPlayerCommand> {
 pub struct SpeechService {
     azure_speech_client: azure_tts::VoiceService,
     audio_cache: Option<AudioCache>,
+    audio_repository: Option<AudioRepository>,
     azure_voice: azure_tts::VoiceSettings,
     azure_audio_format: azure_tts::AudioFormat,
     audio_sender: Sender<AudioPlayerCommand>,
@@ -119,6 +121,7 @@ impl SpeechService {
     pub fn new(
         azure_subscription_key: String,
         cache_dir_path: Option<String>,
+        audio_repository_path: Option<String>,
     ) -> HopperResult<SpeechService> {
         let azure_speech_client =
             azure_tts::VoiceService::new(&azure_subscription_key, azure_tts::Region::uksouth);
@@ -130,9 +133,15 @@ impl SpeechService {
 
         let audio_sender = create_player();
 
+        let audio_repository = match audio_repository_path {
+            Some(path) => Some(AudioRepository::new(path)?),
+            None => None,
+        };
+
         Ok(SpeechService {
             azure_speech_client,
             audio_cache,
+            audio_repository,
             azure_voice: azure_tts::EnUsVoices::SaraNeural.to_voice_settings(),
             azure_audio_format: azure_tts::AudioFormat::Audio48khz192kbitrateMonoMp3,
             audio_sender,
@@ -203,6 +212,15 @@ impl SpeechService {
             Box::new(Cursor::new(data))
         };
         self.play(sound).await?;
+        Ok(())
+    }
+
+    pub async fn play_sound(&mut self, sound_name: &str) -> HopperResult<()> {
+        if let Some(ref audio_repository) = self.audio_repository {
+            if let Some(data) = audio_repository.load(sound_name) {
+                self.play(data).await?;
+            }
+        }
         Ok(())
     }
 
