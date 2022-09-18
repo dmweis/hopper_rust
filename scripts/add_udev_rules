@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -e
+echo "writing udev rules to /etc/udev/rules.d/40-hopper.rules"
+
+cat <<EOT | sudo tee /etc/udev/rules.d/40-hopper.rules > /dev/null
+# steam controller
+SUBSYSTEM=="usb", ATTRS{idVendor}=="28de", GROUP="dweis", MODE="0660"
+KERNEL=="uinput", MODE="0660", GROUP="dweis", OPTIONS+="static_node=uinput"
+
+# rplidar
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE:="0777", SYMLINK+="rplidar"
+
+# dynamixel USB2AX
+KERNEL=="ttyACM*", ATTRS{idVendor}=="16d0", ATTRS{idProduct}=="06a7", MODE:="0777", SYMLINK+="dynamixel"
+
+# sensors
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", KERNELS=="1-1.2", MODE:="0777", SYMLINK+="hopper_face"
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", KERNELS=="1-1.3.4", MODE:="0777", SYMLINK+="hopper_feet"
+
+# other devices
+KERNEL=="ttyUSB[0-9]*",MODE="0666"
+KERNEL=="ttyACM[0-9]*",MODE="0666"
+KERNEL=="video[0-9]*",MODE="0666"
+EOT
+
+echo "writing udev rules to /etc/udev/rules.d/40-scratch.rules"
+
+cat <<EOT | sudo tee /etc/udev/rules.d/40-scratch.rules > /dev/null
+ATTRS{idVendor}=="0694", ATTRS{idProduct}=="0003", SUBSYSTEMS=="usb", ACTION=="add", MODE="0666", GROUP="plugdev"
+EOT
+
+sudo udevadm control --reload-rules && sudo udevadm trigger
+echo "Done"
