@@ -9,7 +9,6 @@ DEB_BUILD_PATH ?= target/debian/hopper_*.deb
 
 TARGET_ARCH := armv7-unknown-linux-musleabihf
 RELEASE_BINARY_PATH := target/release/hopper
-RELEASE_CROSS_BINARY_PATH := target/${TARGET_ARCH}/release/hopper
 TARGET_PATH := ~/hopper_rust
 
 VERSION_TAG = $(shell cargo get version)
@@ -22,7 +21,7 @@ MENDER_ARTIFACT_OUTPUT_PATH := target/mender
 build:
 	cargo build --release --no-default-features --bin hopper
 
-.PHONY: deploy-cross-build
+.PHONY: deploy-build
 deploy-binary: build
 	rsync -c ${RELEASE_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH}
 
