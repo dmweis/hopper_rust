@@ -26,24 +26,3 @@ The platform is modeled and 3D printed by me and is still a work in progress. It
 
 CAD design files can be found [here](https://github.com/dmweis/hopper_design)  
 They may be outdated. If you'd like current file you can email me [here](mailto:dweis7@gmail.com)
-
-## Cross compilation
-
-To cross compile for raspberry pi you need to add `armv7-unknown-linux-musleabihf` target to rustup
-
-You will also need an arm compatible compiler. On debian that is `gcc-arm-linux-gnueabihf`
-
-To set this up run:
-
-```shell
-rustup target add armv7-unknown-linux-musleabihf
-sudo apt update
-sudo apt install gcc-arm-linux-gnueabihf
-```
-
-Then compile for arm with `cargo build --no-default-features --target=armv7-unknown-linux-musleabihf`
-
-You need to build without default features because you don't want the visualizer for ARM.
-The controller library also depends on `libuv`.
-
-The [deploy script](./deploy) and [cross_build script](./cross_build) sort of do it for you.

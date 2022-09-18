@@ -73,12 +73,3 @@ push-to-hub:
 install-dependencies:
 	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev -y
 	cargo install cargo-deb cargo-get
-
-.PHONY: cross-build
-cross-build:
-	cargo build --release --target=${TARGET_ARCH} --no-default-features
-
-.PHONY: push-cross-build
-push-cross-build: cross-build
-	rsync -c ${RELEASE_CROSS_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH}
-
