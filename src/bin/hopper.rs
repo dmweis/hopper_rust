@@ -81,9 +81,12 @@ async fn main() -> Result<()> {
     )
     .unwrap();
 
-    speech_service.say_azure("Good morning!").await.unwrap();
     speech_service
-        .play_sound("Turret_turret_deploy_3.wav")
+        .play_sound("hopper_sounds/windows_startup.wav")
+        .await
+        .unwrap();
+    speech_service
+        .say_azure("How are you doing this lovely evening?")
         .await
         .unwrap();
 
