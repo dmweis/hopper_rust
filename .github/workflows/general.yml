@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Install libudev
-        run: sudo apt update && sudo apt install librust-libudev-sys-dev
+        run: sudo apt-get update && sudo apt-get install librust-libudev-sys-dev libasound2-dev -y
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
