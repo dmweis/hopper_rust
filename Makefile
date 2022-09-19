@@ -47,7 +47,7 @@ build-artifact: build-deb
 		--device-type raspberrypi4 \
 		--device-type raspberrypi3 \
 		--output-path $(MENDER_ARTIFACT_OUTPUT_PATH)/$(MENDER_ARTIFACT_FILE) \
-		--file $(DEB_BUILD_PATH)
+		--file $(DEB_BUILD_PATH) \
 		--script mender/ArtifactInstall_Enter_00
 
 .PHONY: publish-mender-artifact
