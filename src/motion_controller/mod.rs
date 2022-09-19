@@ -279,15 +279,21 @@ impl MotionControllerLoop {
         let mut interval = time::interval(TICK_DURATION);
 
         loop {
-            if let Some(command) = self.command_receiver.try_recv().unwrap() {
-                self.command = command;
+            match self.command_receiver.try_recv() {
+                Ok(Some(command)) => self.command = command,
+                Err(_) => {
+                    warn!("Motion command sender gone. Exiting control loop");
+                    break;
+                }
+                _ => (),
             }
+
             if let Some(blocking_command) =
                 self.blocking_command_receiver.try_recv_optional().unwrap()
             {
                 match blocking_command {
                     BlockingCommand::Terminate => {
-                        trace!("Exiting control loop");
+                        info!("Terminate command received. Exiting control loop");
                         break;
                     }
                     BlockingCommand::Choreography(dance_move) => {
