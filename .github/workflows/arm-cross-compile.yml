@@ -7,7 +7,7 @@ env:
 
 jobs:
   test:
-    name: Build arm cors compile
+    name: Cross compile for aarch64
     runs-on: ubuntu-20.04
     steps:
       - name: Install gcc for arm
