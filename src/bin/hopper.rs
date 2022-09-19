@@ -85,10 +85,6 @@ async fn main() -> Result<()> {
         .play_sound("hopper_sounds/windows_startup.wav")
         .await
         .unwrap();
-    speech_service
-        .say_azure("How are you doing this lovely evening?")
-        .await
-        .unwrap();
 
     udp_adaptor::udp_controller_handler(&mut motion_controller)
         .await

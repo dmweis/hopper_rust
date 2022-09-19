@@ -224,6 +224,40 @@ impl SpeechService {
         Ok(())
     }
 
+    pub async fn say_astromech(&mut self, phrase: &str) -> HopperResult<()> {
+        let mut sounds = vec![];
+        if let Some(ref audio_repository) = self.audio_repository {
+            for letter in phrase.to_ascii_lowercase().chars() {
+                if letter.is_ascii_alphabetic() {
+                    let lookup = format!("astromech/{}.wav", letter);
+                    if let Some(data) = audio_repository.load(&lookup) {
+                        sounds.push(data);
+                    }
+                }
+            }
+        }
+        for sound in sounds {
+            self.play(sound).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn random_astromech_noise(&mut self, length: u32) -> HopperResult<()> {
+        let mut sounds = vec![];
+        if let Some(ref audio_repository) = self.audio_repository {
+            for _ in 0..length {
+                if let Some(sound) = audio_repository.random_file_from_dir("astromech") {
+                    sounds.push(sound);
+                }
+            }
+        }
+
+        for sound in sounds {
+            self.play(sound).await?;
+        }
+        Ok(())
+    }
+
     pub async fn say_azure(&mut self, text: &str) -> HopperResult<()> {
         // This cloning here is lame...
         self.say_azure_with_voice(text, &self.azure_voice.clone(), AzureVoiceStyle::Plain)
