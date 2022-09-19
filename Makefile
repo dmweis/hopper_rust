@@ -9,6 +9,8 @@ DEB_BUILD_PATH ?= target/debian/hopper_*.deb
 
 TARGET_ARCH := aarch64-unknown-linux-musl
 RELEASE_BINARY_PATH := target/release/hopper
+RELEASE_CROSS_BINARY_PATH := ./target/${TARGET_ARCH}/release/hopper
+
 TARGET_PATH := ~/src/hopper_rust/
 
 VERSION_TAG = $(shell cargo get version)
@@ -88,8 +90,8 @@ build-cross:
 
 .PHONY: deploy-cross
 deploy-cross: build-cross
-	rsync -c ${SOURCE_PATH} ${TARGET_HOST}:${TARGET_PATH}
+	rsync -c ${RELEASE_CROSS_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH}
 
 .PHONY: remote-run
 remote-run: deploy-cross
-	ssh -t $(TARGET_HOST) ./face_demo
+	ssh -t $(TARGET_HOST) 'cd src/hopper_rust && ./hopper'
