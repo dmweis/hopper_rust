@@ -10,7 +10,7 @@ jobs:
     name: Test
     runs-on: ubuntu-20.04
     steps:
-      - name: Install libudev
+      - name: Install libudev and alsa
         run: sudo apt-get update && sudo apt-get install librust-libudev-sys-dev libasound2-dev -y
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -42,8 +42,8 @@ jobs:
     name: Clippy
     runs-on: ubuntu-20.04
     steps:
-      - name: Install libudev
-        run: sudo apt update && sudo apt install librust-libudev-sys-dev
+      - name: Install libudev and alsa
+        run: sudo apt-get update && sudo apt-get install librust-libudev-sys-dev libasound2-dev -y
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -60,8 +60,8 @@ jobs:
     name: Code coverage
     runs-on: ubuntu-20.04
     steps:
-      - name: Install libudev
-        run: sudo apt update && sudo apt install librust-libudev-sys-dev
+      - name: Install libudev and alsa
+        run: sudo apt-get update && sudo apt-get install librust-libudev-sys-dev libasound2-dev -y
       - name: Checkout repository
         uses: actions/checkout@v2
 

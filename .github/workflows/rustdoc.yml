@@ -12,8 +12,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v1
-      - name: Install libudev
-        run: sudo apt update && sudo apt install librust-libudev-sys-dev
+      - name: Install libudev and alsa
+        run: sudo apt-get update && sudo apt-get install librust-libudev-sys-dev libasound2-dev -y
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
