@@ -32,3 +32,13 @@ pub enum HopperError {
     #[error("Text to speech error")]
     TtsError(#[from] azure_tts::TtsError),
 }
+
+impl HopperError {
+    pub fn is_recoverable_driver_error(&self) -> bool {
+        if let HopperError::DynamixelDriverError(error) = self {
+            error.is_recoverable()
+        } else {
+            false
+        }
+    }
+}

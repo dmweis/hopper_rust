@@ -890,8 +890,8 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 
 [[package]]
 name = "dynamixel-driver"
-version = "0.2.0"
-source = "git+https://github.com/dmweis/dynamixel-driver?branch=main#d024beb198ffffd513cd63b37a595f8d566fe758"
+version = "0.2.1"
+source = "git+https://github.com/dmweis/dynamixel-driver?branch=main#f1f3048e0028936563c55e1c7480643c1b66f00c"
 dependencies = [
  "async-trait",
  "bytes",

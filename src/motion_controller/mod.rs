@@ -4,12 +4,12 @@ pub mod stance;
 pub mod visualizer;
 pub mod walking;
 
+use crate::error::HopperResult;
 use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
     IkControllable,
 };
 use crate::utilities::MpscChannelHelper;
-use anyhow::Result;
 pub use choreographer::DanceMove;
 use log::*;
 use nalgebra::{UnitQuaternion, Vector3};
@@ -35,11 +35,11 @@ pub struct MotionController {
     command_sender: last_message_channel::Sender<MotionControllerCommand>,
     blocking_command_sender: mpsc::Sender<BlockingCommand>,
     command: MotionControllerCommand,
-    _handle: JoinHandle<Result<()>>,
+    _handle: JoinHandle<HopperResult<()>>,
 }
 
 impl MotionController {
-    pub async fn new(ik_controller: Box<dyn IkControllable>) -> Result<Self> {
+    pub async fn new(ik_controller: Box<dyn IkControllable>) -> HopperResult<Self> {
         let (command_sender, receiver) = last_message_channel::latest_message_channel();
         let command = MotionControllerCommand::default();
 
@@ -150,7 +150,7 @@ impl MotionControllerLoop {
         mut ik_controller: Box<dyn IkControllable>,
         command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
         blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
-    ) -> Result<Self> {
+    ) -> HopperResult<Self> {
         let last_written_pose = ik_controller.read_leg_positions().await?;
         Ok(Self {
             ik_controller,
@@ -171,12 +171,24 @@ impl MotionControllerLoop {
         })
     }
 
-    async fn run(mut self) -> Result<()> {
-        self.control_loop().await?;
-        Ok(())
+    async fn run(mut self) -> HopperResult<()> {
+        loop {
+            match self.control_loop().await {
+                Err(error) => {
+                    error!("Control loop error {}", error);
+                    if error.is_recoverable_driver_error() {
+                        info!("Error is recoverable. Restarting controller");
+                    } else {
+                        error!("Error is not recoverable. Stopping controller");
+                        return Err(error);
+                    }
+                }
+                Ok(()) => return Ok(()),
+            }
+        }
     }
 
-    async fn stand_up(&mut self) -> Result<()> {
+    async fn stand_up(&mut self) -> HopperResult<()> {
         self.last_written_pose = self.ik_controller.read_leg_positions().await?;
         self.transition_direct(&[
             &self.last_written_pose.clone(),
@@ -190,7 +202,7 @@ impl MotionControllerLoop {
         Ok(())
     }
 
-    async fn sit_down(&mut self) -> Result<()> {
+    async fn sit_down(&mut self) -> HopperResult<()> {
         self.transition_step(&[stance::relaxed_stance(), stance::relaxed_wide_stance()])
             .await?;
         self.transition_direct(&[stance::relaxed_wide_stance(), stance::grounded_stance()])
@@ -201,7 +213,7 @@ impl MotionControllerLoop {
     }
 
     /// Move over sequence of LegPositions using direct motions
-    async fn transition_direct(&mut self, states: &[&LegPositions]) -> Result<()> {
+    async fn transition_direct(&mut self, states: &[&LegPositions]) -> HopperResult<()> {
         let mut interval = time::interval(TICK_DURATION);
         for pose in states {
             for new_pose in self.last_written_pose.to_move_towards_iter(pose, MAX_MOVE) {
@@ -216,7 +228,7 @@ impl MotionControllerLoop {
     /// Move over sequence of LegPositions using step transitions
     ///
     /// Uses the last tripod to alternate steps
-    async fn transition_step(&mut self, states: &[&LegPositions]) -> Result<()> {
+    async fn transition_step(&mut self, states: &[&LegPositions]) -> HopperResult<()> {
         let mut interval = time::interval(TICK_DURATION);
         for pose in states {
             self.last_tripod.invert();
@@ -275,7 +287,7 @@ impl MotionControllerLoop {
         !(self.lrl_reset && self.rlr_reset)
     }
 
-    async fn control_loop(&mut self) -> Result<()> {
+    async fn control_loop(&mut self) -> HopperResult<()> {
         let mut interval = time::interval(TICK_DURATION);
 
         loop {
