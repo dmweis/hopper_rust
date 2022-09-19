@@ -1307,7 +1307,7 @@ dependencies = [
 [[package]]
 name = "hopper_face"
 version = "0.1.0"
-source = "git+https://github.com/dmweis/hopper_face?branch=main#46745a07c705ecb1232e81c096d8702bf1da07b2"
+source = "git+https://github.com/dmweis/hopper_face?branch=main#632d9541d5ddc3fd60beee95639b06ad8ec69722"
 dependencies = [
  "clap",
  "cobs-rs",

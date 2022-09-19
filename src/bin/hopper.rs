@@ -1,15 +1,14 @@
 use anyhow::Result;
 use clap::Parser;
-use log::*;
-use std::{
-    path::{Path, PathBuf},
-    time::Duration,
-};
-
 use hopper_rust::{
     app_config::get_configuration, body_controller, body_controller::BodyController, hopper_config,
     ik_controller, lidar::LidarDriver, motion_controller, speech::SpeechService, udp_adaptor,
     utilities,
+};
+use log::*;
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
 };
 
 /// Hopper body controller
@@ -55,6 +54,18 @@ async fn main() -> Result<()> {
     let mut lidar_driver = LidarDriver::new(&args.lidar)?;
     lidar_driver.stop()?;
 
+    let mut speech_service = SpeechService::new(
+        app_config.tts_service_config.azure_api_key,
+        app_config.tts_service_config.cache_dir_path,
+        app_config.tts_service_config.audio_repository_path,
+    )
+    .unwrap();
+
+    speech_service
+        .play_sound("hopper_sounds/windows_startup.wav")
+        .await
+        .unwrap();
+
     let hopper_config = args
         .body_config
         .map(|path| hopper_config::HopperConfig::load(Path::new(&path)))
@@ -73,18 +84,6 @@ async fn main() -> Result<()> {
     ik_controller.set_speed(1023).await?;
 
     let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
-
-    let mut speech_service = SpeechService::new(
-        app_config.tts_service_config.azure_api_key,
-        app_config.tts_service_config.cache_dir_path,
-        app_config.tts_service_config.audio_repository_path,
-    )
-    .unwrap();
-
-    speech_service
-        .play_sound("hopper_sounds/windows_startup.wav")
-        .await
-        .unwrap();
 
     udp_adaptor::udp_controller_handler(&mut motion_controller)
         .await
