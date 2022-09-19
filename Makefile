@@ -26,7 +26,7 @@ deploy-binary: build
 	rsync -c ${RELEASE_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH}
 
 .PHONY: build-deb
-build-deb:
+build-deb: build
 	cargo deb --no-build
 
 .PHONE: install
