@@ -56,6 +56,7 @@ enum AudioPlayerCommand {
     Resume,
     Stop,
     Volume(f32),
+    Terminate,
 }
 
 fn audio_player_loop(receiver: &Receiver<AudioPlayerCommand>) -> HopperResult<()> {
@@ -88,8 +89,13 @@ fn audio_player_loop(receiver: &Receiver<AudioPlayerCommand>) -> HopperResult<()
                 info!("Settings volume to {}", volume);
                 sink.set_volume(volume)
             }
+            AudioPlayerCommand::Terminate => {
+                warn!("Audio player loop terminated");
+                break;
+            }
         }
     }
+    Ok(())
 }
 
 fn create_player() -> Sender<AudioPlayerCommand> {
@@ -289,6 +295,14 @@ impl SpeechService {
     pub fn volume(&self, volume: f32) {
         self.audio_sender
             .send(AudioPlayerCommand::Volume(volume))
+            .unwrap();
+    }
+}
+
+impl Drop for SpeechService {
+    fn drop(&mut self) {
+        self.audio_sender
+            .send(AudioPlayerCommand::Terminate)
             .unwrap();
     }
 }
