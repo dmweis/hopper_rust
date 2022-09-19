@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Install gcc for arm
-        run: sudo apt install gcc-arm-linux-gnueabihf
+        run: sudo apt install gcc-aarch64-linux-gnu
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-          target: armv7-unknown-linux-musleabihf
+          target: aarch64-unknown-linux-musl
           override: true
       - uses: actions-rs/cargo@v1
         with:

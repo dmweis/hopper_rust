@@ -7,7 +7,7 @@ HUB_HOST ?= pi@$(HUB_URL)
 REMOTE_DIRECTORY ?= ~
 DEB_BUILD_PATH ?= target/debian/hopper_*.deb
 
-TARGET_ARCH := armv7-unknown-linux-musleabihf
+TARGET_ARCH := aarch64-unknown-linux-musl
 RELEASE_BINARY_PATH := target/release/hopper
 TARGET_PATH := ~/src/hopper_rust/
 
@@ -82,3 +82,14 @@ cursed: push-to-hub
 		rsync -c ${RELEASE_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH} && \
 		ssh -t $(TARGET_HOST) 'cd src/hopper_rust && ./hopper'"
 
+.PHONY: build-cross
+build-cross:
+	cargo build --release --target=${TARGET_ARCH} --no-default-features
+
+.PHONY: deploy-cross
+deploy-cross: build-cross
+	rsync -c ${SOURCE_PATH} ${TARGET_HOST}:${TARGET_PATH}
+
+.PHONY: remote-run
+remote-run: deploy-cross
+	ssh -t $(TARGET_HOST) ./face_demo

@@ -1,5 +1,6 @@
 use super::audio_cache::AudioCache;
 use super::audio_repository::AudioRepository;
+use super::AzureVoiceStyle;
 use crate::error::{HopperError, HopperResult};
 use log::*;
 use sha2::{Digest, Sha256};
@@ -32,22 +33,6 @@ fn hash_azure_tts(
     hasher.update(serde_json::to_string(&voice.gender).unwrap());
     let hashed = hasher.finalize();
     format!("{}-{:x}", voice.name, hashed)
-}
-
-// These are styles that apply to en-US-SaraNeural
-// since that's the most used voice
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub enum AzureVoiceStyle {
-    Plain,
-    Angry,
-    Cheerful,
-    Sad,
-}
-
-impl Default for AzureVoiceStyle {
-    fn default() -> Self {
-        AzureVoiceStyle::Plain
-    }
 }
 
 enum AudioPlayerCommand {

@@ -28,6 +28,7 @@ pub enum HopperError {
     FailedToCreateAudioOutputStream,
     #[error("Failed to create audio sink")]
     FailedToCreateAudioSink,
+    #[cfg(feature = "audio")]
     #[error("Text to speech error")]
     TtsError(#[from] azure_tts::TtsError),
 }
