@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["create_commands_for_body",""]],"struct":[["LegMotorPositions",""]],"type":[["BodyMotorPositions",""]]};

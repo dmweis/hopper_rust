@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["get_configuration","Use default config if no path is provided"]],"struct":[["AppConfig",""],["TtsServiceConfig",""]]};
