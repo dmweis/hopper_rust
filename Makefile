@@ -21,7 +21,11 @@ MENDER_ARTIFACT_OUTPUT_PATH := target/mender
 
 .PHONY: build
 build:
-	cargo build --release --no-default-features --bin hopper
+	cargo build \
+		--release \
+		--no-default-features \
+		--bin hopper \
+		--features audio
 
 .PHONY: deploy-binary
 deploy-binary: build
