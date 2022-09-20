@@ -49,6 +49,8 @@ build-artifact: build-deb
 	mkdir -p $(MENDER_ARTIFACT_OUTPUT_PATH)
 	rm -f $(MENDER_ARTIFACT_OUTPUT_PATH)/*
 	mender-artifact write module-image --type deb \
+		--software-name hopper_rust \
+		--software-versrion $(VERSION_TAG)
 		--artifact-name $(MENDER_ARTIFACT_NAME) \
 		--device-type raspberrypi4 \
 		--device-type raspberrypi3 \
