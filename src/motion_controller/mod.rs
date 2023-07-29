@@ -11,12 +11,12 @@ use crate::ik_controller::{
 };
 use crate::utilities::MpscChannelHelper;
 pub use choreographer::DanceMove;
-use log::*;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
 use tokio::time;
 use tokio::{spawn, task::JoinHandle};
+use tracing::*;
 use walking::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

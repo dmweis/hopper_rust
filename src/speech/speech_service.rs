@@ -2,7 +2,6 @@ use super::audio_cache::AudioCache;
 use super::audio_repository::AudioRepository;
 use super::AzureVoiceStyle;
 use crate::error::{HopperError, HopperResult};
-use log::*;
 use sha2::{Digest, Sha256};
 use std::sync::mpsc::Receiver;
 use std::{
@@ -11,6 +10,7 @@ use std::{
     sync::mpsc::{channel, Sender},
     thread,
 };
+use tracing::*;
 
 // Used to invalidate old cache
 const AZURE_FORMAT_VERSION: u32 = 3;

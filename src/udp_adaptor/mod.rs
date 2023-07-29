@@ -4,7 +4,6 @@ use crate::ik_controller::leg_positions::*;
 use crate::ik_controller::IkControllable;
 use crate::motion_controller;
 use crate::motion_controller::walking::MoveCommand;
-use log::*;
 use nalgebra::{UnitQuaternion, Vector2, Vector3};
 use serde::{Deserialize, Serialize};
 use std::net::UdpSocket;
@@ -12,6 +11,7 @@ use std::str::from_utf8;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::*;
 
 #[derive(Deserialize)]
 enum Command {
@@ -34,6 +34,7 @@ struct Message {
 pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> HopperResult<()> {
     let socket = UdpSocket::bind("0.0.0.0:6666")?;
     let mut buffer = [0; 1024];
+
     loop {
         if let Ok((amt, addr)) = socket.recv_from(&mut buffer) {
             trace!("got new message");

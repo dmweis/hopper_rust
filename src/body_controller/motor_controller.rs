@@ -5,8 +5,8 @@ use crate::{
 };
 use async_trait::async_trait;
 use dynamixel_driver::*;
-use log::*;
 use std::collections::VecDeque;
+use tracing::*;
 
 #[async_trait]
 pub trait BodyController: Send + Sync {

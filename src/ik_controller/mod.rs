@@ -13,8 +13,8 @@ use crate::{
 };
 use async_trait::async_trait;
 use leg_positions::*;
-use log::*;
 use nalgebra::{Point3, Vector3};
+use tracing::*;
 
 #[async_trait]
 pub trait IkControllable: BodyController {

@@ -1,10 +1,10 @@
 use crate::hexapod::LegFlags;
 use crate::ik_controller::leg_positions::LegPositions;
-use log::*;
 use nalgebra::{distance, Point3, Rotation3, Vector2, Vector3};
 use serde::{Deserialize, Serialize};
 use std::f32;
 use std::time::{Duration, Instant};
+use tracing::*;
 
 // In this mode the legs will immediately lift to full height
 // this prevents dragging of feet but also results in a very choppy movement

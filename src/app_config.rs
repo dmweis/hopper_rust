@@ -1,7 +1,7 @@
 use config::Config;
-use log::*;
 use serde::Deserialize;
 use std::{path::PathBuf, str};
+use tracing::*;
 
 /// Use default config if no path is provided
 pub fn get_configuration(config: Option<PathBuf>) -> Result<AppConfig, anyhow::Error> {

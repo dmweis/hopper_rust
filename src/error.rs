@@ -16,8 +16,6 @@ pub enum HopperError {
     TomlError(#[from] toml::ser::Error),
     #[error("Json serde error")]
     JsonError(#[from] serde_json::Error),
-    #[error("Failed to set logger")]
-    SetLoggerError(#[from] log::SetLoggerError),
     #[error("Lidar error")]
     LidarError(#[from] rplidar_driver::RposError),
     #[error("Audio cache dir error")]

@@ -5,11 +5,11 @@ use hopper_rust::{
     ik_controller, lidar::LidarDriver, motion_controller, speech::SpeechService, udp_adaptor,
     utilities,
 };
-use log::*;
 use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use tracing::*;
 
 /// Hopper body controller
 #[derive(Parser)]
@@ -22,10 +22,6 @@ struct Args {
     /// application configuration
     #[arg(long)]
     config: Option<PathBuf>,
-    /// Path for external log file.
-    /// If no give will only log to out
-    #[arg(long)]
-    log_path: Option<String>,
     /// Serial port name of the dynamixel port
     #[arg(short, long, default_value = "/dev/dynamixel")]
     dynamixel_port: String,
@@ -43,7 +39,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
-    utilities::start_loggers(args.log_path, args.verbose)?;
+    utilities::setup_tracing(args.verbose);
     info!("Started main controller");
 
     let app_config = get_configuration(args.config)?;

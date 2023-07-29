@@ -1,0 +1,8 @@
+
+syntax = "proto3";
+
+package hopper;
+
+message Base {
+  string name = 1;
+}

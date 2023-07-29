@@ -3,9 +3,9 @@ use clap::Parser;
 use gilrs::Gilrs;
 use hopper_rust::udp_adaptor::ControllerData;
 use hopper_rust::utilities;
-use log::*;
 use std::net::UdpSocket;
 use std::{thread::sleep, time::Duration};
+use tracing::*;
 
 /// Visualize Hopper
 #[derive(Parser)]
@@ -19,7 +19,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
-    utilities::start_loggers(None, 1)?;
+    utilities::setup_tracing(1);
     info!("Started remote controller");
 
     let socket = UdpSocket::bind("0.0.0.0:6666")?;

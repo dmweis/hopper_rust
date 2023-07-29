@@ -1,48 +1,20 @@
-use crate::error::HopperResult;
-use log::*;
-use simplelog::*;
-use std::{fs::OpenOptions, sync::mpsc};
+use std::sync::mpsc;
 
-/// Initializes loggers
-///
-/// By default tries to initialize colored logger.
-/// If this fails (systemd services can't) will default to simple logger
-/// If log_file is provided can fail on creating it
-///
-/// Log level is Trace for terminal logger and Warn for file
-///
-/// # Arguments
-///
-/// * `log_file` - Path to the optional file to log into
-pub fn start_loggers(log_file: Option<String>, verbosity_level: u8) -> HopperResult<()> {
-    let config = ConfigBuilder::new()
-        .add_filter_allow_str("hopper_rust")
-        .add_filter_allow_str("remote_controller")
-        .add_filter_allow_str("visualizer")
-        .add_filter_allow_str("hopper")
-        .build();
+pub fn setup_tracing(verbosity_level: u8) {
     let filter = match verbosity_level {
-        0 => LevelFilter::Warn,
-        1 => LevelFilter::Info,
-        2 => LevelFilter::Debug,
-        3 => LevelFilter::Trace,
-        _ => LevelFilter::max(),
+        // 0 => tracing::level_filters::LevelFilter::WARN,
+        0 => tracing::level_filters::LevelFilter::INFO,
+        1 => tracing::level_filters::LevelFilter::INFO,
+        2 => tracing::level_filters::LevelFilter::DEBUG,
+        3 => tracing::level_filters::LevelFilter::TRACE,
+        _ => tracing::level_filters::LevelFilter::TRACE,
     };
-    let mut loggers: Vec<Box<dyn SharedLogger>> = vec![];
-    if let Some(path) = log_file {
-        let log_file = OpenOptions::new().append(true).create(true).open(path)?;
-        let file_logger = WriteLogger::new(filter, config.clone(), log_file);
-        loggers.push(file_logger);
-    }
-    loggers.push(TermLogger::new(
-        filter,
-        config,
-        TerminalMode::Mixed,
-        ColorChoice::Auto,
-    ));
-    CombinedLogger::init(loggers)?;
-    info!("Logging level set to {}", filter);
-    Ok(())
+
+    tracing_subscriber::fmt()
+        .pretty()
+        .with_thread_names(true)
+        .with_max_level(filter)
+        .init();
 }
 
 pub trait MpscChannelHelper<T> {
