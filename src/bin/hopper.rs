@@ -118,6 +118,8 @@ async fn main() -> Result<()> {
 
     let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
 
+    motion_controller.set_body_state(motion_controller::BodyState::Grounded);
+
     udp_adaptor::udp_controller_handler(&mut motion_controller)
         .await
         .unwrap();
