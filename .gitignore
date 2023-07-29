@@ -4,6 +4,6 @@
 audio_cache/*
 dev_settings.yaml
 
-
 .vscode
 python_test/
+docker_out/

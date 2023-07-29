@@ -1,8 +1,6 @@
-TARGET_URL ?= hopper.local
-TARGET_HOST ?= dweis@$(TARGET_URL)
-
-HUB_URL ?= homepi.local
-HUB_HOST ?= pi@$(HUB_URL)
+TARGET_HOST ?= hopper
+TARGET_USERNAME ?= $$USER
+TARGET_HOST_USER ?= $(TARGET_USERNAME)@$(TARGET_HOST)
 
 REMOTE_DIRECTORY ?= ~
 DEB_BUILD_PATH ?= target/debian/hopper_*.deb
@@ -72,23 +70,10 @@ push-to-hopper:
 	rsync -avzhP --stats --exclude 'target/' . \
 		$(TARGET_HOST):$(REMOTE_DIRECTORY)/src/hopper_rust
 
-.PHONY: push-to-hub
-push-to-hub:
-	rsync -avzhP --stats --exclude 'target/' . \
-		$(HUB_HOST):$(REMOTE_DIRECTORY)/src/hopper_rust
-
 .PHONY: install-dependencies
 install-dependencies:
 	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev -y
 	cargo install cargo-deb cargo-get
-
-.PHONY: cursed
-cursed: push-to-hub
-	# this is nasty
-	ssh -t $(HUB_HOST) "cd src/hopper_rust && \
-		/home/pi/.cargo/bin/cargo build --release --no-default-features --bin hopper && \
-		rsync -c ${RELEASE_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH} && \
-		ssh -t $(TARGET_HOST) 'cd src/hopper_rust && ./hopper'"
 
 .PHONY: build-cross
 build-cross:
@@ -101,3 +86,13 @@ deploy-cross: build-cross
 .PHONY: remote-run
 remote-run: deploy-cross
 	ssh -t $(TARGET_HOST) 'cd src/hopper_rust && ./hopper'
+
+.PHONY: build-docker
+build-docker:
+	rm -rf docker_out
+	mkdir docker_out
+	DOCKER_BUILDKIT=1 docker build --tag hopper-builder --file Dockerfile --output type=local,dest=docker_out .
+
+.PHONY: push-docker-built
+push-docker-built: build-docker
+	rsync -avz --delete docker_out/* $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper
