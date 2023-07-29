@@ -26,3 +26,32 @@ The platform is modeled and 3D printed by me and is still a work in progress. It
 
 CAD design files can be found [here](https://github.com/dmweis/hopper_design)  
 They may be outdated. If you'd like current file you can email me [here](mailto:dweis7@gmail.com)
+
+## Dependencies
+
+In case build fails with alsa-sys build stepa you want to install dev dependencies for `alsa`.  
+On debian the package is called `libasound2-dev`.  
+
+You may also need `libssl-dev` depending on which ssl library you are using.  
+And `libudev` - `libudev-dev` on Ubuntu
+
+```bash
+sudo apt install libssl-dev libasound2-dev libudev-dev -y
+```
+
+## Audio on raspberry pi
+
+depending on if you are running as user or system you'll want to have the following config
+
+```shell
+pcm.!default {
+    type hw
+    card 1
+}
+ctl.!default {
+    type hw
+    card 1
+}
+```
+
+either in `~/.asoundrc` or `/etc/asound.conf`

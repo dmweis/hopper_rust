@@ -20,7 +20,7 @@ struct Args {
     #[arg(short, long, default_value = "ChessBoard")]
     ground: GroundType,
     /// Sets the level of verbosity
-    #[arg(short, parse(from_occurrences))]
+    #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
 }
 

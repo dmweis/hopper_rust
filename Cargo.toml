@@ -74,7 +74,7 @@ tokio = {version = "1.6", features = [
   "time",
 ], default-features = false}
 toml = "0.7.6"
-warp = "0.3"
+warp = "0.3.5"
 # fix weird bug with mp3 not playing from start
 # rodio = "0.15"
 config = "0.13.2"

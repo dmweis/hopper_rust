@@ -247,6 +247,7 @@ fn visualizer_loop(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GroundType {
     ChessBoard,
     Circles,
