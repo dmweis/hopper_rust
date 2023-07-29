@@ -3,8 +3,17 @@ FROM balenalib/raspberrypi3-64-debian as chef
 WORKDIR /app
 
 # Install dependancies
-RUN apt-get update && apt-get install -y lld clang autoconf libtool pkg-config build-essential unzip wget 
-RUN apt-get update && apt-get install librust-libudev-sys-dev libasound2-dev -y
+RUN apt-get update && apt-get install -y lld \
+                                         clang \
+                                         autoconf \
+                                         libtool \
+                                         pkg-config \
+                                         build-essential \
+                                         unzip \
+                                         wget \
+                                         librust-libudev-sys-dev \
+                                         libasound2-dev \
+                                         libssl-dev
 
 # install protoc
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v23.4/protoc-23.4-linux-aarch_64.zip
