@@ -9,7 +9,7 @@ use crate::{
 };
 use crate::{
     error::HopperResult,
-    hopper_config::{HopperConfig, LegConfig},
+    hopper_body_config::{HopperConfig, LegConfig},
 };
 use async_trait::async_trait;
 use leg_positions::*;
@@ -282,10 +282,14 @@ mod tests {
 
     #[test]
     fn basic_ik_left_front() {
-        let hopper_config = HopperConfig::default();
+        let hopper_body_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
-        let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front()).unwrap();
+        let motor_positions = calculate_ik_for_leg(
+            &target,
+            &hopper_body_config,
+            hopper_body_config.legs.left_front(),
+        )
+        .unwrap();
         assert_relative_eq!(motor_positions.coxa().to_degrees(), 113.28124);
         assert_relative_eq!(motor_positions.femur().to_degrees(), 112.15929);
         assert_relative_eq!(motor_positions.tibia().to_degrees(), 196.29994);
@@ -293,11 +297,14 @@ mod tests {
 
     #[test]
     fn basic_ik_right_front() {
-        let hopper_config = HopperConfig::default();
+        let hopper_body_config = HopperConfig::default();
         let target = Point3::new(0.18, -0.15, -0.09);
-        let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.right_front())
-                .unwrap();
+        let motor_positions = calculate_ik_for_leg(
+            &target,
+            &hopper_body_config,
+            hopper_body_config.legs.right_front(),
+        )
+        .unwrap();
         assert_relative_eq!(motor_positions.coxa().to_degrees(), 186.71875);
         assert_relative_eq!(motor_positions.femur().to_degrees(), 188.0706);
         assert_relative_eq!(motor_positions.tibia().to_degrees(), 103.929955);
@@ -308,7 +315,7 @@ mod tests {
         // This is a magic number test for hoppers standard resting position
         // if it fails it's a good indicator something went wrong
         // but not a good indicator of what went wrong
-        let hopper_config = HopperConfig::default();
+        let hopper_body_config = HopperConfig::default();
         let pose = LegPositions::new(
             Point3::new(0.18, 0.15, -0.09),
             Point3::new(0.0, 0.22, -0.09),
@@ -317,7 +324,7 @@ mod tests {
             Point3::new(0.0, -0.22, -0.09),
             Point3::new(-0.18, -0.15, -0.09),
         );
-        let motor_positions = calculate_ik(&pose, &hopper_config).unwrap();
+        let motor_positions = calculate_ik(&pose, &hopper_body_config).unwrap();
         let expected_motor_positions = BodyMotorPositions::new(
             LegMotorPositions::new(1.9771307, 1.9575489, 3.4260802),
             LegMotorPositions::new(2.6187901, 1.9678993, 3.3529518),
@@ -331,36 +338,43 @@ mod tests {
 
     #[test]
     fn test_fk_against_ik_left_front() {
-        let hopper_config = HopperConfig::default();
+        let hopper_body_config = HopperConfig::default();
         let target = Point3::new(0.18, 0.15, -0.09);
-        let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.left_front()).unwrap();
+        let motor_positions = calculate_ik_for_leg(
+            &target,
+            &hopper_body_config,
+            hopper_body_config.legs.left_front(),
+        )
+        .unwrap();
         let fk_calculated = calculate_fk_for_leg(
             &motor_positions,
-            &hopper_config,
-            hopper_config.legs.left_front(),
+            &hopper_body_config,
+            hopper_body_config.legs.left_front(),
         );
         assert_relative_eq!(&target, &fk_calculated);
     }
 
     #[test]
     fn test_fk_against_ik_right_front() {
-        let hopper_config = HopperConfig::default();
+        let hopper_body_config = HopperConfig::default();
         let target = Point3::new(0.18, -0.15, -0.09);
-        let motor_positions =
-            calculate_ik_for_leg(&target, &hopper_config, hopper_config.legs.right_front())
-                .unwrap();
+        let motor_positions = calculate_ik_for_leg(
+            &target,
+            &hopper_body_config,
+            hopper_body_config.legs.right_front(),
+        )
+        .unwrap();
         let fk_calculated = calculate_fk_for_leg(
             &motor_positions,
-            &hopper_config,
-            hopper_config.legs.right_front(),
+            &hopper_body_config,
+            hopper_body_config.legs.right_front(),
         );
         assert_relative_eq!(&target, &fk_calculated);
     }
 
     #[test]
     fn test_full_fk_against_ik() {
-        let hopper_config = HopperConfig::default();
+        let hopper_body_config = HopperConfig::default();
         let origin = LegPositions::new(
             Point3::new(0.18, 0.15, -0.09),
             Point3::new(0.0, 0.22, -0.09),
@@ -369,8 +383,8 @@ mod tests {
             Point3::new(0.0, -0.22, -0.09),
             Point3::new(-0.18, -0.15, -0.09),
         );
-        let motor_positions = calculate_ik(&origin, &hopper_config).unwrap();
-        let result = calculate_fk(&motor_positions, &hopper_config);
+        let motor_positions = calculate_ik(&origin, &hopper_body_config).unwrap();
+        let result = calculate_fk(&motor_positions, &hopper_body_config);
         assert_relative_eq!(origin.left_front(), result.left_front());
         assert_relative_eq!(origin.left_middle(), result.left_middle());
         assert_relative_eq!(origin.left_rear(), result.left_rear());

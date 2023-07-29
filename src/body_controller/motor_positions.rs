@@ -1,6 +1,6 @@
 use crate::{
     hexapod::HexapodTypes,
-    hopper_config::{BodyConfig, LegConfig},
+    hopper_body_config::{BodyConfig, LegConfig},
 };
 use dynamixel_driver::*;
 use serde::{Deserialize, Serialize};

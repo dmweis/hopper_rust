@@ -5,7 +5,7 @@ pub mod camera;
 pub mod configuration;
 pub mod error;
 mod hexapod;
-pub mod hopper_config;
+pub mod hopper_body_config;
 pub mod ik_controller;
 pub mod lidar;
 pub mod motion_controller;

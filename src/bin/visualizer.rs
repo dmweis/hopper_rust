@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use gilrs::Gilrs;
-use hopper_rust::{hopper_config, motion_controller, utilities};
+use hopper_rust::{hopper_body_config, motion_controller, utilities};
 use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;
 use std::path::Path;
@@ -32,8 +32,8 @@ async fn main() -> Result<()> {
 
     let _config = args
         .body_config
-        .map(|path| hopper_config::HopperConfig::load(Path::new(&path)))
-        .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
+        .map(|path| hopper_body_config::HopperConfig::load(Path::new(&path)))
+        .unwrap_or_else(|| Ok(hopper_body_config::HopperConfig::default()))?;
 
     let visualizer = motion_controller::visualizer::HopperVisualizer::new(args.ground);
     let mut motion_controller =

@@ -1,7 +1,7 @@
 use super::motor_positions::*;
 use crate::{
     error::HopperResult,
-    hopper_config::{BodyConfig, LegConfig},
+    hopper_body_config::{BodyConfig, LegConfig},
 };
 use async_trait::async_trait;
 use dynamixel_driver::*;

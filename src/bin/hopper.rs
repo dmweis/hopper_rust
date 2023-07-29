@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
     body_controller, body_controller::BodyController, camera::scan_camera,
-    configuration::get_configuration, error::HopperError, hopper_config, ik_controller,
+    configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
     lidar::start_lidar_driver, motion_controller, speech::SpeechService, udp_remote, utilities,
 };
 use std::{
@@ -99,17 +99,19 @@ async fn main() -> Result<()> {
         .await
         .unwrap();
 
-    let hopper_config = args
+    let hopper_body_config = args
         .body_config
-        .map(|path| hopper_config::HopperConfig::load(Path::new(&path)))
-        .unwrap_or_else(|| Ok(hopper_config::HopperConfig::default()))?;
+        .map(|path| hopper_body_config::HopperConfig::load(Path::new(&path)))
+        .unwrap_or_else(|| Ok(hopper_body_config::HopperConfig::default()))?;
 
-    let body_controller =
-        body_controller::AsyncBodyController::new(&args.dynamixel_port, hopper_config.legs.clone())
-            .unwrap();
+    let body_controller = body_controller::AsyncBodyController::new(
+        &args.dynamixel_port,
+        hopper_body_config.legs.clone(),
+    )
+    .unwrap();
 
     let mut ik_controller =
-        ik_controller::IkController::new(Box::new(body_controller), hopper_config);
+        ik_controller::IkController::new(Box::new(body_controller), hopper_body_config);
 
     // TODO (David): Move to some settings system
     // also maybe tune...

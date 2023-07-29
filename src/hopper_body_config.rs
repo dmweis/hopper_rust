@@ -68,7 +68,7 @@ impl HopperConfig {
 
 impl Default for HopperConfig {
     fn default() -> Self {
-        toml::from_str(include_str!("../../config/hopper.toml")).unwrap()
+        toml::from_str(include_str!("../config/hopper.toml")).unwrap()
     }
 }
 
@@ -77,7 +77,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_hopper_config_loads() {
+    fn default_hopper_body_config_loads() {
         let _ = HopperConfig::default();
     }
 }
