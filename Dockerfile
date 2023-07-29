@@ -4,18 +4,18 @@ WORKDIR /app
 
 # Install dependancies
 RUN apt-get update && apt-get install -y lld \
-                                         clang \
-                                         autoconf \
-                                         libtool \
-                                         pkg-config \
-                                         build-essential \
-                                         unzip \
-                                         wget \
-                                         librust-libudev-sys-dev \
-                                         libasound2-dev \
-                                         libssl-dev \
-                                         libv4l-dev \
-                                         libclang-dev
+    clang \
+    autoconf \
+    libtool \
+    pkg-config \
+    build-essential \
+    unzip \
+    wget \
+    librust-libudev-sys-dev \
+    libasound2-dev \
+    libssl-dev \
+    libv4l-dev \
+    libclang-dev
 
 # install protoc
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v23.4/protoc-23.4-linux-aarch_64.zip
@@ -48,14 +48,15 @@ COPY . .
 
 # Build
 RUN cargo build \
-		--release \
-		--no-default-features \
-		--bin hopper \
-		--features audio
+    --release \
+    --no-default-features \
+    --bin hopper \
+    --features audio
 
 RUN cargo deb --no-build
 
 # Copy to exporter
 FROM scratch AS export
 COPY --from=builder /app/target/debian/hopper-rust*.deb /
+COPY --from=builder /app/target/debian/hopper-rust*.deb /hopper-rust.deb
 COPY --from=builder /app/target/release/hopper /
