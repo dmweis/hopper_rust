@@ -5,11 +5,11 @@ use std::io::Read;
 
 /// Hopper body controller
 #[derive(Parser)]
-#[clap(author, version)]
+#[command(author, version)]
 struct Args {
-    #[clap()]
+    #[arg()]
     text: Option<String>,
-    #[clap(long)]
+    #[arg(long)]
     audio: String,
 }
 

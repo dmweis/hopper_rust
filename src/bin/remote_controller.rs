@@ -9,10 +9,10 @@ use std::{thread::sleep, time::Duration};
 
 /// Visualize Hopper
 #[derive(Parser)]
-#[clap(author, version)]
+#[command(author, version)]
 struct Args {
     /// addr:port of target
-    #[clap()]
+    #[arg()]
     target: String,
 }
 

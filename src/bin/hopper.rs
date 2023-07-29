@@ -13,30 +13,30 @@ use std::{
 
 /// Hopper body controller
 #[derive(Parser)]
-#[clap(author, version)]
+#[command(author, version)]
 struct Args {
     /// Sets path to body config file (.yaml)
     /// If unset uses default value.
-    #[clap(long)]
+    #[arg(long)]
     body_config: Option<String>,
     /// application configuration
-    #[clap(long)]
+    #[arg(long)]
     config: Option<PathBuf>,
     /// Path for external log file.
     /// If no give will only log to out
-    #[clap(long)]
+    #[arg(long)]
     log_path: Option<String>,
     /// Serial port name of the dynamixel port
-    #[clap(short, long, default_value = "/dev/dynamixel")]
+    #[arg(short, long, default_value = "/dev/dynamixel")]
     dynamixel_port: String,
     /// hopper face serial port
-    #[clap(long, default_value = "/dev/hopper_face")]
+    #[arg(long, default_value = "/dev/hopper_face")]
     face_port: String,
     /// hopper lidar serial port
-    #[clap(long, default_value = "/dev/rplidar")]
+    #[arg(long, default_value = "/dev/rplidar")]
     lidar: String,
     /// Sets the level of verbosity
-    #[clap(short, parse(from_occurrences))]
+    #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
 }
 

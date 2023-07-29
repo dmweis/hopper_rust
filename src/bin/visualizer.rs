@@ -10,17 +10,17 @@ use std::{thread::sleep, time::Duration};
 
 /// Visualize Hopper
 #[derive(Parser)]
-#[clap(author, version)]
+#[command(author, version)]
 struct Args {
     /// Sets path to body config file (.yaml)
     /// If unset uses default value.
-    #[clap(long)]
+    #[arg(long)]
     body_config: Option<String>,
     /// type of floor to draw in visualizer
-    #[clap(short, long, default_value = "ChessBoard")]
+    #[arg(short, long, default_value = "ChessBoard")]
     ground: GroundType,
     /// Sets the level of verbosity
-    #[clap(short, parse(from_occurrences))]
+    #[arg(short, parse(from_occurrences))]
     verbose: u8,
 }
 
