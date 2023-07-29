@@ -45,9 +45,14 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 
 # Build
-RUN cargo build --all --bins --release
+RUN cargo build \
+		--release \
+		--no-default-features \
+		--bin hopper \
+		--features audio
+
 RUN cargo deb --no-build
 
 # Copy to exporter
 FROM scratch AS export
-COPY --from=builder /app/target/debian/hopper_*.deb /
+COPY --from=builder /app/target/debian/hopper-rust*.deb /
