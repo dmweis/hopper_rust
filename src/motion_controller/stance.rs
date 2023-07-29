@@ -94,15 +94,15 @@ lazy_static! {
 }
 
 pub fn relaxed_stance() -> &'static LegPositions {
-    &*RELAXED
+    &RELAXED
 }
 
 pub fn grounded_stance() -> &'static LegPositions {
-    &*GROUNDED
+    &GROUNDED
 }
 
 pub fn relaxed_wide_stance() -> &'static LegPositions {
-    &*RELAXED_WIDE
+    &RELAXED_WIDE
 }
 
 fn random_float(range: f32) -> f32 {

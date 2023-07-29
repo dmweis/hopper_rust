@@ -20,16 +20,14 @@ use tokio::{spawn, task::JoinHandle};
 use walking::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
 pub enum BodyState {
     Standing,
+    #[default]
     Grounded,
 }
 
-impl Default for BodyState {
-    fn default() -> Self {
-        BodyState::Grounded
-    }
-}
+
 
 pub struct MotionController {
     command_sender: last_message_channel::Sender<MotionControllerCommand>,

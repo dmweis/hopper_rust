@@ -26,7 +26,7 @@ fn hash_azure_tts(
     hasher.update(&voice.name);
     hasher.update(&voice.language);
     hasher.update(format.as_string());
-    hasher.update(&[style as u8]);
+    hasher.update([style as u8]);
     hasher.update(AZURE_FORMAT_VERSION.to_be_bytes());
     // Turning it into json to hash is a hack.
     // TODO: hash the type not the json
