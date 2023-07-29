@@ -68,7 +68,7 @@ impl HopperConfig {
 
 impl Default for HopperConfig {
     fn default() -> Self {
-        toml::from_slice(include_bytes!("../../config/hopper.toml")).unwrap()
+        toml::from_str(include_str!("../../config/hopper.toml")).unwrap()
     }
 }
 

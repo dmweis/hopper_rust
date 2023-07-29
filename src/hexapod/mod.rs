@@ -103,6 +103,7 @@ impl<T: Clone> HexapodTypes<T> {
 }
 
 bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct LegFlags: u32 {
         const LEFT_FRONT = 0b00000001;
         const LEFT_MIDDLE = 0b00000010;
@@ -110,12 +111,12 @@ bitflags! {
         const RIGHT_FRONT = 0b00001000;
         const RIGHT_MIDDLE = 0b00010000;
         const RIGHT_REAR = 0b00100000;
-        const LRL_TRIPOD = Self::LEFT_FRONT.bits | Self::RIGHT_MIDDLE.bits | Self::LEFT_REAR.bits;
-        const RLR_TRIPOD = Self::RIGHT_FRONT.bits | Self::LEFT_MIDDLE.bits | Self::RIGHT_REAR.bits;
-        const RIGHT = Self::RIGHT_FRONT.bits | Self::RIGHT_MIDDLE.bits | Self::RIGHT_REAR.bits;
-        const LEFT = Self::LEFT_FRONT.bits | Self::LEFT_MIDDLE.bits | Self::LEFT_REAR.bits;
-        const MIDDLE = Self::RIGHT_MIDDLE.bits | Self::LEFT_MIDDLE.bits;
-        const FRONT = Self::LEFT_FRONT.bits | Self::RIGHT_FRONT.bits;
-        const REAR = Self::LEFT_REAR.bits | Self::RIGHT_REAR.bits;
+        const LRL_TRIPOD = Self::LEFT_FRONT.bits() | Self::RIGHT_MIDDLE.bits() | Self::LEFT_REAR.bits();
+        const RLR_TRIPOD = Self::RIGHT_FRONT.bits() | Self::LEFT_MIDDLE.bits() | Self::RIGHT_REAR.bits();
+        const RIGHT = Self::RIGHT_FRONT.bits() | Self::RIGHT_MIDDLE.bits() | Self::RIGHT_REAR.bits();
+        const LEFT = Self::LEFT_FRONT.bits() | Self::LEFT_MIDDLE.bits() | Self::LEFT_REAR.bits();
+        const MIDDLE = Self::RIGHT_MIDDLE.bits() | Self::LEFT_MIDDLE.bits();
+        const FRONT = Self::LEFT_FRONT.bits() | Self::RIGHT_FRONT.bits();
+        const REAR = Self::LEFT_REAR.bits() | Self::RIGHT_REAR.bits();
     }
 }

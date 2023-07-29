@@ -1,34 +1,33 @@
 [package]
-name = "hopper_rust"
-description = "Hopper hexapod robot"
-version = "0.2.9"
 authors = ["David Weis <davidmichaelweis@gmail.com>"]
+default-run = "hopper"
+description = "Hopper hexapod robot"
 edition = "2021"
+license = "MIT OR APACHE"
+name = "hopper_rust"
 publish = false
 readme = "README.md"
-license = "MIT OR APACHE"
 repository = "https://github.com/dmweis/hopper_rust"
-default-run = "hopper"
+version = "0.2.9"
 
 [package.metadata.deb]
+assets = [
+  [
+    "target/release/hopper",
+    "/usr/bin/",
+    "755",
+  ],
+  [
+    "config/settings.yaml",
+    "/etc/hopper/settings.yaml",
+    "644",
+  ],
+]
+conf-files = ["/etc/home_speak/settings.yaml"]
 maintainer = "David Weis <dweis7@gmail.com>"
 maintainer-scripts = "debian/"
-conf-files = ["/etc/home_speak/settings.yaml"]
-assets = [
-    [
-        "target/release/hopper",
-        "/usr/bin/",
-        "755",
-    ],
-    [
-        "config/settings.yaml",
-        "/etc/hopper/settings.yaml",
-        "644",
-    ],
-]
 
 [package.metadata.deb.systemd-units]
-
 
 [[bin]]
 name = "hopper"
@@ -42,44 +41,44 @@ name = "remote_controller"
 required-features = ["visualizer"]
 
 [features]
+audio = ["rodio", "azure_tts"]
 default = ["visualizer", "audio"]
 visualizer = ["kiss3d", "gilrs"]
-audio = ["rodio", "azure_tts"]
 
 [dependencies]
-dynamixel-driver = { branch = "main", git = "https://github.com/dmweis/dynamixel-driver" }
-hopper_face = { branch = "main", git = "https://github.com/dmweis/hopper_face" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-toml = "0.5.8"
+anyhow = "1.0"
+async-trait = "0.1"
+azure_tts = {git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true}
+bitflags = "2.3.3"
 clap = "3.2"
-simplelog = "0.12"
+ctrlc = "3.1"
+dynamixel-driver = {branch = "main", git = "https://github.com/dmweis/dynamixel-driver"}
+gilrs = {version = "0.9", optional = true}
+hopper_face = {branch = "main", git = "https://github.com/dmweis/hopper_face"}
+kiss3d = {optional = true, version = "0.35"}
+last-message-channel = {branch = "main", git = "https://github.com/dmweis/last-message-channel"}
+lazy_static = "1.4"
 log = "0.4"
 mint = "0.5"
-nalgebra = { version = "0.30", features = ["serde-serialize"] }
-thiserror = "1.0"
-anyhow = "1.0"
-tokio = { version = "1.6", features = [
-    "macros",
-    "rt-multi-thread",
-    "time",
-], default-features = false }
-async-trait = "0.1"
-lazy_static = "1.4"
-bitflags = "1.2"
-last-message-channel = { branch = "main", git = "https://github.com/dmweis/last-message-channel" }
+nalgebra = {version = "0.30", features = ["serde-serialize"]}
 rand = "0.8"
-ctrlc = "3.1"
+rodio = {git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true}
+rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "main"}
+serde = {version = "1.0", features = ["derive"]}
+serde_json = "1.0"
+simplelog = "0.12"
+thiserror = "1.0"
+tokio = {version = "1.6", features = [
+  "macros",
+  "rt-multi-thread",
+  "time",
+], default-features = false}
+toml = "0.7.6"
 warp = "0.3"
-kiss3d = { optional = true, version = "0.35" }
-gilrs = { version = "0.9", optional = true }
-rplidar_driver = { git = "https://github.com/dmweis/rplidar_driver", branch = "main" }
-azure_tts = { git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true }
-rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true }
 # fix weird bug with mp3 not playing from start
 # rodio = "0.15"
-sha2 = "0.10"
 config = "0.13.2"
+sha2 = "0.10"
 
 [dev-dependencies]
 approx = "0.5.1"
