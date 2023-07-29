@@ -96,3 +96,4 @@ build-docker:
 .PHONY: push-docker-built
 push-docker-built: build-docker
 	rsync -avz --delete docker_out/* $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper
+	rsync -avz --delete scripts/add_udev_rules $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper/add_udev_rules
