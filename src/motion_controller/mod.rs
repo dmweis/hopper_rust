@@ -19,15 +19,12 @@ use tokio::time;
 use tokio::{spawn, task::JoinHandle};
 use walking::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BodyState {
     Standing,
     #[default]
     Grounded,
 }
-
-
 
 pub struct MotionController {
     command_sender: last_message_channel::Sender<MotionControllerCommand>,

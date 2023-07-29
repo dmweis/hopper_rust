@@ -18,8 +18,7 @@ pub use fake_speech_service::SpeechService;
 
 // These are styles that apply to en-US-SaraNeural
 // since that's the most used voice
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Default)]
 pub enum AzureVoiceStyle {
     #[default]
     Plain,
@@ -27,5 +26,3 @@ pub enum AzureVoiceStyle {
     Cheerful,
     Sad,
 }
-
-
