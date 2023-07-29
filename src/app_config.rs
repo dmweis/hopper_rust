@@ -4,7 +4,7 @@ use std::{path::PathBuf, str};
 use tracing::*;
 
 /// Use default config if no path is provided
-pub fn get_configuration(config: Option<PathBuf>) -> Result<AppConfig, anyhow::Error> {
+pub fn get_configuration(config: &Option<PathBuf>) -> Result<AppConfig, anyhow::Error> {
     let settings = if let Some(config) = config {
         info!("Using configuration from {:?}", config);
         Config::builder()

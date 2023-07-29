@@ -1,15 +1,17 @@
 use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
-    app_config::get_configuration, body_controller, body_controller::BodyController, hopper_config,
-    ik_controller, lidar::LidarDriver, motion_controller, speech::SpeechService, udp_adaptor,
-    utilities,
+    app_config::get_configuration, body_controller, body_controller::BodyController,
+    error::HopperError, hopper_config, ik_controller, lidar::start_lidar_driver, motion_controller,
+    speech::SpeechService, udp_adaptor, utilities,
 };
 use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
 use tracing::*;
+use zenoh::config::Config as ZenohConfig;
+use zenoh::prelude::r#async::*;
 
 /// Hopper body controller
 #[derive(Parser)]
@@ -34,6 +36,35 @@ struct Args {
     /// Sets the level of verbosity
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
+
+    /// Endpoints to connect to.
+    #[clap(short = 'e', long)]
+    connect: Vec<zenoh_config::EndPoint>,
+
+    /// Endpoints to listen on.
+    #[clap(long)]
+    listen: Vec<zenoh_config::EndPoint>,
+
+    /// A configuration file.
+    #[clap(short, long)]
+    zenoh_config: Option<PathBuf>,
+}
+
+impl Args {
+    fn get_zenoh_config(&self) -> Result<ZenohConfig> {
+        let mut config = if let Some(conf_file) = &self.zenoh_config {
+            ZenohConfig::from_file(conf_file).unwrap()
+        } else {
+            ZenohConfig::default()
+        };
+        if !self.connect.is_empty() {
+            config.connect.endpoints = self.connect.clone();
+        }
+        if !self.listen.is_empty() {
+            config.listen.endpoints = self.listen.clone();
+        }
+        Ok(config)
+    }
 }
 
 #[tokio::main]
@@ -42,13 +73,19 @@ async fn main() -> Result<()> {
     utilities::setup_tracing(args.verbose);
     info!("Started main controller");
 
-    let app_config = get_configuration(args.config)?;
+    let app_config = get_configuration(&args.config)?;
+
+    let zenoh_config = args.get_zenoh_config()?;
+    let zenoh_session = zenoh::open(zenoh_config)
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?
+        .into_arc();
 
     let face_controller = hopper_face::FaceController::open(&args.face_port)?;
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
 
-    let mut lidar_driver = LidarDriver::new(&args.lidar)?;
-    lidar_driver.stop()?;
+    start_lidar_driver(zenoh_session.clone(), &args.lidar, false).await?;
 
     let mut speech_service = SpeechService::new(
         app_config.tts_service_config.azure_api_key,

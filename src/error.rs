@@ -29,6 +29,8 @@ pub enum HopperError {
     #[cfg(feature = "audio")]
     #[error("Text to speech error")]
     TtsError(#[from] azure_tts::TtsError),
+    #[error("Zenoh error")]
+    ZenohError(#[from] zenoh::Error),
 }
 
 impl HopperError {
