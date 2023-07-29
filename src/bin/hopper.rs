@@ -1,9 +1,9 @@
 use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
-    app_config::get_configuration, body_controller, body_controller::BodyController,
-    camera::scan_camera, error::HopperError, hopper_config, ik_controller,
-    lidar::start_lidar_driver, motion_controller, speech::SpeechService, udp_adaptor, utilities,
+    body_controller, body_controller::BodyController, camera::scan_camera,
+    configuration::get_configuration, error::HopperError, hopper_config, ik_controller,
+    lidar::start_lidar_driver, motion_controller, speech::SpeechService, udp_remote, utilities,
 };
 use std::{
     path::{Path, PathBuf},
@@ -122,7 +122,7 @@ async fn main() -> Result<()> {
 
     scan_camera()?;
 
-    udp_adaptor::udp_controller_handler(&mut motion_controller)
+    udp_remote::udp_controller_handler(&mut motion_controller)
         .await
         .unwrap();
 

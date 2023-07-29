@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use gilrs::Gilrs;
-use hopper_rust::udp_adaptor::ControllerData;
+use hopper_rust::udp_remote::ControllerData;
 use hopper_rust::utilities;
 use std::net::UdpSocket;
 use std::{thread::sleep, time::Duration};
