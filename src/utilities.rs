@@ -11,7 +11,6 @@ pub fn setup_tracing(verbosity_level: u8) {
     };
 
     tracing_subscriber::fmt()
-        .pretty()
         .with_thread_names(true)
         .with_max_level(filter)
         .init();
