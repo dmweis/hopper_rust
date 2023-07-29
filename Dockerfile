@@ -56,3 +56,4 @@ RUN cargo deb --no-build
 # Copy to exporter
 FROM scratch AS export
 COPY --from=builder /app/target/debian/hopper-rust*.deb /
+COPY --from=builder /app/target/release/hopper /
