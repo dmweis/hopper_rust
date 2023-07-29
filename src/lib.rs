@@ -2,6 +2,7 @@
 
 pub mod app_config;
 pub mod body_controller;
+pub mod camera;
 pub mod error;
 mod hexapod;
 pub mod hopper_config;

@@ -37,6 +37,10 @@ And `libudev` - `libudev-dev` on Ubuntu
 
 ```bash
 sudo apt install libssl-dev libasound2-dev libudev-dev -y
+
+
+# camera
+sudo apt install libv4l-dev libclang-dev -y
 ```
 
 ## Audio on raspberry pi

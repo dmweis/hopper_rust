@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y lld \
                                          wget \
                                          librust-libudev-sys-dev \
                                          libasound2-dev \
-                                         libssl-dev
+                                         libssl-dev \
+                                         libv4l-dev \
+                                         libclang-dev
 
 # install protoc
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v23.4/protoc-23.4-linux-aarch_64.zip

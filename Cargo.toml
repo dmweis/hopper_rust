@@ -78,6 +78,8 @@ dynamixel-driver = {branch = "main", git = "https://github.com/dmweis/dynamixel-
 hopper_face = {branch = "main", git = "https://github.com/dmweis/hopper_face"}
 rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "main"}
 
+v4l = "0.14.0"
+
 gilrs = {version = "0.10", optional = true}
 kiss3d = {optional = true, version = "0.35"}
 last-message-channel = {branch = "main", git = "https://github.com/dmweis/last-message-channel"}

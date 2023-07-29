@@ -2,8 +2,8 @@ use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
     app_config::get_configuration, body_controller, body_controller::BodyController,
-    error::HopperError, hopper_config, ik_controller, lidar::start_lidar_driver, motion_controller,
-    speech::SpeechService, udp_adaptor, utilities,
+    camera::scan_camera, error::HopperError, hopper_config, ik_controller,
+    lidar::start_lidar_driver, motion_controller, speech::SpeechService, udp_adaptor, utilities,
 };
 use std::{
     path::{Path, PathBuf},
@@ -119,6 +119,8 @@ async fn main() -> Result<()> {
     let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
+
+    scan_camera()?;
 
     udp_adaptor::udp_controller_handler(&mut motion_controller)
         .await
