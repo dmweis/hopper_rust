@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
-    body_controller, body_controller::BodyController, camera::scan_camera,
+    body_controller, body_controller::BodyController, camera::start_camera,
     configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
     lidar::start_lidar_driver, motion_controller, speech::SpeechService, udp_remote, utilities,
 };
@@ -122,7 +122,7 @@ async fn main() -> Result<()> {
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
 
-    scan_camera()?;
+    start_camera(zenoh_session.clone()).await?;
 
     udp_remote::udp_controller_handler(&mut motion_controller)
         .await
