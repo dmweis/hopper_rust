@@ -16,6 +16,7 @@ use leg_positions::*;
 use nalgebra::{Point3, Vector3};
 use prost::Message;
 use tracing::*;
+use zenoh::prelude::r#async::*;
 
 #[async_trait]
 pub trait IkControllable: BodyController {
@@ -27,14 +28,14 @@ pub trait IkControllable: BodyController {
 pub struct IkController {
     body_controller: Box<dyn BodyController>,
     body_configuration: HopperConfig,
-    pose_publisher: zenoh::zenoh::Publisher,
+    pose_publisher: zenoh::publication::Publisher<'static>,
 }
 
 impl IkController {
     pub fn new(
         body_controller: Box<dyn BodyController>,
         body_configuration: HopperConfig,
-        pose_publisher: zenoh::zenoh::Publisher,
+        pose_publisher: zenoh::publication::Publisher<'static>,
     ) -> Box<Self> {
         Box::new(IkController {
             body_controller,
