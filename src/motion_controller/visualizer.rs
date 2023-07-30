@@ -96,6 +96,10 @@ impl BodyController for HopperVisualizer {
     async fn scan_motors(&mut self) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
+
+    async fn flush_and_clear_motors(&mut self) -> HopperResult<()> {
+        unimplemented!("shouldn't be called on a mock");
+    }
 }
 
 #[async_trait]

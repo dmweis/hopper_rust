@@ -10,7 +10,7 @@ pub enum HopperError {
     GenericIkError,
     #[error("Dynamixel sync write error {0:?}")]
     DynamixelSyncWriteError(#[source] DynamixelDriverError),
-    #[error("Dynamixel driver error {0} {1:?}")]
+    #[error("Dynamixel driver error ID ({0}) {1:?}")]
     DynamixelDriverError(u8, #[source] DynamixelDriverError),
     #[error("IO error {0:?}")]
     IoError(#[from] std::io::Error),

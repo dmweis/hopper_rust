@@ -17,6 +17,7 @@ pub trait BodyController: Send + Sync {
     async fn read_motor_positions(&mut self) -> HopperResult<BodyMotorPositions>;
     async fn read_mean_voltage(&mut self) -> HopperResult<f32>;
     async fn scan_motors(&mut self) -> HopperResult<()>;
+    async fn flush_and_clear_motors(&mut self) -> HopperResult<()>;
 }
 
 pub struct AsyncBodyController {
@@ -172,6 +173,14 @@ impl BodyController for AsyncBodyController {
                 Err(err) => error!("Motor {} failing with {:?}", id, err),
             }
         }
+        Ok(())
+    }
+
+    async fn flush_and_clear_motors(&mut self) -> HopperResult<()> {
+        self.driver
+            .flush_and_clear()
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(())
     }
 }

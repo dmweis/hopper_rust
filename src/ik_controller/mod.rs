@@ -69,6 +69,10 @@ impl BodyController for IkController {
     async fn scan_motors(&mut self) -> HopperResult<()> {
         self.body_controller.scan_motors().await
     }
+
+    async fn flush_and_clear_motors(&mut self) -> HopperResult<()> {
+        self.body_controller.flush_and_clear_motors().await
+    }
 }
 
 #[async_trait]
