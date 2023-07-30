@@ -65,6 +65,10 @@ impl BodyController for IkController {
     async fn read_mean_voltage(&mut self) -> HopperResult<f32> {
         self.body_controller.read_mean_voltage().await
     }
+
+    async fn scan_motors(&mut self) -> HopperResult<()> {
+        self.body_controller.scan_motors().await
+    }
 }
 
 #[async_trait]

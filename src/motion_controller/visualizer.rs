@@ -92,6 +92,10 @@ impl BodyController for HopperVisualizer {
     async fn read_mean_voltage(&mut self) -> HopperResult<f32> {
         Ok(12.0)
     }
+
+    async fn scan_motors(&mut self) -> HopperResult<()> {
+        unimplemented!("shouldn't be called on a mock");
+    }
 }
 
 #[async_trait]

@@ -173,6 +173,7 @@ impl MotionControllerLoop {
                     error!("Control loop error {}", error);
                     if error.is_recoverable_driver_error() {
                         info!("Error is recoverable. Restarting controller");
+                        self.scan_motors().await?;
                     } else {
                         error!("Error is not recoverable. Stopping controller");
                         return Err(error);
@@ -280,6 +281,11 @@ impl MotionControllerLoop {
 
     fn should_reset_legs(&self) -> bool {
         !(self.lrl_reset && self.rlr_reset)
+    }
+
+    async fn scan_motors(&mut self) -> HopperResult<()> {
+        self.ik_controller.scan_motors().await?;
+        Ok(())
     }
 
     async fn control_loop(&mut self) -> HopperResult<()> {
