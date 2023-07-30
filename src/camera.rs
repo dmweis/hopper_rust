@@ -68,14 +68,8 @@ pub async fn start_camera(zenoh_session: Arc<Session>) -> anyhow::Result<()> {
         timestamp: Some(proto_timestamp_now()),
     };
 
-    loop {
+    tokio::spawn(async move {
         let (buf, meta) = stream.next().unwrap();
-        println!(
-            "Buffer size: {}, seq: {}, timestamp: {}",
-            buf.len(),
-            meta.sequence,
-            meta.timestamp
-        );
 
         compressed_image.data = buf.to_vec();
         compressed_image.timestamp = Some(proto_timestamp_from_v4l(meta.timestamp));
@@ -83,8 +77,10 @@ pub async fn start_camera(zenoh_session: Arc<Session>) -> anyhow::Result<()> {
             .put(compressed_image.encode_to_vec())
             .res()
             .await
-            .map_err(HopperError::ZenohError)?;
-    }
+            .map_err(HopperError::ZenohError)
+            .unwrap();
+    });
+    Ok(())
 }
 
 fn proto_timestamp_from_v4l(ts: v4l::Timestamp) -> Timestamp {
