@@ -1,5 +1,5 @@
-use crate::error::HopperError;
 use crate::foxglove;
+use crate::{configuration::LidarConfig, error::HopperError};
 use prost::Message;
 use prost_types::Timestamp;
 use rplidar_driver::{utils::sort_scan, RplidarDevice, RposError, ScanOptions, ScanPoint};
@@ -17,19 +17,19 @@ use zenoh::prelude::r#async::*;
 
 pub async fn start_lidar_driver(
     zenoh_session: Arc<Session>,
-    port: &str,
-    start_state_on: bool,
+    config: &LidarConfig,
 ) -> anyhow::Result<()> {
-    let (mut scan_receiver, should_lidar_run) = start_lidar_driver_internal(port, start_state_on)?;
+    let (mut scan_receiver, should_lidar_run) =
+        start_lidar_driver_internal(&config.serial_port, config.start_state_on)?;
 
     let subscriber = zenoh_session
-        .declare_subscriber("hopper/lidar/state")
+        .declare_subscriber(&config.state_topic)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let point_cloud_publisher = zenoh_session
-        .declare_publisher("hopper/lidar/point_cloud")
+        .declare_publisher(config.point_cloud_topic.to_owned())
         .res()
         .await
         .map_err(HopperError::ZenohError)?;

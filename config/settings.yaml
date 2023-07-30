@@ -1,4 +1,22 @@
+base:
+  dynamixel_port: "/dev/dynamixel"
+  face_port: "/dev/hopper_face"
 tts_service_config:
   azure_api_key: ""
   cache_dir_path: "/var/cache/hopper/audio_cache"
   audio_repository_path: "/etc/hopper/audio/"
+lidar:
+  serial_port: "/dev/rplidar"
+  state_topic: "/hopper/lidar/state"
+  point_cloud_topic: "/hopper/lidar/point_cloud"
+  start_state_on: false
+zenoh:
+  connect:
+    - "udp/dork:7448"
+  listen:
+    - "udp/0.0.0.0:7448"
+camera:
+  id: 0
+  image_topic: "/hopper/camera/image"
+  image_width: 320
+  image_height: 240

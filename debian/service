@@ -12,7 +12,7 @@ CacheDirectory=hopper
 Type=simple
 Restart=on-failure
 RestartSec=5s
-ExecStart=/usr/bin/hopper --dynamixel-port /dev/dynamixel --config /etc/hopper/settings
+ExecStart=/usr/bin/hopper --config /etc/hopper/settings
 
 [Install]
 WantedBy=default.target

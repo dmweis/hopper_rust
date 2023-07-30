@@ -10,7 +10,6 @@ use std::{
     time::Duration,
 };
 use tracing::*;
-use zenoh::config::Config as ZenohConfig;
 use zenoh::prelude::r#async::*;
 
 /// Hopper body controller
@@ -24,47 +23,10 @@ struct Args {
     /// application configuration
     #[arg(long)]
     config: Option<PathBuf>,
-    /// Serial port name of the dynamixel port
-    #[arg(short, long, default_value = "/dev/dynamixel")]
-    dynamixel_port: String,
-    /// hopper face serial port
-    #[arg(long, default_value = "/dev/hopper_face")]
-    face_port: String,
-    /// hopper lidar serial port
-    #[arg(long, default_value = "/dev/rplidar")]
-    lidar: String,
+
     /// Sets the level of verbosity
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
-
-    /// Endpoints to connect to.
-    #[clap(short = 'e', long)]
-    connect: Vec<zenoh_config::EndPoint>,
-
-    /// Endpoints to listen on.
-    #[clap(long)]
-    listen: Vec<zenoh_config::EndPoint>,
-
-    /// A configuration file.
-    #[clap(short, long)]
-    zenoh_config: Option<PathBuf>,
-}
-
-impl Args {
-    fn get_zenoh_config(&self) -> Result<ZenohConfig> {
-        let mut config = if let Some(conf_file) = &self.zenoh_config {
-            ZenohConfig::from_file(conf_file).unwrap()
-        } else {
-            ZenohConfig::default()
-        };
-        if !self.connect.is_empty() {
-            config.connect.endpoints = self.connect.clone();
-        }
-        if !self.listen.is_empty() {
-            config.listen.endpoints = self.listen.clone();
-        }
-        Ok(config)
-    }
 }
 
 #[tokio::main]
@@ -75,17 +37,17 @@ async fn main() -> Result<()> {
 
     let app_config = get_configuration(&args.config)?;
 
-    let zenoh_config = args.get_zenoh_config()?;
+    let zenoh_config = app_config.zenoh.get_zenoh_config()?;
     let zenoh_session = zenoh::open(zenoh_config)
         .res()
         .await
         .map_err(HopperError::ZenohError)?
         .into_arc();
 
-    let face_controller = hopper_face::FaceController::open(&args.face_port)?;
+    let face_controller = hopper_face::FaceController::open(&app_config.base.face_port)?;
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
 
-    start_lidar_driver(zenoh_session.clone(), &args.lidar, false).await?;
+    start_lidar_driver(zenoh_session.clone(), &app_config.lidar).await?;
 
     let mut speech_service = SpeechService::new(
         app_config.tts_service_config.azure_api_key,
@@ -105,7 +67,7 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|| Ok(hopper_body_config::HopperConfig::default()))?;
 
     let body_controller = body_controller::AsyncBodyController::new(
-        &args.dynamixel_port,
+        &app_config.base.dynamixel_port,
         hopper_body_config.legs.clone(),
     )
     .unwrap();
@@ -122,7 +84,7 @@ async fn main() -> Result<()> {
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
 
-    start_camera(zenoh_session.clone()).await?;
+    start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
     udp_remote::udp_controller_handler(&mut motion_controller)
         .await

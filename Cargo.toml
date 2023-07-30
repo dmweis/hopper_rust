@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.2.9"
+version = "0.2.10"
 
 [package.metadata.deb]
 assets = [

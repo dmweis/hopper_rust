@@ -12,6 +12,7 @@ use v4l::FourCC;
 use zenoh::prelude::r#async::*;
 use zenoh::Session;
 
+use crate::configuration::CameraConfig;
 use crate::error::HopperError;
 use crate::foxglove::CompressedImage;
 
@@ -42,18 +43,21 @@ pub fn scan_camera() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn start_camera(zenoh_session: Arc<Session>) -> anyhow::Result<()> {
-    let dev = Device::new(0).expect("Failed to open device");
+pub async fn start_camera(
+    zenoh_session: Arc<Session>,
+    config: &CameraConfig,
+) -> anyhow::Result<()> {
+    let dev = Device::new(config.id).expect("Failed to open device");
 
     let image_publisher = zenoh_session
-        .declare_publisher("hopper/camera/image")
+        .declare_publisher(config.image_topic.to_owned())
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let mut fmt = dev.format().expect("Failed to read format");
-    fmt.width = 320;
-    fmt.height = 240;
+    fmt.width = config.image_width;
+    fmt.height = config.image_height;
     fmt.fourcc = FourCC::new(b"MJPG");
     let fmt = dev.set_format(&fmt).expect("Failed to write format");
     info!("Format in use:\n{}", fmt);
@@ -62,7 +66,7 @@ pub async fn start_camera(zenoh_session: Arc<Session>) -> anyhow::Result<()> {
         Stream::with_buffers(&dev, Type::VideoCapture, 4).expect("Failed to create buffer stream");
 
     let mut compressed_image = CompressedImage {
-        frame_id: "camera".to_string(),
+        frame_id: "hopper_camera".to_string(),
         format: "jpeg".to_string(),
         data: vec![],
         timestamp: Some(proto_timestamp_now()),
