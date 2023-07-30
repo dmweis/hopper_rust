@@ -8,15 +8,15 @@ pub type HopperResult<T> = Result<T, HopperError>;
 pub enum HopperError {
     #[error("Generic IK error")]
     GenericIkError,
-    #[error("Dynamixel driver error")]
+    #[error("Dynamixel driver error {0:?}")]
     DynamixelDriverError(#[from] DynamixelDriverError),
-    #[error("IO error")]
+    #[error("IO error {0:?}")]
     IoError(#[from] std::io::Error),
-    #[error("Toml serde error")]
+    #[error("Toml serde error {0:?}")]
     TomlError(#[from] toml::ser::Error),
-    #[error("Json serde error")]
+    #[error("Json serde error {0:?}")]
     JsonError(#[from] serde_json::Error),
-    #[error("Lidar error")]
+    #[error("Lidar error {0:?}")]
     LidarError(#[from] rplidar_driver::RposError),
     #[error("Audio cache dir error")]
     AudioCacheDirError,
@@ -27,9 +27,9 @@ pub enum HopperError {
     #[error("Failed to create audio sink")]
     FailedToCreateAudioSink,
     #[cfg(feature = "audio")]
-    #[error("Text to speech error")]
+    #[error("Text to speech error {0:?}")]
     TtsError(#[from] azure_tts::TtsError),
-    #[error("Zenoh error")]
+    #[error("Zenoh error {0:?}")]
     ZenohError(#[from] zenoh::Error),
 }
 
