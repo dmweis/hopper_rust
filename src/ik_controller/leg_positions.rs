@@ -1,5 +1,6 @@
 use crate::hexapod::{HexapodTypes, LegFlags};
 use nalgebra::{distance, Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
+use prost_types::Timestamp;
 use std::error::Error;
 
 pub type LegPositions = HexapodTypes<Point3<f32>>;
@@ -81,6 +82,79 @@ impl LegPositions {
             .zip(other_legs.iter())
             .map(|(my, other)| distance(my, other))
             .fold(std::f32::NAN, f32::max)
+    }
+
+    pub fn to_foxglove_frame_transport(&self) -> anyhow::Result<crate::foxglove::FrameTransforms> {
+        fn to_foxglove_vector3(point: &Point3<f32>) -> crate::foxglove::Vector3 {
+            crate::foxglove::Vector3 {
+                x: point.x,
+                y: point.y,
+                z: point.z,
+            }
+        }
+        let now = proto_timestamp_now();
+        let left_front = crate::foxglove::FrameTransform {
+            timestamp: now.clone(),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "left_front".to_string(),
+            translation: Some(to_foxglove_vector3(self.left_front())),
+            rotation: None,
+        };
+        let left_middle = crate::foxglove::FrameTransform {
+            timestamp: now.clone(),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "left_middle".to_string(),
+            translation: Some(to_foxglove_vector3(self.left_middle())),
+            rotation: None,
+        };
+        let left_rear = crate::foxglove::FrameTransform {
+            timestamp: now.clone(),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "left_rear".to_string(),
+            translation: Some(to_foxglove_vector3(self.left_rear())),
+            rotation: None,
+        };
+        let right_front = crate::foxglove::FrameTransform {
+            timestamp: now.clone(),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "right_front".to_string(),
+            translation: Some(to_foxglove_vector3(self.right_front())),
+            rotation: None,
+        };
+        let right_middle = crate::foxglove::FrameTransform {
+            timestamp: now.clone(),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "right_middle".to_string(),
+            translation: Some(to_foxglove_vector3(self.right_middle())),
+            rotation: None,
+        };
+        let right_rear = crate::foxglove::FrameTransform {
+            timestamp: now.clone(),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "right_rear".to_string(),
+            translation: Some(to_foxglove_vector3(self.right_rear())),
+            rotation: None,
+        };
+
+        let mut transforms = crate::foxglove::FrameTransforms {
+            transforms: vec![
+                left_front,
+                left_middle,
+                left_rear,
+                right_front,
+                right_middle,
+                right_rear,
+            ],
+        };
+    }
+}
+
+fn proto_timestamp_now() -> Timestamp {
+    let now = std::time::SystemTime::now();
+    let duration = now.duration_since(std::time::UNIX_EPOCH).unwrap();
+    Timestamp {
+        seconds: duration.as_secs() as i64,
+        nanos: duration.subsec_nanos() as i32,
     }
 }
 

@@ -73,8 +73,17 @@ async fn main() -> Result<()> {
     )
     .unwrap();
 
-    let mut ik_controller =
-        ik_controller::IkController::new(Box::new(body_controller), hopper_body_config);
+    let pose_publisher = zenoh_session
+        .declare_publisher("hopper/pose/frames")
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
+    let mut ik_controller = ik_controller::IkController::new(
+        Box::new(body_controller),
+        hopper_body_config,
+        pose_publisher,
+    );
 
     // TODO (David): Move to some settings system
     // also maybe tune...

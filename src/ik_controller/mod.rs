@@ -14,6 +14,7 @@ use crate::{
 use async_trait::async_trait;
 use leg_positions::*;
 use nalgebra::{Point3, Vector3};
+use prost::Message;
 use tracing::*;
 
 #[async_trait]
@@ -26,16 +27,19 @@ pub trait IkControllable: BodyController {
 pub struct IkController {
     body_controller: Box<dyn BodyController>,
     body_configuration: HopperConfig,
+    pose_publisher: zenoh::zenoh::Publisher,
 }
 
 impl IkController {
     pub fn new(
         body_controller: Box<dyn BodyController>,
         body_configuration: HopperConfig,
+        pose_publisher: zenoh::zenoh::Publisher,
     ) -> Box<Self> {
         Box::new(IkController {
             body_controller,
             body_configuration,
+            pose_publisher,
         })
     }
 }
@@ -81,6 +85,10 @@ impl IkControllable for IkController {
         let motor_positions = calculate_ik(positions, &self.body_configuration)?;
         self.body_controller
             .move_motors_to(&motor_positions)
+            .await?;
+        self.pose_publisher
+            .put(positions.to_foxglove_frame_transport().encode_to_vec())
+            .res()
             .await?;
         Ok(())
     }
