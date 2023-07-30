@@ -135,6 +135,29 @@ impl LegPositions {
             translation: Some(to_foxglove_vector3(self.right_rear())),
             rotation: None,
         };
+        let lidar = crate::foxglove::FrameTransform {
+            timestamp: Some(now.clone()),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "hopper_lidar".to_string(),
+            translation: Some(crate::foxglove::Vector3 {
+                x: 0.035,
+                y: 0.0,
+                z: 0.112,
+            }),
+            rotation: None,
+        };
+
+        let camera = crate::foxglove::FrameTransform {
+            timestamp: Some(now.clone()),
+            parent_frame_id: "body".to_string(),
+            child_frame_id: "hopper_camera".to_string(),
+            translation: Some(crate::foxglove::Vector3 {
+                x: 0.100,
+                y: 0.0,
+                z: 0.112,
+            }),
+            rotation: None,
+        };
 
         crate::foxglove::FrameTransforms {
             transforms: vec![
@@ -144,6 +167,8 @@ impl LegPositions {
                 right_front,
                 right_middle,
                 right_rear,
+                lidar,
+                camera,
             ],
         }
     }
