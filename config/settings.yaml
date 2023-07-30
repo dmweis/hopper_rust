@@ -7,8 +7,8 @@ tts_service_config:
   audio_repository_path: "/etc/hopper/audio/"
 lidar:
   serial_port: "/dev/rplidar"
-  state_topic: "/hopper/lidar/state"
-  point_cloud_topic: "/hopper/lidar/point_cloud"
+  state_topic: "hopper/lidar/state"
+  point_cloud_topic: "hopper/lidar/point_cloud"
   start_state_on: false
 zenoh:
   connect:
@@ -17,6 +17,6 @@ zenoh:
     - "udp/0.0.0.0:7448"
 camera:
   id: 0
-  image_topic: "/hopper/camera/image"
+  image_topic: "hopper/camera/image"
   image_width: 320
   image_height: 240
