@@ -21,7 +21,7 @@ pub async fn simple_zenoh_controller(
     .expect("Failed to set Ctrl-C handler");
 
     let subscriber = zenoh_session
-        .declare_subscriber("/hopper/command/simple/stance")
+        .declare_subscriber("hopper/command/simple/stance")
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
