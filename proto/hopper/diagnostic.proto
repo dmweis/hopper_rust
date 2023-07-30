@@ -1,0 +1,19 @@
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package hopper;
+
+message DiagnosticKeyValuePair {
+    // Key
+    string key = 1;
+
+    // Value
+    string value = 2;
+}
+
+message DiagnosticMessage {
+    google.protobuf.Timestamp timestamp = 1;
+    repeated DiagnosticKeyValuePair key_value_pairs = 2;
+}

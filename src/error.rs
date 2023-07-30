@@ -33,6 +33,8 @@ pub enum HopperError {
     TtsError(#[from] azure_tts::TtsError),
     #[error("Zenoh error {0:?}")]
     ZenohError(#[from] zenoh::Error),
+    #[error("Failed parsing command output")]
+    FailedParsingCommandOutput(String),
 }
 
 impl HopperError {

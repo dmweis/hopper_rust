@@ -6,7 +6,8 @@ Wants=network-online.target
 [Service]
 User=hopper
 DynamicUser=yes
-Group=audio
+SupplementaryGroups=audio
+SupplementaryGroups=video
 StateDirectory=hopper
 CacheDirectory=hopper
 Type=simple

@@ -8,6 +8,7 @@ mod hexapod;
 pub mod hopper_body_config;
 pub mod ik_controller;
 pub mod lidar;
+pub mod monitoring;
 pub mod motion_controller;
 pub mod speech;
 pub mod udp_remote;

@@ -3,8 +3,8 @@ use clap::Parser;
 use hopper_rust::{
     body_controller, body_controller::BodyController, camera::start_camera,
     configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
-    lidar::start_lidar_driver, motion_controller, speech::SpeechService, utilities,
-    zenoh_remote::simple_zenoh_controller,
+    lidar::start_lidar_driver, monitoring::start_monitoring_loop, motion_controller,
+    speech::SpeechService, utilities, zenoh_remote::simple_zenoh_controller,
 };
 use std::{
     path::{Path, PathBuf},
@@ -49,6 +49,8 @@ async fn main() -> Result<()> {
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
 
     start_lidar_driver(zenoh_session.clone(), &app_config.lidar).await?;
+
+    start_monitoring_loop(zenoh_session.clone()).await?;
 
     let mut speech_service = SpeechService::new(
         app_config.tts_service_config.azure_api_key,
