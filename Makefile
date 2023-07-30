@@ -60,32 +60,10 @@ build-artifact: build-deb
 publish-mender-artifact: build-artifact
 	mender-cli artifacts --server https://hosted.mender.io upload $(MENDER_ARTIFACT_OUTPUT_PATH)/$(MENDER_ARTIFACT_FILE)
 
-.PHONY: serve-artifact
-serve-artifact: build-artifact
-	@echo http://$(HOSTNAME):8000
-	python3 -m http.server 8000 --directory $(MENDER_ARTIFACT_OUTPUT_PATH)
-
-.PHONY: push-to-hopper
-push-to-hopper:
-	rsync -avzhP --stats --exclude 'target/' . \
-		$(TARGET_HOST):$(REMOTE_DIRECTORY)/src/hopper_rust
-
 .PHONY: install-dependencies
 install-dependencies:
 	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev -y
 	cargo install cargo-deb cargo-get
-
-.PHONY: build-cross
-build-cross:
-	cargo build --release --target=${TARGET_ARCH} --no-default-features
-
-.PHONY: deploy-cross
-deploy-cross: build-cross
-	rsync -c ${RELEASE_CROSS_BINARY_PATH} ${TARGET_HOST}:${TARGET_PATH}
-
-.PHONY: remote-run
-remote-run: deploy-cross
-	ssh -t $(TARGET_HOST) 'cd src/hopper_rust && ./hopper'
 
 .PHONY: build-docker
 build-docker:
