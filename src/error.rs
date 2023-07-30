@@ -8,8 +8,10 @@ pub type HopperResult<T> = Result<T, HopperError>;
 pub enum HopperError {
     #[error("Generic IK error")]
     GenericIkError,
-    #[error("Dynamixel driver error {0:?}")]
-    DynamixelDriverError(#[from] DynamixelDriverError),
+    #[error("Dynamixel sync write error {0:?}")]
+    DynamixelSyncWriteError(#[source] DynamixelDriverError),
+    #[error("Dynamixel driver error {0} {1:?}")]
+    DynamixelDriverError(u8, #[source] DynamixelDriverError),
     #[error("IO error {0:?}")]
     IoError(#[from] std::io::Error),
     #[error("Toml serde error {0:?}")]
@@ -35,10 +37,10 @@ pub enum HopperError {
 
 impl HopperError {
     pub fn is_recoverable_driver_error(&self) -> bool {
-        if let HopperError::DynamixelDriverError(error) = self {
-            error.is_recoverable()
-        } else {
-            false
+        match self {
+            HopperError::DynamixelSyncWriteError(error) => error.is_recoverable(),
+            HopperError::DynamixelDriverError(_id, error) => error.is_recoverable(),
+            _ => false,
         }
     }
 }

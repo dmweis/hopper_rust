@@ -1,6 +1,6 @@
 use super::motor_positions::*;
 use crate::{
-    error::HopperResult,
+    error::{HopperError, HopperResult},
     hopper_body_config::{BodyConfig, LegConfig},
 };
 use async_trait::async_trait;
@@ -27,7 +27,8 @@ pub struct AsyncBodyController {
 
 impl AsyncBodyController {
     pub fn new(port_name: &str, body_config: BodyConfig) -> HopperResult<Self> {
-        let dynamixel_driver = DynamixelDriver::new(port_name)?;
+        let dynamixel_driver =
+            DynamixelDriver::new(port_name).map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(Self {
             driver: dynamixel_driver,
             body_config,
@@ -41,7 +42,10 @@ impl AsyncBodyController {
 impl BodyController for AsyncBodyController {
     async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> HopperResult<()> {
         let commands = create_commands_for_body(&self.body_config, positions);
-        self.driver.sync_write_position_rad(commands).await?;
+        self.driver
+            .sync_write_position_rad(commands)
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(())
     }
 
@@ -52,7 +56,10 @@ impl BodyController for AsyncBodyController {
             .iter()
             .map(|id| SyncCommand::new(*id, speed as u32))
             .collect::<Vec<_>>();
-        self.driver.sync_write_moving_speed(commands).await?;
+        self.driver
+            .sync_write_moving_speed(commands)
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(())
     }
 
@@ -65,7 +72,8 @@ impl BodyController for AsyncBodyController {
             .collect::<Vec<_>>();
         self.driver
             .sync_write_compliance_slope_both(commands)
-            .await?;
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(())
     }
 
@@ -76,7 +84,10 @@ impl BodyController for AsyncBodyController {
             .iter()
             .map(|id| (*id, torque))
             .collect::<Vec<_>>();
-        self.driver.sync_write_torque(commands).await?;
+        self.driver
+            .sync_write_torque(commands)
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(())
     }
 
@@ -86,7 +97,11 @@ impl BodyController for AsyncBodyController {
         if self.last_voltages.is_empty() {
             info!("Read all voltages");
             for id in &ids {
-                let voltage = self.driver.read_voltage(*id).await?;
+                let voltage = self
+                    .driver
+                    .read_voltage(*id)
+                    .await
+                    .map_err(|err| HopperError::DynamixelDriverError(*id, err))?;
                 self.last_voltages.push_front(voltage);
             }
             self.last_read_voltage = ids.len() - 1;
@@ -96,7 +111,11 @@ impl BodyController for AsyncBodyController {
             self.last_read_voltage = 0;
         }
         let id = ids[self.last_read_voltage];
-        let voltage = self.driver.read_voltage(id).await?;
+        let voltage = self
+            .driver
+            .read_voltage(id)
+            .await
+            .map_err(|err| HopperError::DynamixelDriverError(id, err))?;
         self.last_voltages.push_front(voltage);
         self.last_voltages.pop_back();
         let sum: f32 = self.last_voltages.iter().sum();
@@ -109,9 +128,18 @@ impl BodyController for AsyncBodyController {
             driver: &mut DynamixelDriver,
             leg_config: &LegConfig,
         ) -> HopperResult<LegMotorPositions> {
-            let coxa = driver.read_position_rad(leg_config.coxa_id).await?;
-            let femur = driver.read_position_rad(leg_config.femur_id).await?;
-            let tibia = driver.read_position_rad(leg_config.tibia_id).await?;
+            let coxa = driver
+                .read_position_rad(leg_config.coxa_id)
+                .await
+                .map_err(|err| HopperError::DynamixelDriverError(leg_config.coxa_id, err))?;
+            let femur = driver
+                .read_position_rad(leg_config.femur_id)
+                .await
+                .map_err(|err| HopperError::DynamixelDriverError(leg_config.femur_id, err))?;
+            let tibia = driver
+                .read_position_rad(leg_config.tibia_id)
+                .await
+                .map_err(|err| HopperError::DynamixelDriverError(leg_config.tibia_id, err))?;
             Ok(LegMotorPositions::new(coxa, femur, tibia))
         }
         let left_front =
