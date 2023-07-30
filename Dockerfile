@@ -49,7 +49,6 @@ COPY . .
 # Build
 RUN cargo build \
     --release \
-    --no-default-features \
     --bin hopper \
     --features audio
 
