@@ -12,8 +12,11 @@ lidar:
   start_state_on: false
 zenoh:
   connect:
+    - "tcp/homepi:7447"
+    - "tcp/dork:7447"
     - "udp/dork:7448"
   listen:
+    - "tcp/0.0.0.0:7447"
     - "udp/0.0.0.0:7448"
 camera:
   id: 0
