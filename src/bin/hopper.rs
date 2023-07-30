@@ -3,7 +3,8 @@ use clap::Parser;
 use hopper_rust::{
     body_controller, body_controller::BodyController, camera::start_camera,
     configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
-    lidar::start_lidar_driver, motion_controller, speech::SpeechService, udp_remote, utilities,
+    lidar::start_lidar_driver, motion_controller, speech::SpeechService, utilities,
+    zenoh_remote::simple_zenoh_controller,
 };
 use std::{
     path::{Path, PathBuf},
@@ -86,9 +87,11 @@ async fn main() -> Result<()> {
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
-    udp_remote::udp_controller_handler(&mut motion_controller)
-        .await
-        .unwrap();
+    // udp_remote::udp_controller_handler(&mut motion_controller)
+    //     .await
+    //     .unwrap();
+
+    simple_zenoh_controller(&mut motion_controller, zenoh_session.clone()).await?;
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
     tokio::time::sleep(Duration::from_secs_f32(2.0)).await;
