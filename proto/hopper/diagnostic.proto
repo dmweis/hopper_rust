@@ -6,14 +6,23 @@ import "google/protobuf/timestamp.proto";
 package hopper;
 
 message DiagnosticKeyValuePair {
-    // Key
     string key = 1;
-
-    // Value
     string value = 2;
+}
+
+message DiagnosticStringValue {
+    string key = 1;
+    string value = 2;
+}
+
+message DiagnosticFloatValue {
+    string key = 1;
+    float value = 2;
 }
 
 message DiagnosticMessage {
     google.protobuf.Timestamp timestamp = 1;
-    repeated DiagnosticKeyValuePair key_value_pairs = 2;
+    repeated DiagnosticStringValue string_values = 3;
+    repeated DiagnosticFloatValue float_values = 4;
+    reserved 2;
 }

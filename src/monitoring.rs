@@ -53,15 +53,25 @@ async fn measure(
         .split('=')
         .nth(1)
         .ok_or(HopperError::FailedParsingCommandOutput(text.to_owned()))?
+        .to_owned()
+        .trim()
+        .strip_suffix("'C")
+        .ok_or(HopperError::FailedParsingCommandOutput(text.to_owned()))?
         .to_owned();
     tracing::info!("CPU temperature: {}", temp);
+    let temperature_float = temp.parse::<f32>().unwrap_or_default();
 
     let diagnostic_data = crate::hopper::DiagnosticMessage {
         timestamp: Some(proto_timestamp_now()),
-        key_value_pairs: vec![crate::hopper::DiagnosticKeyValuePair {
+        string_values: vec![crate::hopper::DiagnosticStringValue {
             key: String::from("cpu_temperature"),
             value: temp,
         }],
+        float_values: vec![crate::hopper::DiagnosticFloatValue {
+            key: String::from("cpu_temperature"),
+            value: temperature_float,
+        }],
+        ..Default::default()
     };
 
     proto_publisher
