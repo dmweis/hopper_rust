@@ -26,7 +26,7 @@ pub async fn start_monitoring_loop(zenoh_session: Arc<Session>) -> anyhow::Resul
 
     tokio::spawn(async move {
         loop {
-            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
             if let Err(err) = measure(&publisher, &json_publisher).await {
                 tracing::error!("Failed to measure metrics: {:?}", err);
             }
