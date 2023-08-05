@@ -23,7 +23,7 @@ pub async fn simple_zenoh_controller(
         .await
         .map_err(HopperError::ZenohError)?;
 
-    let mut last_gamepad_message = InputMessage::default();
+    let mut last_gamepad_message: Option<InputMessage> = None;
 
     loop {
         tokio::select! {
@@ -54,8 +54,8 @@ pub async fn simple_zenoh_controller(
                     continue;
                 }
 
-                let a_pressed = gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::South).cloned().unwrap_or_default()).unwrap_or_default() > last_gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::South).cloned().unwrap_or_default()).unwrap_or_default();
-                let b_pressed = gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::East).cloned().unwrap_or_default()).unwrap_or_default() > last_gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::East).cloned().unwrap_or_default()).unwrap_or_default();
+                let a_pressed = was_button_pressed_since_last_time(Button::South, &gamepad_message, &last_gamepad_message);
+                let b_pressed = was_button_pressed_since_last_time(Button::East, &gamepad_message, &last_gamepad_message);
 
                 if a_pressed {
                     info!("Setting stance to standing");
@@ -65,8 +65,7 @@ pub async fn simple_zenoh_controller(
                     controller.set_body_state(motion_controller::BodyState::Grounded);
                 }
 
-                last_gamepad_message = gamepad_message.clone();
-
+                last_gamepad_message = Some(gamepad_message);
             }
             _ = tokio::signal::ctrl_c() => {
                 info!("Got ctrl-c");
@@ -76,6 +75,42 @@ pub async fn simple_zenoh_controller(
     }
     info!("Exiting control loop");
     Ok(())
+}
+
+fn was_button_pressed_since_last_time(
+    button: Button,
+    gamepad_message: &InputMessage,
+    last_gamepad_message: &Option<InputMessage>,
+) -> bool {
+    let last_gamepad_message = match last_gamepad_message {
+        Some(last_gamepad_message) => last_gamepad_message,
+        None => return false,
+    };
+    let button_down_event_counter = gamepad_message
+        .gamepads
+        .values()
+        .next()
+        .map(|gamepad| {
+            gamepad
+                .button_down_event_counter
+                .get(&button)
+                .cloned()
+                .unwrap_or_default()
+        })
+        .unwrap_or_default();
+    let last_button_down_event_counter = last_gamepad_message
+        .gamepads
+        .values()
+        .next()
+        .map(|gamepad| {
+            gamepad
+                .button_down_event_counter
+                .get(&button)
+                .cloned()
+                .unwrap_or_default()
+        })
+        .unwrap_or_default();
+    button_down_event_counter > last_button_down_event_counter
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
