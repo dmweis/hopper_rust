@@ -53,8 +53,8 @@ pub async fn simple_zenoh_controller(
                     continue;
                 }
 
-                let a_pressed = gamepad_message.gamepads[&0].button_down_event_counter[&Button::South] > last_gamepad_message.gamepads[&0].button_down_event_counter[&Button::South];
-                let b_pressed = gamepad_message.gamepads[&0].button_down_event_counter[&Button::East] > last_gamepad_message.gamepads[&0].button_down_event_counter[&Button::East];
+                let a_pressed = gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::South).cloned().unwrap_or_default()).unwrap_or_default() > last_gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::South).cloned().unwrap_or_default()).unwrap_or_default();
+                let b_pressed = gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::East).cloned().unwrap_or_default()).unwrap_or_default() > last_gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::East).cloned().unwrap_or_default()).unwrap_or_default();
 
                 if a_pressed {
                     controller.set_body_state(motion_controller::BodyState::Standing);
