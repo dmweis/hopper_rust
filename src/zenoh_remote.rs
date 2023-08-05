@@ -79,9 +79,9 @@ pub async fn simple_zenoh_controller(
 
                 if lb_pressed {
                     // translation mode
-                    let x = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.05;
-                    let y = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
-                    let pitch = (get_axis(Axis::RightStickY, &gamepad_message) * 10.0).to_radians();
+                    let x = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
+                    let y = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.05;
+                    let pitch = -(get_axis(Axis::RightStickY, &gamepad_message) * 10.0).to_radians();
                     let yaw = (get_axis(Axis::RightStickX, &gamepad_message) * 10.0).to_radians();
 
                     let translation = Vector3::new(
