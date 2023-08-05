@@ -51,6 +51,7 @@ visualizer = ["kiss3d", "gilrs"]
 anyhow = "1.0"
 async-trait = "0.1"
 bitflags = "2.3.3"
+chrono = {version = "0.4", features = ["serde"]}
 clap = {version = "4", features = ["derive"]}
 config = "0.13.2"
 ctrlc = "3.1"
@@ -91,6 +92,7 @@ tokio = {version = "1.6", features = [
   "rt-multi-thread",
   "time",
   "process",
+  "signal",
 ], default-features = false}
 # fix weird bug with mp3 not playing from start
 # rodio = "0.15"
