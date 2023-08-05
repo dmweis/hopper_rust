@@ -22,31 +22,40 @@ pub async fn start_face_controller(
         .await
         .map_err(HopperError::ZenohError)?;
 
-    let mut selected_color = hopper_face::driver::OFF;
-
-    loop {
-        select! {
-            color = face_color_subscriber.recv_async() => {
-                let color = color?;
-                let color: String = color.value.try_into()?;
-                match color.to_lowercase().as_str() {
-                    "red" => selected_color = hopper_face::driver::RED,
-                    "green" => selected_color = hopper_face::driver::GREEN,
-                    "blue" => selected_color = hopper_face::driver::BLUE,
-                    "yellow" => selected_color = hopper_face::driver::YELLOW,
-                    "purple" => selected_color = hopper_face::driver::PURPLE,
-                    "off" => selected_color = hopper_face::driver::OFF,
-                    _ => error!("Unknown color {}", color),
+    tokio::spawn(async move {
+        let mut selected_color = hopper_face::driver::OFF;
+        loop {
+            let res: anyhow::Result<()> = async {
+                select! {
+                    color = face_color_subscriber.recv_async() => {
+                        let color = color?;
+                        let color: String = color.value.try_into()?;
+                        match color.to_lowercase().as_str() {
+                            "red" => selected_color = hopper_face::driver::RED,
+                            "green" => selected_color = hopper_face::driver::GREEN,
+                            "blue" => selected_color = hopper_face::driver::BLUE,
+                            "yellow" => selected_color = hopper_face::driver::YELLOW,
+                            "purple" => selected_color = hopper_face::driver::PURPLE,
+                            "off" => selected_color = hopper_face::driver::OFF,
+                            _ => error!("Unknown color {}", color),
+                        }
+                    }
+                    animation = face_animation_subscriber.recv_async() => {
+                        let animation = animation?;
+                        let animation: String = animation.value.try_into()?;
+                        match animation.to_lowercase().as_str() {
+                            "larson_scanner" => face_controller.larson_scanner(selected_color)?,
+                            _ => error!("Unknown animation {}", animation),
+                        }
+                    }
                 }
+                Ok(())
             }
-            animation = face_animation_subscriber.recv_async() => {
-                let animation = animation?;
-                let animation: String = animation.value.try_into()?;
-                match animation.to_lowercase().as_str() {
-                    "larson_scanner" => face_controller.larson_scanner(selected_color)?,
-                    _ => error!("Unknown animation {}", animation),
-                }
+            .await;
+            if let Err(e) = res {
+                error!("Error in face controller: {}", e);
             }
         }
-    }
+    });
+    Ok(())
 }

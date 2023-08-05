@@ -10,6 +10,7 @@ pub async fn simple_zenoh_controller(
     controller: &mut motion_controller::MotionController,
     zenoh_session: Arc<zenoh::Session>,
 ) -> anyhow::Result<()> {
+    info!("Starting simple zenoh controller");
     let subscriber = zenoh_session
         .declare_subscriber("hopper/command/simple/stance")
         .res()
