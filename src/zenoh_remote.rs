@@ -1,6 +1,7 @@
 use crate::error::HopperError;
 use crate::motion_controller;
 use chrono::{DateTime, Utc};
+use nalgebra::{UnitQuaternion, Vector2, Vector3};
 use serde::Deserialize;
 use std::{collections::BTreeMap, sync::Arc};
 use tracing::*;
@@ -50,12 +51,16 @@ pub async fn simple_zenoh_controller(
                 let gamepad_message: InputMessage = serde_json::from_str(&gamepad_message)?;
 
                 if gamepad_message.gamepads.len() != 1 {
-                    error!("Expected 1 gamepad, got {}", gamepad_message.gamepads.len());
+                    warn!("Expected 1 gamepad, got {}", gamepad_message.gamepads.len());
                     continue;
                 }
 
                 let a_pressed = was_button_pressed_since_last_time(Button::South, &gamepad_message, &last_gamepad_message);
                 let b_pressed = was_button_pressed_since_last_time(Button::East, &gamepad_message, &last_gamepad_message);
+                let y_pressed = was_button_pressed_since_last_time(Button::North, &gamepad_message, &last_gamepad_message);
+                let x_pressed = was_button_pressed_since_last_time(Button::West, &gamepad_message, &last_gamepad_message);
+                let lb_pressed = was_button_pressed_since_last_time(Button::LeftTrigger, &gamepad_message, &last_gamepad_message);
+                let rb_pressed = was_button_pressed_since_last_time(Button::RightTrigger, &gamepad_message, &last_gamepad_message);
 
                 if a_pressed {
                     info!("Setting stance to standing");
@@ -63,6 +68,28 @@ pub async fn simple_zenoh_controller(
                 } else if b_pressed {
                     info!("Setting stance to grounded");
                     controller.set_body_state(motion_controller::BodyState::Grounded);
+                } else if y_pressed {
+                    info!("Starting happy dance");
+                    controller.start_sequence(motion_controller::DanceMove::HappyDance);
+                } else if x_pressed {
+                    info!("Starting wave");
+                    controller.start_sequence(motion_controller::DanceMove::WaveHi);
+                }
+
+                if lb_pressed {
+                    // translation mode
+                    let x = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.05;
+                    let y = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
+                    let pitch = (get_axis(Axis::RightStickY, &gamepad_message) * 10.0).to_radians();
+                    let yaw = (get_axis(Axis::RightStickX, &gamepad_message) * 10.0).to_radians();
+
+                    let translation = Vector3::new(
+                        x,
+                        y,
+                        0.0,
+                    );
+                    let rotation = UnitQuaternion::from_euler_angles(0.0, pitch, yaw);
+                    controller.set_transformation(translation, rotation);
                 }
 
                 last_gamepad_message = Some(gamepad_message);
@@ -111,6 +138,15 @@ fn was_button_pressed_since_last_time(
         })
         .unwrap_or_default();
     button_down_event_counter > last_button_down_event_counter
+}
+
+fn get_axis(axis: Axis, gamepad_message: &InputMessage) -> f32 {
+    gamepad_message
+        .gamepads
+        .values()
+        .next()
+        .map(|gamepad| gamepad.axis_state.get(&axis).cloned().unwrap_or_default())
+        .unwrap_or_default()
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
