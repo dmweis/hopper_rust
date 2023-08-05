@@ -13,6 +13,7 @@ pub mod motion_controller;
 pub mod speech;
 pub mod udp_remote;
 pub mod utilities;
+pub mod zenoh_face_controller;
 pub mod zenoh_remote;
 
 use once_cell::sync::Lazy;

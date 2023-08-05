@@ -4,7 +4,8 @@ use hopper_rust::{
     body_controller, body_controller::BodyController, camera::start_camera,
     configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
     lidar::start_lidar_driver, monitoring::start_monitoring_loop, motion_controller,
-    speech::SpeechService, utilities, zenoh_remote::simple_zenoh_controller,
+    speech::SpeechService, utilities, zenoh_face_controller::start_face_controller,
+    zenoh_remote::simple_zenoh_controller,
 };
 use std::{
     path::{Path, PathBuf},
@@ -47,6 +48,8 @@ async fn main() -> Result<()> {
 
     let face_controller = hopper_face::FaceController::open(&app_config.base.face_port)?;
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
+
+    start_face_controller(face_controller, zenoh_session.clone()).await?;
 
     start_lidar_driver(zenoh_session.clone(), &app_config.lidar).await?;
 
@@ -106,7 +109,6 @@ async fn main() -> Result<()> {
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
     tokio::time::sleep(Duration::from_secs_f32(2.0)).await;
-    drop(face_controller);
     drop(motion_controller);
     Ok(())
 }
