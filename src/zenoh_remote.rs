@@ -62,6 +62,8 @@ pub async fn simple_zenoh_controller(
 
                 let lb_pressed = is_pressed(Button::LeftTrigger, &gamepad_message);
                 let rb_pressed = is_pressed(Button::RightTrigger, &gamepad_message);
+                let lt_pressed = is_pressed(Button::LeftTrigger2, &gamepad_message);
+                let rt_pressed = is_pressed(Button::RightTrigger2, &gamepad_message);
 
                 if a_pressed {
                     info!("Setting stance to standing");
@@ -80,7 +82,7 @@ pub async fn simple_zenoh_controller(
                 if lb_pressed {
                     // translation mode
                     let x = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
-                    let y = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.05;
+                    let y = get_axis(Axis::LeftStickX, &gamepad_message) * 0.05;
                     let pitch = -(get_axis(Axis::RightStickY, &gamepad_message) * 10.0).to_radians();
                     let yaw = (get_axis(Axis::RightStickX, &gamepad_message) * 10.0).to_radians();
 
@@ -94,6 +96,22 @@ pub async fn simple_zenoh_controller(
                 }
 
                 if rb_pressed {
+                    // translation mode 2
+                    let x = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
+                    let z = -get_axis(Axis::RightStickY, &gamepad_message) * 0.05;
+                    let roll = (get_axis(Axis::LeftStickX, &gamepad_message) * 10.0).to_radians();
+                    let yaw = (get_axis(Axis::RightStickX, &gamepad_message) * 10.0).to_radians();
+
+                    let translation = Vector3::new(
+                        x,
+                        0.0,
+                        z,
+                    );
+                    let rotation = UnitQuaternion::from_euler_angles(roll, 0.0, yaw);
+                    controller.set_transformation(translation, rotation);
+                }
+
+                if rt_pressed {
                     // walking mode
                     let x = get_axis(Axis::LeftStickX, &gamepad_message) * 0.06;
                     let y = get_axis(Axis::LeftStickY, &gamepad_message) * 0.06;
