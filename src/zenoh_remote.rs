@@ -43,7 +43,7 @@ pub async fn simple_zenoh_controller(
                 }
             }
             gamepad_message = gamepad_subscriber.recv_async() => {
-                trace!("got new gamepad message");
+                info!("got new gamepad message");
                 let gamepad_message = gamepad_message?;
                 let gamepad_message: String = gamepad_message.value.try_into()?;
                 let gamepad_message: InputMessage = serde_json::from_str(&gamepad_message)?;
@@ -56,6 +56,7 @@ pub async fn simple_zenoh_controller(
                 let a_pressed = gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::South).cloned().unwrap_or_default()).unwrap_or_default() > last_gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::South).cloned().unwrap_or_default()).unwrap_or_default();
                 let b_pressed = gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::East).cloned().unwrap_or_default()).unwrap_or_default() > last_gamepad_message.gamepads.values().next().map(|gamepad| gamepad.button_down_event_counter.get(&Button::East).cloned().unwrap_or_default()).unwrap_or_default();
 
+                info!("A pressed: {}, B pressed: {}", a_pressed, b_pressed);
                 if a_pressed {
                     controller.set_body_state(motion_controller::BodyState::Standing);
                 } else if b_pressed {
