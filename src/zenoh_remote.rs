@@ -113,9 +113,9 @@ pub async fn simple_zenoh_controller(
 
                 if rt_pressed {
                     // walking mode
-                    let x = get_axis(Axis::LeftStickX, &gamepad_message) * 0.06;
-                    let y = get_axis(Axis::LeftStickY, &gamepad_message) * 0.06;
-                    let yaw = get_axis(Axis::RightStickY, &gamepad_message) * 15_f32.to_radians();
+                    let x = get_axis(Axis::LeftStickY, &gamepad_message) * 0.06;
+                    let y = get_axis(Axis::LeftStickX, &gamepad_message) * 0.06;
+                    let yaw = get_axis(Axis::RightStickX, &gamepad_message) * 15_f32.to_radians();
 
                     let move_command =
                     MoveCommand::new(Vector2::new(x, y), yaw);
