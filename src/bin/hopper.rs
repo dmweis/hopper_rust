@@ -98,6 +98,7 @@ async fn main() -> Result<()> {
     let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
+    motion_controller.disable_motors();
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
@@ -109,6 +110,7 @@ async fn main() -> Result<()> {
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
     tokio::time::sleep(Duration::from_secs_f32(2.0)).await;
+    motion_controller.disable_motors();
     drop(motion_controller);
     Ok(())
 }

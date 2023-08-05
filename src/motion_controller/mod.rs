@@ -84,6 +84,12 @@ impl MotionController {
             .send(BlockingCommand::Choreography(dance_move))
             .unwrap();
     }
+
+    pub fn disable_motors(&mut self) {
+        self.blocking_command_sender
+            .send(BlockingCommand::DisableMotors)
+            .unwrap();
+    }
 }
 
 impl Drop for MotionController {
@@ -105,6 +111,7 @@ struct MotionControllerCommand {
 #[derive(Debug, Clone, Copy)]
 enum BlockingCommand {
     Terminate,
+    DisableMotors,
     Choreography(DanceMove),
 }
 
@@ -307,9 +314,8 @@ impl MotionControllerLoop {
                 _ => (),
             }
 
-            if let Some(blocking_command) =
-                self.blocking_command_receiver.try_recv_optional().unwrap()
-            {
+            let blocking_command = self.blocking_command_receiver.try_recv_optional().unwrap();
+            if let Some(blocking_command) = blocking_command {
                 match blocking_command {
                     BlockingCommand::Terminate => {
                         info!("Terminate command received. Exiting control loop");
@@ -323,6 +329,10 @@ impl MotionControllerLoop {
                         } else {
                             warn!("Already executing a dance move");
                         }
+                    }
+                    BlockingCommand::DisableMotors => {
+                        self.ik_controller.disable_motors().await?;
+                        continue;
                     }
                 }
             }

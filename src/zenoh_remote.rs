@@ -27,7 +27,7 @@ pub async fn simple_zenoh_controller(
     loop {
         tokio::select! {
             sample = subscriber.recv_async() => {
-                trace!("got new message");
+                info!("got new message");
                 let sample = sample?;
                 let command: String = sample.value.try_into()?;
                 if &command.to_lowercase() == "stand" {
