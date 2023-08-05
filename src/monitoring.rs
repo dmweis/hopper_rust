@@ -71,7 +71,6 @@ async fn measure(
             key: String::from("cpu_temperature"),
             value: temperature_float,
         }],
-        ..Default::default()
     };
 
     proto_publisher
