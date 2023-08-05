@@ -1,5 +1,5 @@
-use crate::error::HopperError;
 use crate::motion_controller;
+use crate::{error::HopperError, motion_controller::walking::MoveCommand};
 use chrono::{DateTime, Utc};
 use nalgebra::{UnitQuaternion, Vector2, Vector3};
 use serde::Deserialize;
@@ -59,8 +59,9 @@ pub async fn simple_zenoh_controller(
                 let b_pressed = was_button_pressed_since_last_time(Button::East, &gamepad_message, &last_gamepad_message);
                 let y_pressed = was_button_pressed_since_last_time(Button::North, &gamepad_message, &last_gamepad_message);
                 let x_pressed = was_button_pressed_since_last_time(Button::West, &gamepad_message, &last_gamepad_message);
-                let lb_pressed = was_button_pressed_since_last_time(Button::LeftTrigger, &gamepad_message, &last_gamepad_message);
-                let rb_pressed = was_button_pressed_since_last_time(Button::RightTrigger, &gamepad_message, &last_gamepad_message);
+
+                let lb_pressed = is_pressed(Button::LeftTrigger, &gamepad_message);
+                let rb_pressed = is_pressed(Button::RightTrigger, &gamepad_message);
 
                 if a_pressed {
                     info!("Setting stance to standing");
@@ -90,6 +91,17 @@ pub async fn simple_zenoh_controller(
                     );
                     let rotation = UnitQuaternion::from_euler_angles(0.0, pitch, yaw);
                     controller.set_transformation(translation, rotation);
+                }
+
+                if rb_pressed {
+                    // walking mode
+                    let x = get_axis(Axis::LeftStickX, &gamepad_message) * 0.06;
+                    let y = get_axis(Axis::LeftStickY, &gamepad_message) * 0.06;
+                    let yaw = get_axis(Axis::RightStickY, &gamepad_message) * 15_f32.to_radians();
+
+                    let move_command =
+                    MoveCommand::new(Vector2::new(x, y), yaw);
+                    controller.set_command(move_command);
                 }
 
                 last_gamepad_message = Some(gamepad_message);
@@ -146,6 +158,21 @@ fn get_axis(axis: Axis, gamepad_message: &InputMessage) -> f32 {
         .values()
         .next()
         .map(|gamepad| gamepad.axis_state.get(&axis).cloned().unwrap_or_default())
+        .unwrap_or_default()
+}
+
+fn is_pressed(button: Button, gamepad_message: &InputMessage) -> bool {
+    gamepad_message
+        .gamepads
+        .values()
+        .next()
+        .map(|gamepad| {
+            gamepad
+                .button_pressed
+                .get(&button)
+                .cloned()
+                .unwrap_or_default()
+        })
         .unwrap_or_default()
 }
 
