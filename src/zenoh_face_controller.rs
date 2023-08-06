@@ -7,7 +7,7 @@ use zenoh::prelude::r#async::*;
 use zenoh::Session;
 
 pub async fn start_face_controller(
-    face_controller: FaceController,
+    face_controller: Arc<FaceController>,
     zenoh_session: Arc<Session>,
 ) -> anyhow::Result<()> {
     let face_color_subscriber = zenoh_session

@@ -7,6 +7,7 @@ pub mod error;
 mod hexapod;
 pub mod hopper_body_config;
 pub mod ik_controller;
+pub mod ioc_container;
 pub mod lidar;
 pub mod monitoring;
 pub mod motion_controller;

@@ -11,11 +11,14 @@ use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
     IkControllable,
 };
+use crate::ioc_container::IocContainer;
+use crate::speech::SpeechService;
 use crate::utilities::MpscChannelHelper;
 pub use choreographer::DanceMove;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
+use tokio::sync::Mutex;
 use tokio::time;
 use tokio::{spawn, task::JoinHandle};
 use tracing::*;
@@ -227,6 +230,20 @@ impl MotionControllerLoop {
                     match error {
                         HopperError::GenericIkError => {
                             warn!("Error is generic IK error. Restarting");
+                            if let Ok(speech_service) =
+                                IocContainer::global_instance().service::<Mutex<SpeechService>>()
+                            {
+                                if let Err(err) = speech_service
+                                    .lock()
+                                    .await
+                                    .play_sound("hopper_sounds/ik_failure.wav")
+                                    .await
+                                {
+                                    error!("Failed to play sound {}", err);
+                                }
+                            } else {
+                                error!("Failed to get speech service");
+                            }
                             // Attempt recovery
                             self.command = MotionControllerCommand::default();
                             self.state = BodyState::Grounded;

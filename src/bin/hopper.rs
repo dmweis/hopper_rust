@@ -3,14 +3,16 @@ use clap::Parser;
 use hopper_rust::{
     body_controller, body_controller::BodyController, camera::start_camera,
     configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
-    lidar::start_lidar_driver, monitoring::start_monitoring_loop, motion_controller,
-    speech::SpeechService, utilities, zenoh_face_controller::start_face_controller,
-    zenoh_remote::simple_zenoh_controller, zenoh_speech_controller::start_speech_controller,
+    ioc_container::IocContainer, lidar::start_lidar_driver, monitoring::start_monitoring_loop,
+    motion_controller, speech::SpeechService, utilities,
+    zenoh_face_controller::start_face_controller, zenoh_remote::simple_zenoh_controller,
+    zenoh_speech_controller::start_speech_controller,
 };
 use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use tokio::sync::Mutex as TokioMutex;
 use tracing::*;
 use zenoh::prelude::r#async::*;
 
@@ -49,7 +51,14 @@ async fn main() -> Result<()> {
     let face_controller = hopper_face::FaceController::open(&app_config.base.face_port)?;
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
 
-    start_face_controller(face_controller, zenoh_session.clone()).await?;
+    let ioc_container = IocContainer::global_instance();
+
+    ioc_container.register(face_controller);
+    start_face_controller(
+        ioc_container.service::<hopper_face::FaceController>()?,
+        zenoh_session.clone(),
+    )
+    .await?;
 
     start_lidar_driver(zenoh_session.clone(), &app_config.lidar).await?;
 
@@ -67,7 +76,13 @@ async fn main() -> Result<()> {
         .await
         .unwrap();
 
-    start_speech_controller(speech_service, zenoh_session.clone()).await?;
+    ioc_container.register(TokioMutex::new(speech_service));
+
+    start_speech_controller(
+        ioc_container.service::<TokioMutex<SpeechService>>()?,
+        zenoh_session.clone(),
+    )
+    .await?;
 
     let hopper_body_config = args
         .body_config
