@@ -126,24 +126,30 @@ struct WaveHiIter {
 
 impl WaveHiIter {
     pub fn new(starting_pose: LegPositions) -> Self {
-        const SPEED: f32 = 0.003;
+        const BODY_LIFT_SPEED: f32 = 0.003;
 
-        let mut lifted_paw = starting_pose
-            .transform(
-                Vector3::new(0.0, 0.0, -0.02),
-                UnitQuaternion::from_euler_angles(-0.05, 0.05, 0.0),
-            )
-            .transform_selected_legs(
-                Vector3::new(0.1, 0.02, 0.0),
-                UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
-                LegFlags::LEFT_FRONT,
-            );
+        let mut poses = vec![];
+
+        let lifted_body = starting_pose.transform(
+            Vector3::new(0.0, 0.0, -0.02),
+            UnitQuaternion::from_euler_angles(-0.07, 0.07, 0.0),
+        );
+
+        for step in starting_pose.to_move_towards_iter(&lifted_body, BODY_LIFT_SPEED) {
+            poses.push(step);
+        }
+
+        const PAW_LIFT_SPEED: f32 = 0.007;
+
+        let mut lifted_paw = lifted_body.transform_selected_legs(
+            Vector3::new(0.1, 0.02, 0.0),
+            UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
+            LegFlags::LEFT_FRONT,
+        );
         let left_front = *lifted_paw.left_front();
 
         lifted_paw =
             lifted_paw.updated_left_front(Vector3::new(left_front.x, left_front.y, 0.04).into());
-
-        let mut poses = vec![];
 
         let paw_a = lifted_paw.transform_selected_legs(
             Vector3::new(0.0, 0.0, 0.02),
@@ -158,11 +164,11 @@ impl WaveHiIter {
         );
 
         // lift paw
-        for step in starting_pose.to_move_towards_iter(&lifted_paw, SPEED) {
+        for step in lifted_body.to_move_towards_iter(&lifted_paw, PAW_LIFT_SPEED) {
             poses.push(step);
         }
 
-        const WAVE_SPEED: f32 = 0.003;
+        const WAVE_SPEED: f32 = 0.005;
 
         let mut rng = rand::thread_rng();
         let count = rng.gen_range(3..6);
@@ -176,7 +182,7 @@ impl WaveHiIter {
         }
 
         // lower paw
-        for step in lifted_paw.to_move_towards_iter(&starting_pose, SPEED) {
+        for step in lifted_paw.to_move_towards_iter(&starting_pose, BODY_LIFT_SPEED) {
             poses.push(step);
         }
 
