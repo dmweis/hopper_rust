@@ -131,8 +131,8 @@ async fn handle_gamepad_command(
         was_button_pressed_since_last_time(Button::West, &gamepad_message, last_gamepad_message);
     let select_pressed =
         was_button_pressed_since_last_time(Button::Select, &gamepad_message, last_gamepad_message);
-    let mode_pressed =
-        was_button_pressed_since_last_time(Button::Mode, &gamepad_message, last_gamepad_message);
+    let start_pressed =
+        was_button_pressed_since_last_time(Button::Start, &gamepad_message, last_gamepad_message);
 
     let lb_pressed = is_button_down(Button::LeftTrigger, &gamepad_message);
     let rb_pressed = is_button_down(Button::RightTrigger, &gamepad_message);
@@ -154,7 +154,7 @@ async fn handle_gamepad_command(
     } else if select_pressed {
         info!("Folding");
         controller.fold();
-    } else if mode_pressed {
+    } else if start_pressed {
         info!("Unfolding");
         controller.unfold();
     }
