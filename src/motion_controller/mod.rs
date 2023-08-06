@@ -273,11 +273,14 @@ impl MotionControllerLoop {
 
     async fn stand_up(&mut self) -> HopperResult<()> {
         self.last_written_pose = self.ik_controller.read_leg_positions().await?;
-        self.transition_direct(&[
-            &self.last_written_pose.clone(),
-            stance::grounded_stance(),
-            stance::relaxed_wide_stance(),
-        ])
+        self.transition_direct(
+            &[
+                &self.last_written_pose.clone(),
+                stance::grounded_stance(),
+                stance::relaxed_wide_stance(),
+            ],
+            0.005,
+        )
         .await?;
         self.transition_step(&[stance::relaxed_wide_stance(), stance::relaxed_stance()])
             .await?;
@@ -288,18 +291,25 @@ impl MotionControllerLoop {
     async fn sit_down(&mut self) -> HopperResult<()> {
         self.transition_step(&[stance::relaxed_stance(), stance::relaxed_wide_stance()])
             .await?;
-        self.transition_direct(&[stance::relaxed_wide_stance(), stance::grounded_stance()])
-            .await?;
+        self.transition_direct(
+            &[stance::relaxed_wide_stance(), stance::grounded_stance()],
+            MAX_MOVE,
+        )
+        .await?;
         self.ik_controller.disable_motors().await?;
         self.state = BodyState::Grounded;
         Ok(())
     }
 
     /// Move over sequence of LegPositions using direct motions
-    async fn transition_direct(&mut self, states: &[&LegPositions]) -> HopperResult<()> {
+    async fn transition_direct(
+        &mut self,
+        states: &[&LegPositions],
+        stride: f32,
+    ) -> HopperResult<()> {
         let mut interval = time::interval(TICK_DURATION);
         for pose in states {
-            for new_pose in self.last_written_pose.to_move_towards_iter(pose, MAX_MOVE) {
+            for new_pose in self.last_written_pose.to_move_towards_iter(pose, stride) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
                 self.last_written_pose = new_pose;
                 interval.tick().await;
@@ -430,6 +440,10 @@ impl MotionControllerLoop {
                         continue;
                     }
                     BlockingCommand::Unfold => {
+                        if self.state != BodyState::Grounded {
+                            warn!("Cannot fold while not grounded");
+                            continue;
+                        }
                         FoldingManager::new(&mut self.ik_controller)
                             .await?
                             .unfold()
@@ -437,6 +451,10 @@ impl MotionControllerLoop {
                         continue;
                     }
                     BlockingCommand::UnfoldOnGround => {
+                        if self.state != BodyState::Grounded {
+                            warn!("Cannot fold while not grounded");
+                            continue;
+                        }
                         FoldingManager::new(&mut self.ik_controller)
                             .await?
                             .unfold_on_ground()
@@ -444,6 +462,10 @@ impl MotionControllerLoop {
                         continue;
                     }
                     BlockingCommand::FoldOnGround => {
+                        if self.state != BodyState::Grounded {
+                            warn!("Cannot fold while not grounded");
+                            continue;
+                        }
                         FoldingManager::new(&mut self.ik_controller)
                             .await?
                             .fold_on_ground()
