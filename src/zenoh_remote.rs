@@ -153,7 +153,7 @@ async fn handle_gamepad_command(
         controller.start_sequence(motion_controller::DanceMove::WaveHi);
     } else if select_pressed {
         info!("Folding");
-        controller.fold();
+        controller.fold_on_ground();
     } else if start_pressed {
         info!("Unfolding on ground");
         controller.unfold_on_ground();
