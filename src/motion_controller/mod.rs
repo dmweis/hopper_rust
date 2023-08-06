@@ -281,7 +281,7 @@ impl MotionControllerLoop {
         .await?;
         self.transition_direct(
             &[stance::grounded_stance(), stance::relaxed_wide_stance()],
-            MAX_MOVE,
+            0.003,
         )
         .await?;
         self.transition_step(&[stance::relaxed_wide_stance(), stance::relaxed_stance()])
