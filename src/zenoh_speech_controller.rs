@@ -36,16 +36,19 @@ pub async fn start_speech_controller(
                     say_msg = say_command_subscriber.recv_async() => {
                         let say_msg = say_msg?;
                         let say_msg: String = say_msg.value.try_into()?;
+                        info!("Received speech say command {}", say_msg);
                         speech_service.say_azure(&say_msg).await?;
                     }
                     say_astromech_msg = say_astromech_command_subscriber.recv_async() => {
                         let say_astromech_msg = say_astromech_msg?;
                         let say_astromech_msg: String = say_astromech_msg.value.try_into()?;
+                        info!("Received speech say astromech command {}", say_astromech_msg);
                         speech_service.say_astromech(&say_astromech_msg).await?;
                     }
                     play_sound_msg = play_sound_command_subscriber.recv_async() => {
                         let play_sound_msg = play_sound_msg?;
                         let play_sound_msg: String = play_sound_msg.value.try_into()?;
+                        info!("Received speech play sound command {}", play_sound_msg);
                         speech_service.play_sound(&play_sound_msg).await?;
                     }
                 }

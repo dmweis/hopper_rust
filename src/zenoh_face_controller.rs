@@ -23,7 +23,7 @@ pub async fn start_face_controller(
         .map_err(HopperError::ZenohError)?;
 
     tokio::spawn(async move {
-        let mut selected_color = hopper_face::driver::OFF;
+        let mut selected_color = hopper_face::driver::PURPLE;
         let mut selected_animation = String::from("larson_scanner");
 
         fn set_animation(
@@ -52,6 +52,7 @@ pub async fn start_face_controller(
                     color = face_color_subscriber.recv_async() => {
                         let color = color?;
                         let color: String = color.value.try_into()?;
+                        info!("Received face color command {}", color);
                         match color.to_lowercase().as_str() {
                             "red" => selected_color = hopper_face::driver::RED,
                             "green" => selected_color = hopper_face::driver::GREEN,
@@ -67,6 +68,7 @@ pub async fn start_face_controller(
                         let animation = animation?;
                         let animation: String = animation.value.try_into()?;
                         selected_animation = animation;
+                        info!("Received face animation command {}", selected_animation);
                         set_animation(&face_controller, &selected_animation, selected_color)?;
                     }
                 }
