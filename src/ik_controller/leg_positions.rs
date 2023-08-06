@@ -84,7 +84,7 @@ impl LegPositions {
             .fold(std::f32::NAN, f32::max)
     }
 
-    pub fn to_foxglove_frame_transport(&self) -> crate::foxglove::FrameTransforms {
+    pub fn to_foxglove_frame_transport(self) -> crate::foxglove::FrameTransforms {
         fn to_foxglove_vector3(point: &Point3<f32>) -> crate::foxglove::Vector3 {
             crate::foxglove::Vector3 {
                 x: point.x as f64,
@@ -246,7 +246,7 @@ impl Iterator for MovingTowardsIterator<LegPositions> {
                 right_middle,
                 right_rear,
             );
-            self.last_state = leg_positions.clone();
+            self.last_state = leg_positions;
             Some(leg_positions)
         } else {
             None
@@ -359,9 +359,9 @@ impl MoveTowards for LegPositions {
         max_move: f32,
     ) -> MovingTowardsIterator<Self::Item> {
         MovingTowardsIterator::<LegPositions> {
-            target: target.clone(),
+            target: *target,
             max_move,
-            last_state: self.clone(),
+            last_state: *self,
         }
     }
 }
@@ -370,8 +370,8 @@ pub type OptionalLegPositions = HexapodTypes<Option<Point3<f32>>>;
 
 #[allow(dead_code)]
 impl OptionalLegPositions {
-    fn to_json(&self) -> Result<String, Box<dyn Error>> {
-        Ok(serde_json::to_string(self)?)
+    fn to_json(self) -> Result<String, Box<dyn Error>> {
+        Ok(serde_json::to_string(&self)?)
     }
 
     fn from_json(json: &str) -> Result<OptionalLegPositions, Box<dyn Error>> {

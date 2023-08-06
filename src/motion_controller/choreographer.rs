@@ -99,9 +99,9 @@ impl SadEmoteIter {
             poses.push(step);
         }
 
-        let last = poses.last().unwrap().clone();
+        let last = *poses.last().unwrap();
         for _ in 0..40 {
-            poses.push(last.clone())
+            poses.push(last)
         }
 
         for step in a.to_move_towards_iter(&starting_pose, SPEED) {

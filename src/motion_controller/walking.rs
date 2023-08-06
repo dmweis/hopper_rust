@@ -82,7 +82,7 @@ impl StepIterator {
         tripod: Tripod,
     ) -> StepIterator {
         StepIterator {
-            start: start.clone(),
+            start,
             last: start,
             target,
             max_move,
@@ -115,7 +115,7 @@ impl Iterator for StepIterator {
         );
         if moved {
             self.last = positions;
-            Some(self.last.clone())
+            Some(self.last)
         } else {
             None
         }
@@ -143,7 +143,7 @@ impl TimedStepIterator {
         tripod: Tripod,
     ) -> Self {
         Self {
-            start: start.clone(),
+            start,
             last: start,
             target,
             period,
@@ -178,7 +178,7 @@ impl Iterator for TimedStepIterator {
         );
         if moved {
             self.last = positions;
-            Some(self.last.clone())
+            Some(self.last)
         } else {
             None
         }
@@ -490,8 +490,8 @@ mod tests {
         let mut left_middle_lifted = false;
         let mut right_rear_lifted = false;
 
-        let mut final_state = start.clone();
-        for step in StepIterator::step(start, target.clone(), 0.001, 0.02, Tripod::RLR) {
+        let mut final_state = start;
+        for step in StepIterator::step(start, target, 0.001, 0.02, Tripod::RLR) {
             assert_relative_eq!(step.left_front().z, 0.0);
             assert_relative_eq!(step.right_middle().z, 0.0);
             assert_relative_eq!(step.left_rear().z, 0.0);
@@ -539,8 +539,8 @@ mod tests {
         let mut right_middle_lifted = false;
         let mut left_rear_lifted = false;
 
-        let mut final_state = start.clone();
-        for step in StepIterator::step(start, target.clone(), 0.001, 0.02, Tripod::LRL) {
+        let mut final_state = start;
+        for step in StepIterator::step(start, target, 0.001, 0.02, Tripod::LRL) {
             assert_relative_eq!(step.right_front().z, 0.0);
             assert_relative_eq!(step.left_middle().z, 0.0);
             assert_relative_eq!(step.right_rear().z, 0.0);
@@ -592,7 +592,7 @@ mod tests {
         const MAX_MOVE: f32 = 0.001;
         const STEP_HEIGHT: f32 = 0.03;
         let mut tripod = Tripod::LRL;
-        let mut last_written = relaxed_stance().clone();
+        let mut last_written = *relaxed_stance();
         for _ in 0..4 {
             tripod.invert();
             let step = step_with_relaxed_transformation(
@@ -602,8 +602,8 @@ mod tests {
                 MoveCommand::new(Vector2::new(0.00, 0.0), 10_f32.to_radians()),
             );
             for new_pose in StepIterator::step(
-                last_written.clone(),
-                step.clone(),
+                last_written,
+                step,
                 MAX_MOVE,
                 STEP_HEIGHT,
                 tripod,
@@ -627,8 +627,8 @@ mod tests {
         const STEP_HEIGHT: f32 = 0.03;
         const MAX_RELATIVE_ERROR: f32 = 0.001;
         let mut tripod = Tripod::LRL;
-        let initial_pose = relaxed_stance().clone();
-        let mut last_written = initial_pose.clone();
+        let initial_pose = *relaxed_stance();
+        let mut last_written = initial_pose;
         for _ in 0..4 {
             tripod.invert();
             let step = step_with_relaxed_transformation(
@@ -638,8 +638,8 @@ mod tests {
                 MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
             for new_pose in StepIterator::step(
-                last_written.clone(),
-                step.clone(),
+                last_written,
+                step,
                 MAX_MOVE,
                 STEP_HEIGHT,
                 tripod,
@@ -696,8 +696,8 @@ mod tests {
         const STEP_HEIGHT: f32 = 0.03;
         const MAX_RELATIVE_ERROR: f32 = 0.005;
         let mut tripod = Tripod::LRL;
-        let initial_pose = relaxed_stance().clone();
-        let mut last_written = initial_pose.clone();
+        let initial_pose = *relaxed_stance();
+        let mut last_written = initial_pose;
         for _ in 0..4 {
             tripod.invert();
             let step = step_with_relaxed_transformation(
@@ -707,8 +707,8 @@ mod tests {
                 MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
             for new_pose in StepIterator::step(
-                last_written.clone(),
-                step.clone(),
+                last_written,
+                step,
                 MAX_MOVE,
                 STEP_HEIGHT,
                 tripod,
@@ -752,8 +752,8 @@ mod tests {
 
     #[test]
     fn step_iterator_handles_zero_steps() {
-        let initial_pose = relaxed_stance().clone();
-        let target = initial_pose.clone();
+        let initial_pose = *relaxed_stance();
+        let target = initial_pose;
         let mut step_iterator = StepIterator::step(initial_pose, target, 1.0, 0.003, Tripod::LRL);
         assert_eq!(step_iterator.next(), None);
     }

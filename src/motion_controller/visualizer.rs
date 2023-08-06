@@ -53,7 +53,7 @@ impl HopperVisualizer {
 
 impl Default for HopperVisualizer {
     fn default() -> Self {
-        let initial_position = stance::grounded_stance().clone();
+        let initial_position = *stance::grounded_stance();
         let leg_positions = Arc::new(Mutex::new(initial_position));
         let keep_running = Arc::new(AtomicBool::new(true));
         let ground_type = GroundType::Circles;
@@ -120,12 +120,12 @@ impl BodyController for HopperVisualizer {
 impl IkControllable for HopperVisualizer {
     async fn move_to_positions(&mut self, positions: &LegPositions) -> HopperResult<()> {
         let mut guard = self.leg_positions.lock().unwrap();
-        *guard = positions.clone();
+        *guard = *positions;
         Ok(())
     }
 
     async fn read_leg_positions(&mut self) -> HopperResult<LegPositions> {
-        Ok(self.leg_positions.lock().unwrap().clone())
+        Ok(*self.leg_positions.lock().unwrap())
     }
 
     async fn disable_motors(&mut self) -> HopperResult<()> {

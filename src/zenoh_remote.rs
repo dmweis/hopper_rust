@@ -122,13 +122,13 @@ async fn handle_gamepad_command(
     }
 
     let a_pressed =
-        was_button_pressed_since_last_time(Button::South, &gamepad_message, &last_gamepad_message);
+        was_button_pressed_since_last_time(Button::South, &gamepad_message, last_gamepad_message);
     let b_pressed =
-        was_button_pressed_since_last_time(Button::East, &gamepad_message, &last_gamepad_message);
+        was_button_pressed_since_last_time(Button::East, &gamepad_message, last_gamepad_message);
     let y_pressed =
-        was_button_pressed_since_last_time(Button::North, &gamepad_message, &last_gamepad_message);
+        was_button_pressed_since_last_time(Button::North, &gamepad_message, last_gamepad_message);
     let x_pressed =
-        was_button_pressed_since_last_time(Button::West, &gamepad_message, &last_gamepad_message);
+        was_button_pressed_since_last_time(Button::West, &gamepad_message, last_gamepad_message);
 
     let lb_pressed = is_button_down(Button::LeftTrigger, &gamepad_message);
     let rb_pressed = is_button_down(Button::RightTrigger, &gamepad_message);
