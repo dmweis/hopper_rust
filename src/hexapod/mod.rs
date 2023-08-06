@@ -1,5 +1,8 @@
 use bitflags::bitflags;
+use dynamixel_driver::SyncCommand;
 use serde::{Deserialize, Serialize};
+
+use crate::hopper_body_config::{BodyConfig, LegConfig};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct HexapodTypes<T: Clone> {
@@ -118,5 +121,49 @@ bitflags! {
         const MIDDLE = Self::RIGHT_MIDDLE.bits() | Self::LEFT_MIDDLE.bits();
         const FRONT = Self::LEFT_FRONT.bits() | Self::RIGHT_FRONT.bits();
         const REAR = Self::LEFT_REAR.bits() | Self::RIGHT_REAR.bits();
+    }
+}
+
+impl<T: Clone + Copy> Copy for HexapodTypes<T> {}
+
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct TripodLegType<T: Clone> {
+    coxa: T,
+    femur: T,
+    tibia: T,
+}
+
+impl<T: Clone> TripodLegType<T> {
+    pub fn pair_with_id(&self, leg_config: &LegConfig) -> [(u8, T); 3] {
+        [
+            (leg_config.coxa_id, self.coxa.clone()),
+            (leg_config.femur_id, self.femur.clone()),
+            (leg_config.tibia_id, self.tibia.clone()),
+        ]
+    }
+}
+
+impl<T: Clone + Copy> Copy for TripodLegType<T> {}
+
+pub trait ToSyncCommand {
+    fn cerate_sync_command(&self, config: &BodyConfig) -> Vec<SyncCommand>;
+}
+
+impl<T> ToSyncCommand for HexapodTypes<TripodLegType<T>>
+where
+    T: Clone + Into<u32>,
+{
+    fn cerate_sync_command(&self, config: &BodyConfig) -> Vec<SyncCommand> {
+        let mut commands = Vec::with_capacity(18);
+        commands.extend_from_slice(&self.left_front().pair_with_id(config.left_front()));
+        commands.extend_from_slice(&self.left_middle().pair_with_id(config.left_middle()));
+        commands.extend_from_slice(&self.left_rear().pair_with_id(config.left_rear()));
+        commands.extend_from_slice(&self.right_front().pair_with_id(config.right_front()));
+        commands.extend_from_slice(&self.right_middle().pair_with_id(config.right_middle()));
+        commands.extend_from_slice(&self.right_rear().pair_with_id(config.right_rear()));
+        commands
+            .into_iter()
+            .map(|(id, value)| SyncCommand::new(id, value.into()))
+            .collect()
     }
 }

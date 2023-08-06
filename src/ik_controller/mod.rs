@@ -2,6 +2,7 @@ pub mod leg_positions;
 
 use crate::{
     body_controller::{
+        motor_controller::{HexapodCompliance, HexapodMotorSpeed},
         motor_positions::{BodyMotorPositions, LegMotorPositions},
         BodyController,
     },
@@ -55,8 +56,21 @@ impl BodyController for IkController {
         self.body_controller.set_compliance_slope(compliance).await
     }
 
-    async fn set_speed(&mut self, speed: u16) -> HopperResult<()> {
-        self.body_controller.set_speed(speed).await
+    async fn set_body_compliance_slope(
+        &mut self,
+        compliance: HexapodCompliance,
+    ) -> HopperResult<()> {
+        self.body_controller
+            .set_body_compliance_slope(compliance)
+            .await
+    }
+
+    async fn set_motor_speed(&mut self, speed: u16) -> HopperResult<()> {
+        self.body_controller.set_motor_speed(speed).await
+    }
+
+    async fn set_body_motor_speed(&mut self, speed: HexapodMotorSpeed) -> HopperResult<()> {
+        self.body_controller.set_body_motor_speed(speed).await
     }
 
     async fn set_torque(&mut self, torque: bool) -> HopperResult<()> {

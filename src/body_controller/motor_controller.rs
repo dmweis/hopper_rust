@@ -1,6 +1,8 @@
 use super::motor_positions::*;
+
 use crate::{
     error::{HopperError, HopperResult},
+    hexapod::{HexapodTypes, ToSyncCommand, TripodLegType},
     hopper_body_config::{BodyConfig, LegConfig},
 };
 use async_trait::async_trait;
@@ -12,13 +14,22 @@ use tracing::*;
 pub trait BodyController: Send + Sync {
     async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> HopperResult<()>;
     async fn set_compliance_slope(&mut self, compliance: u8) -> HopperResult<()>;
-    async fn set_speed(&mut self, speed: u16) -> HopperResult<()>;
+    async fn set_body_compliance_slope(
+        &mut self,
+        compliance: HexapodCompliance,
+    ) -> HopperResult<()>;
+    async fn set_motor_speed(&mut self, speed: u16) -> HopperResult<()>;
+    async fn set_body_motor_speed(&mut self, speed: HexapodMotorSpeed) -> HopperResult<()>;
     async fn set_torque(&mut self, torque: bool) -> HopperResult<()>;
     async fn read_motor_positions(&mut self) -> HopperResult<BodyMotorPositions>;
     async fn read_mean_voltage(&mut self) -> HopperResult<f32>;
     async fn scan_motors(&mut self) -> HopperResult<()>;
     async fn flush_and_clear_motors(&mut self) -> HopperResult<()>;
 }
+
+pub type HexapodCompliance = HexapodTypes<TripodLegType<u8>>;
+
+pub type HexapodMotorSpeed = HexapodTypes<TripodLegType<u16>>;
 
 pub struct AsyncBodyController {
     driver: DynamixelDriver,
@@ -51,7 +62,7 @@ impl BodyController for AsyncBodyController {
         Ok(())
     }
 
-    async fn set_speed(&mut self, speed: u16) -> HopperResult<()> {
+    async fn set_motor_speed(&mut self, speed: u16) -> HopperResult<()> {
         let commands = self
             .body_config
             .get_ids()
@@ -65,6 +76,15 @@ impl BodyController for AsyncBodyController {
         Ok(())
     }
 
+    async fn set_body_motor_speed(&mut self, speed: HexapodMotorSpeed) -> HopperResult<()> {
+        let commands = speed.cerate_sync_command(&self.body_config);
+        self.driver
+            .sync_write_compliance_slope_both(commands)
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
+        Ok(())
+    }
+
     async fn set_compliance_slope(&mut self, compliance: u8) -> HopperResult<()> {
         let commands = self
             .body_config
@@ -72,6 +92,18 @@ impl BodyController for AsyncBodyController {
             .iter()
             .map(|id| SyncCommand::new(*id, compliance as u32))
             .collect::<Vec<_>>();
+        self.driver
+            .sync_write_compliance_slope_both(commands)
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
+        Ok(())
+    }
+
+    async fn set_body_compliance_slope(
+        &mut self,
+        compliance: HexapodCompliance,
+    ) -> HopperResult<()> {
+        let commands = compliance.cerate_sync_command(&self.body_config);
         self.driver
             .sync_write_compliance_slope_both(commands)
             .await

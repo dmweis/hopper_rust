@@ -1,5 +1,8 @@
 use crate::{
-    body_controller::{BodyController, BodyMotorPositions},
+    body_controller::{
+        motor_controller::{HexapodCompliance, HexapodMotorSpeed},
+        BodyController, BodyMotorPositions,
+    },
     error::HopperResult,
     ik_controller::leg_positions::*,
 };
@@ -77,7 +80,18 @@ impl BodyController for HopperVisualizer {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn set_speed(&mut self, _speed: u16) -> HopperResult<()> {
+    async fn set_body_compliance_slope(
+        &mut self,
+        _compliance: HexapodCompliance,
+    ) -> HopperResult<()> {
+        unimplemented!("shouldn't be called on a mock");
+    }
+
+    async fn set_motor_speed(&mut self, _speed: u16) -> HopperResult<()> {
+        unimplemented!("shouldn't be called on a mock");
+    }
+
+    async fn set_body_motor_speed(&mut self, _speed: HexapodMotorSpeed) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 

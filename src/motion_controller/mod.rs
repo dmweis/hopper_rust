@@ -4,6 +4,7 @@ pub mod stance;
 pub mod visualizer;
 pub mod walking;
 
+use crate::body_controller::motor_controller::{HexapodCompliance, HexapodMotorSpeed};
 use crate::error::HopperResult;
 use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
@@ -78,6 +79,18 @@ impl MotionController {
         self.command_sender.send(self.command.clone()).unwrap();
     }
 
+    pub fn set_body_compliance_slpe(&mut self, compliance: HexapodCompliance) {
+        self.blocking_command_sender
+            .send(BlockingCommand::SetCompliance(compliance))
+            .unwrap();
+    }
+
+    pub fn set_body_motor_speed(&mut self, speed: HexapodMotorSpeed) {
+        self.blocking_command_sender
+            .send(BlockingCommand::SetMotorSpeed(speed))
+            .unwrap();
+    }
+
     pub fn start_sequence(&mut self, dance_move: DanceMove) {
         info!("Starting dance sequence");
         self.blocking_command_sender
@@ -113,6 +126,8 @@ enum BlockingCommand {
     Terminate,
     DisableMotors,
     Choreography(DanceMove),
+    SetCompliance(HexapodCompliance),
+    SetMotorSpeed(HexapodMotorSpeed),
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
@@ -165,7 +180,7 @@ impl MotionControllerLoop {
             last_written_pose,
             current_rotation: UnitQuaternion::identity(),
             current_translation: Vector3::zeros(),
-            base_relaxed: stance::relaxed_stance().clone(),
+            base_relaxed: *stance::relaxed_stance(),
             lrl_reset: false,
             rlr_reset: false,
             last_voltage_read: Instant::now(),
@@ -240,8 +255,8 @@ impl MotionControllerLoop {
                 .last_written_pose
                 .merge_with(pose, self.last_tripod.as_flag());
             for new_pose in StepIterator::step(
-                self.last_written_pose.clone(),
-                target.clone(),
+                self.last_written_pose,
+                target,
                 MAX_MOVE,
                 STEP_HEIGHT,
                 self.last_tripod,
@@ -255,8 +270,8 @@ impl MotionControllerLoop {
                 .last_written_pose
                 .merge_with(pose, self.last_tripod.as_flag());
             for new_pose in StepIterator::step(
-                self.last_written_pose.clone(),
-                target.clone(),
+                self.last_written_pose,
+                target,
                 MAX_MOVE,
                 STEP_HEIGHT,
                 self.last_tripod,
@@ -322,8 +337,7 @@ impl MotionControllerLoop {
                         break;
                     }
                     BlockingCommand::Choreography(dance_move) => {
-                        let moves: Vec<_> =
-                            dance_move.to_iterator(self.base_relaxed.clone()).collect();
+                        let moves: Vec<_> = dance_move.to_iterator(self.base_relaxed).collect();
                         if self.dance_moves.is_empty() {
                             self.dance_moves = moves;
                         } else {
@@ -332,6 +346,16 @@ impl MotionControllerLoop {
                     }
                     BlockingCommand::DisableMotors => {
                         self.ik_controller.disable_motors().await?;
+                        continue;
+                    }
+                    BlockingCommand::SetCompliance(compliance) => {
+                        self.ik_controller
+                            .set_body_compliance_slope(compliance)
+                            .await?;
+                        continue;
+                    }
+                    BlockingCommand::SetMotorSpeed(speed) => {
+                        self.ik_controller.set_body_motor_speed(speed).await?;
                         continue;
                     }
                 }
@@ -368,8 +392,8 @@ impl MotionControllerLoop {
                         self.command.move_command,
                     );
                     for new_pose in TimedStepIterator::step(
-                        self.last_written_pose.clone(),
-                        target.clone(),
+                        self.last_written_pose,
+                        target,
                         self.move_duration,
                         STEP_HEIGHT,
                         GROUNDED_STEP_HEIGHT,

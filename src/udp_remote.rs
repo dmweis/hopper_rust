@@ -48,7 +48,7 @@ pub async fn udp_motor_commander(mut controller: Box<dyn BodyController>) -> Hop
                     }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
-                        controller.set_speed(speed).await?;
+                        controller.set_motor_speed(speed).await?;
                     }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");
@@ -115,7 +115,7 @@ pub async fn udp_ik_commander(mut controller: Box<dyn IkControllable>) -> Hopper
                     }
                     Command::SetSpeed(speed) => {
                         trace!("Setting speed");
-                        controller.set_speed(speed).await?;
+                        controller.set_motor_speed(speed).await?;
                     }
                     Command::SetCompliance(compliance) => {
                         trace!("Setting compliance");

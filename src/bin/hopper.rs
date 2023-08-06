@@ -93,7 +93,7 @@ async fn main() -> Result<()> {
     // TODO (David): Move to some settings system
     // also maybe tune...
     ik_controller.set_compliance_slope(64).await?;
-    ik_controller.set_speed(1023).await?;
+    ik_controller.set_motor_speed(1023).await?;
 
     let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
