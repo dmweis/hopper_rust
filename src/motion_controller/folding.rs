@@ -475,7 +475,7 @@ impl<'a> FoldingManager<'a> {
             OptionalLegMotorPositions::new(
                 None,
                 Some(60.0_f32.to_radians()),
-                Some(120.0_f32.to_radians()),
+                Some(210.0_f32.to_radians()),
             ),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
