@@ -2,6 +2,8 @@ use dynamixel_driver::DynamixelDriverError;
 use std::result::Result;
 use thiserror::Error;
 
+use crate::ioc_container;
+
 pub type HopperResult<T> = Result<T, HopperError>;
 
 #[derive(Error, Debug)]
@@ -35,6 +37,12 @@ pub enum HopperError {
     ZenohError(#[from] zenoh::Error),
     #[error("Failed parsing command output")]
     FailedParsingCommandOutput(String),
+    /// Ioc container error
+    #[error("Ioc container error {0:?}")]
+    IocContainerError(#[from] ioc_container::IocContainerError),
+    /// Hopper Face error
+    #[error("Hopper face error {0:?}")]
+    HopperFaceError(#[from] hopper_face::LedControllerError),
 }
 
 impl HopperError {

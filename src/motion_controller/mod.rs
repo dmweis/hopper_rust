@@ -15,6 +15,7 @@ use crate::ioc_container::IocContainer;
 use crate::speech::SpeechService;
 use crate::utilities::MpscChannelHelper;
 pub use choreographer::DanceMove;
+use hopper_face::FaceController;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
@@ -459,6 +460,9 @@ impl MotionControllerLoop {
                             .await?
                             .unfold_on_ground()
                             .await?;
+                        IocContainer::global_instance()
+                            .service::<FaceController>()?
+                            .larson_scanner(hopper_face::driver::PURPLE)?;
                         continue;
                     }
                     BlockingCommand::FoldOnGround => {
@@ -470,7 +474,10 @@ impl MotionControllerLoop {
                             .await?
                             .fold_on_ground()
                             .await?;
-                        continue;
+
+                        IocContainer::global_instance()
+                            .service::<FaceController>()?
+                            .off()?;
                     }
                 }
             }
