@@ -461,9 +461,9 @@ impl<'a> FoldingManager<'a> {
         self.move_towards(&compress_left_legs, max_step).await?;
 
         let folded_left_legs = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::new(Some(60.0_f32.to_radians()), None, None),
-            OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::new(Some(240.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(Some(60.0_f32.to_radians()), None, None),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
