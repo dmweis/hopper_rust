@@ -5,7 +5,7 @@ use hopper_rust::{
     configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
     lidar::start_lidar_driver, monitoring::start_monitoring_loop, motion_controller,
     speech::SpeechService, utilities, zenoh_face_controller::start_face_controller,
-    zenoh_remote::simple_zenoh_controller,
+    zenoh_remote::simple_zenoh_controller, zenoh_speech_controller::start_speech_controller,
 };
 use std::{
     path::{Path, PathBuf},
@@ -66,6 +66,8 @@ async fn main() -> Result<()> {
         .play_sound("hopper_sounds/windows_startup.wav")
         .await
         .unwrap();
+
+    start_speech_controller(speech_service, zenoh_session.clone()).await?;
 
     let hopper_body_config = args
         .body_config

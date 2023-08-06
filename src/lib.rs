@@ -15,6 +15,7 @@ pub mod udp_remote;
 pub mod utilities;
 pub mod zenoh_face_controller;
 pub mod zenoh_remote;
+pub mod zenoh_speech_controller;
 
 use once_cell::sync::Lazy;
 use prost_reflect::DescriptorPool;
