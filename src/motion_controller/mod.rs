@@ -223,6 +223,11 @@ impl MotionControllerLoop {
         })
     }
 
+    async fn read_current_pose(&mut self) -> HopperResult<()> {
+        self.last_written_pose = self.ik_controller.read_leg_positions().await?;
+        Ok(())
+    }
+
     async fn run(mut self) -> HopperResult<()> {
         loop {
             match self.control_loop().await {
@@ -250,8 +255,7 @@ impl MotionControllerLoop {
                             self.state = BodyState::Grounded;
                             self.ik_controller.disable_motors().await?;
                             tokio::time::sleep(Duration::from_millis(500)).await;
-                            self.last_written_pose =
-                                self.ik_controller.read_leg_positions().await?;
+                            self.read_current_pose().await?;
                         }
                         error if error.is_recoverable_driver_error() => {
                             info!("Error is recoverable. Restarting controller");
@@ -273,7 +277,7 @@ impl MotionControllerLoop {
     }
 
     async fn stand_up(&mut self) -> HopperResult<()> {
-        self.last_written_pose = self.ik_controller.read_leg_positions().await?;
+        self.read_current_pose().await?;
         self.transition_direct(
             &[&self.last_written_pose.clone(), stance::grounded_stance()],
             0.005,
@@ -413,7 +417,9 @@ impl MotionControllerLoop {
                         break;
                     }
                     BlockingCommand::Choreography(dance_move) => {
-                        let moves: Vec<_> = dance_move.to_iterator(self.base_relaxed).collect();
+                        self.read_current_pose().await?;
+                        let moves: Vec<_> =
+                            dance_move.to_iterator(self.last_written_pose).collect();
                         if self.dance_moves.is_empty() {
                             self.dance_moves = moves;
                         } else {
@@ -439,6 +445,7 @@ impl MotionControllerLoop {
                             .await?
                             .fold()
                             .await?;
+                        self.read_current_pose().await?;
                         continue;
                     }
                     BlockingCommand::Unfold => {
@@ -450,6 +457,7 @@ impl MotionControllerLoop {
                             .await?
                             .unfold()
                             .await?;
+                        self.read_current_pose().await?;
                         continue;
                     }
                     BlockingCommand::UnfoldOnGround => {
@@ -464,6 +472,7 @@ impl MotionControllerLoop {
                             .await?
                             .unfold_on_ground()
                             .await?;
+                        self.read_current_pose().await?;
                         continue;
                     }
                     BlockingCommand::FoldOnGround => {
@@ -479,6 +488,7 @@ impl MotionControllerLoop {
                         IocContainer::global_instance()
                             .service::<FaceController>()?
                             .off()?;
+                        self.read_current_pose().await?;
                     }
                 }
             }
