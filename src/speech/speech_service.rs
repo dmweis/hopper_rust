@@ -211,7 +211,11 @@ impl SpeechService {
         if let Some(ref audio_repository) = self.audio_repository {
             if let Some(data) = audio_repository.load(sound_name) {
                 self.play(data).await?;
+            } else {
+                error!("No sound found with name {}", sound_name);
             }
+        } else {
+            error!("No audio repository configured");
         }
         Ok(())
     }
@@ -224,9 +228,13 @@ impl SpeechService {
                     let lookup = format!("astromech/{}.wav", letter);
                     if let Some(data) = audio_repository.load(&lookup) {
                         sounds.push(data);
+                    } else {
+                        error!("No sound found with name {}", lookup);
                     }
                 }
             }
+        } else {
+            error!("No audio repository configured");
         }
         for sound in sounds {
             self.play(sound).await?;
