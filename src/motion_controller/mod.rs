@@ -417,9 +417,7 @@ impl MotionControllerLoop {
                         break;
                     }
                     BlockingCommand::Choreography(dance_move) => {
-                        self.read_current_pose().await?;
-                        let moves: Vec<_> =
-                            dance_move.to_iterator(self.last_written_pose).collect();
+                        let moves: Vec<_> = dance_move.to_iterator(self.base_relaxed).collect();
                         if self.dance_moves.is_empty() {
                             self.dance_moves = moves;
                         } else {
