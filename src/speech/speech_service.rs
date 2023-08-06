@@ -207,6 +207,7 @@ impl SpeechService {
     }
 
     pub async fn play_sound(&mut self, sound_name: &str) -> HopperResult<()> {
+        info!("Playing sound {}", sound_name);
         if let Some(ref audio_repository) = self.audio_repository {
             if let Some(data) = audio_repository.load(sound_name) {
                 self.play(data).await?;
