@@ -1,6 +1,7 @@
 use crate::{
     body_controller::{
         motor_controller::{HexapodCompliance, HexapodMotorSpeed},
+        motor_positions::OptionalBodyMotorPositions,
         BodyController, BodyMotorPositions,
     },
     error::HopperResult,
@@ -73,6 +74,13 @@ impl Default for HopperVisualizer {
 #[async_trait]
 impl BodyController for HopperVisualizer {
     async fn move_motors_to(&mut self, _positions: &BodyMotorPositions) -> HopperResult<()> {
+        unimplemented!("shouldn't be called on a mock");
+    }
+
+    async fn move_optional_motors_to(
+        &mut self,
+        _positions: &OptionalBodyMotorPositions,
+    ) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 

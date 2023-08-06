@@ -129,6 +129,10 @@ async fn handle_gamepad_command(
         was_button_pressed_since_last_time(Button::North, &gamepad_message, last_gamepad_message);
     let x_pressed =
         was_button_pressed_since_last_time(Button::West, &gamepad_message, last_gamepad_message);
+    let select_pressed =
+        was_button_pressed_since_last_time(Button::Select, &gamepad_message, last_gamepad_message);
+    let mode_pressed =
+        was_button_pressed_since_last_time(Button::Mode, &gamepad_message, last_gamepad_message);
 
     let lb_pressed = is_button_down(Button::LeftTrigger, &gamepad_message);
     let rb_pressed = is_button_down(Button::RightTrigger, &gamepad_message);
@@ -147,6 +151,12 @@ async fn handle_gamepad_command(
     } else if x_pressed {
         info!("Starting wave");
         controller.start_sequence(motion_controller::DanceMove::WaveHi);
+    } else if select_pressed {
+        info!("Folding");
+        controller.fold();
+    } else if mode_pressed {
+        info!("Unfolding");
+        controller.unfold();
     }
 
     if lb_pressed {

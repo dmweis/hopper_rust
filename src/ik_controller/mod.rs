@@ -3,7 +3,7 @@ pub mod leg_positions;
 use crate::{
     body_controller::{
         motor_controller::{HexapodCompliance, HexapodMotorSpeed},
-        motor_positions::{BodyMotorPositions, LegMotorPositions},
+        motor_positions::{BodyMotorPositions, LegMotorPositions, OptionalBodyMotorPositions},
         BodyController,
     },
     error::HopperError,
@@ -50,6 +50,15 @@ impl IkController {
 impl BodyController for IkController {
     async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> HopperResult<()> {
         self.body_controller.move_motors_to(positions).await
+    }
+
+    async fn move_optional_motors_to(
+        &mut self,
+        positions: &OptionalBodyMotorPositions,
+    ) -> HopperResult<()> {
+        self.body_controller
+            .move_optional_motors_to(positions)
+            .await
     }
 
     async fn set_compliance_slope(&mut self, compliance: u8) -> HopperResult<()> {

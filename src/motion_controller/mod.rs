@@ -1,4 +1,5 @@
 mod choreographer;
+pub mod folding;
 pub mod stance;
 #[cfg(feature = "visualizer")]
 pub mod visualizer;
@@ -19,6 +20,8 @@ use tokio::time;
 use tokio::{spawn, task::JoinHandle};
 use tracing::*;
 use walking::*;
+
+use self::folding::FoldingManager;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BodyState {
@@ -103,6 +106,18 @@ impl MotionController {
             .send(BlockingCommand::DisableMotors)
             .unwrap();
     }
+
+    pub fn fold(&mut self) {
+        self.blocking_command_sender
+            .send(BlockingCommand::Fold)
+            .unwrap();
+    }
+
+    pub fn unfold(&mut self) {
+        self.blocking_command_sender
+            .send(BlockingCommand::Unfold)
+            .unwrap();
+    }
 }
 
 impl Drop for MotionController {
@@ -126,6 +141,8 @@ enum BlockingCommand {
     Terminate,
     DisableMotors,
     Choreography(DanceMove),
+    Fold,
+    Unfold,
     SetCompliance(HexapodCompliance),
     SetMotorSpeed(HexapodMotorSpeed),
 }
@@ -372,6 +389,20 @@ impl MotionControllerLoop {
                     }
                     BlockingCommand::SetMotorSpeed(speed) => {
                         self.ik_controller.set_body_motor_speed(speed).await?;
+                        continue;
+                    }
+                    BlockingCommand::Fold => {
+                        FoldingManager::new(&mut self.ik_controller)
+                            .await?
+                            .fold()
+                            .await?;
+                        continue;
+                    }
+                    BlockingCommand::Unfold => {
+                        FoldingManager::new(&mut self.ik_controller)
+                            .await?
+                            .unfold()
+                            .await?;
                         continue;
                     }
                 }

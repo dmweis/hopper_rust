@@ -134,6 +134,10 @@ pub struct TripodLegType<T: Clone> {
 }
 
 impl<T: Clone> TripodLegType<T> {
+    pub fn new(coxa: T, femur: T, tibia: T) -> Self {
+        Self { coxa, femur, tibia }
+    }
+
     pub fn pair_with_id(&self, leg_config: &LegConfig) -> [(u8, T); 3] {
         [
             (leg_config.coxa_id, self.coxa.clone()),
@@ -144,6 +148,20 @@ impl<T: Clone> TripodLegType<T> {
 }
 
 impl<T: Clone + Copy> Copy for TripodLegType<T> {}
+
+impl<T: Clone + Copy> TripodLegType<T> {
+    pub fn coxa(&self) -> T {
+        self.coxa
+    }
+
+    pub fn femur(&self) -> T {
+        self.femur
+    }
+
+    pub fn tibia(&self) -> T {
+        self.tibia
+    }
+}
 
 pub trait ToSyncCommand {
     fn cerate_sync_command(&self, config: &BodyConfig) -> Vec<SyncCommand>;

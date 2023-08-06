@@ -13,6 +13,10 @@ use tracing::*;
 #[async_trait]
 pub trait BodyController: Send + Sync {
     async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> HopperResult<()>;
+    async fn move_optional_motors_to(
+        &mut self,
+        positions: &OptionalBodyMotorPositions,
+    ) -> HopperResult<()>;
     async fn set_compliance_slope(&mut self, compliance: u8) -> HopperResult<()>;
     async fn set_body_compliance_slope(
         &mut self,
@@ -54,7 +58,19 @@ impl AsyncBodyController {
 #[async_trait]
 impl BodyController for AsyncBodyController {
     async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> HopperResult<()> {
-        let commands = create_commands_for_body(&self.body_config, positions);
+        let commands = positions.create_command(&self.body_config);
+        self.driver
+            .sync_write_position_rad(commands)
+            .await
+            .map_err(HopperError::DynamixelSyncWriteError)?;
+        Ok(())
+    }
+
+    async fn move_optional_motors_to(
+        &mut self,
+        positions: &OptionalBodyMotorPositions,
+    ) -> HopperResult<()> {
+        let commands = positions.create_command(&self.body_config);
         self.driver
             .sync_write_position_rad(commands)
             .await
