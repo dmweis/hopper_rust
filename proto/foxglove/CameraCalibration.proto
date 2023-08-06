@@ -34,7 +34,7 @@ message CameraCalibration {
   // 
   // Projects 3D points in the camera coordinate frame to 2D pixel coordinates using the focal lengths (fx, fy) and principal point (cx, cy).
   // 
-  // ```
+  // ```ignore
   //     [fx  0 cx]
   // K = [ 0 fy cy]
   //     [ 0  0  1]
@@ -48,7 +48,7 @@ message CameraCalibration {
 
   // Projection/camera matrix (3x4 row-major matrix)
   // 
-  // ```
+  // ```ignore
   //     [fx'  0  cx' Tx]
   // P = [ 0  fy' cy' Ty]
   //     [ 0   0   1   0]
@@ -64,7 +64,7 @@ message CameraCalibration {
   // 
   // Given a 3D point [X Y Z]', the projection (x, y) of the point onto the rectified image is given by:
   // 
-  // ```
+  // ```ignore
   // [u v w]' = P * [X Y Z 1]'
   //        x = u / w
   //        y = v / w
