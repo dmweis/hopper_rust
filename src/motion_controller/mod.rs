@@ -5,7 +5,7 @@ pub mod visualizer;
 pub mod walking;
 
 use crate::body_controller::motor_controller::{HexapodCompliance, HexapodMotorSpeed};
-use crate::error::HopperResult;
+use crate::error::{HopperError, HopperResult};
 use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
     IkControllable,
@@ -193,16 +193,32 @@ impl MotionControllerLoop {
             match self.control_loop().await {
                 Err(error) => {
                     error!("Control loop error {}", error);
-                    if error.is_recoverable_driver_error() {
-                        info!("Error is recoverable. Restarting controller");
-                        self.flush_and_clear_motors().await?;
-                        self.scan_motors().await?;
-                    } else {
-                        error!("Error is not recoverable. Stopping controller");
-                        return Err(error);
+                    match error {
+                        HopperError::GenericIkError => {
+                            warn!("Error is generic IK error. Restarting");
+                            // Attempt recovery
+                            self.command = MotionControllerCommand::default();
+                            self.state = BodyState::Grounded;
+                            self.ik_controller.disable_motors().await?;
+                            tokio::time::sleep(Duration::from_millis(500)).await;
+                            self.last_written_pose =
+                                self.ik_controller.read_leg_positions().await?;
+                        }
+                        error if error.is_recoverable_driver_error() => {
+                            info!("Error is recoverable. Restarting controller");
+                            self.flush_and_clear_motors().await?;
+                            self.scan_motors().await?;
+                        }
+                        error => {
+                            error!("Error is not recoverable. Stopping controller");
+                            return Err(error);
+                        }
                     }
                 }
-                Ok(()) => return Ok(()),
+                Ok(()) => {
+                    info!("Control loop exited cleanly. Stopping controller");
+                    return Ok(());
+                }
             }
         }
     }
