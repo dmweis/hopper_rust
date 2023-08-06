@@ -118,6 +118,12 @@ impl MotionController {
             .send(BlockingCommand::Unfold)
             .unwrap();
     }
+
+    pub fn unfold_on_ground(&mut self) {
+        self.blocking_command_sender
+            .send(BlockingCommand::UnfoldOnGround)
+            .unwrap();
+    }
 }
 
 impl Drop for MotionController {
@@ -143,6 +149,7 @@ enum BlockingCommand {
     Choreography(DanceMove),
     Fold,
     Unfold,
+    UnfoldOnGround,
     SetCompliance(HexapodCompliance),
     SetMotorSpeed(HexapodMotorSpeed),
 }
@@ -402,6 +409,13 @@ impl MotionControllerLoop {
                         FoldingManager::new(&mut self.ik_controller)
                             .await?
                             .unfold()
+                            .await?;
+                        continue;
+                    }
+                    BlockingCommand::UnfoldOnGround => {
+                        FoldingManager::new(&mut self.ik_controller)
+                            .await?
+                            .unfold_on_ground()
                             .await?;
                         continue;
                     }

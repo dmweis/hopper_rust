@@ -155,8 +155,8 @@ async fn handle_gamepad_command(
         info!("Folding");
         controller.fold();
     } else if start_pressed {
-        info!("Unfolding");
-        controller.unfold();
+        info!("Unfolding on ground");
+        controller.unfold_on_ground();
     }
 
     if lb_pressed {

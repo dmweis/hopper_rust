@@ -225,4 +225,122 @@ impl<'a> FoldingManager<'a> {
         self.ik_controller.disable_motors().await?;
         Ok(())
     }
+
+    pub async fn unfold_on_ground(&mut self) -> HopperResult<()> {
+        self.fold_femur_tibia().await?;
+        let max_step = 1.3_f32.to_radians();
+
+        let middle_legs_lifted_tibias = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(None, None, Some(200.0_f32.to_radians())),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(None, None, Some(100.0_f32.to_radians())),
+            OptionalLegMotorPositions::default(),
+        );
+        self.move_towards(&middle_legs_lifted_tibias, max_step)
+            .await?;
+
+        let middle_legs_folded_out = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::default(),
+        );
+        self.move_towards(&middle_legs_folded_out, max_step).await?;
+
+        let right_side_lifted = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(
+                None,
+                Some(170.0_f32.to_radians()),
+                Some(100.0_f32.to_radians()),
+            ),
+            OptionalLegMotorPositions::default(),
+        );
+        self.move_towards(&right_side_lifted, max_step).await?;
+
+        let unfolded_right_legs = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+        );
+        self.move_towards(&unfolded_right_legs, max_step).await?;
+
+        let lifted_right_legs = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(None, None, Some(90.0_f32.to_radians())),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(None, None, Some(90.0_f32.to_radians())),
+        );
+        self.move_towards(&lifted_right_legs, max_step).await?;
+
+        // switch sides
+        let left_side_lifted = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(
+                None,
+                Some(130.0_f32.to_radians()),
+                Some(200.0_f32.to_radians()),
+            ),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(
+                None,
+                Some(240.0_f32.to_radians()),
+                Some(90.0_f32.to_radians()),
+            ),
+            OptionalLegMotorPositions::default(),
+        );
+        self.move_towards(&left_side_lifted, max_step).await?;
+
+        let unfolded_left_legs = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+        );
+        self.move_towards(&unfolded_left_legs, max_step).await?;
+
+        let lifted_left_legs = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::new(None, None, Some(210.0_f32.to_radians())),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(None, None, Some(210.0_f32.to_radians())),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+        );
+        self.move_towards(&lifted_left_legs, max_step).await?;
+
+        let lift_left_middle = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::new(
+                None,
+                Some(60.0_f32.to_radians()),
+                Some(210.0_f32.to_radians()),
+            ),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+            OptionalLegMotorPositions::default(),
+        );
+        self.move_towards(&lift_left_middle, max_step).await?;
+
+        // done
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        self.ik_controller.disable_motors().await?;
+        Ok(())
+    }
 }
