@@ -453,6 +453,9 @@ impl MotionControllerLoop {
                         continue;
                     }
                     BlockingCommand::UnfoldOnGround => {
+                        IocContainer::global_instance()
+                            .service::<FaceController>()?
+                            .larson_scanner(hopper_face::driver::PURPLE)?;
                         if self.state != BodyState::Grounded {
                             warn!("Cannot fold while not grounded");
                             continue;
@@ -461,9 +464,6 @@ impl MotionControllerLoop {
                             .await?
                             .unfold_on_ground()
                             .await?;
-                        IocContainer::global_instance()
-                            .service::<FaceController>()?
-                            .larson_scanner(hopper_face::driver::PURPLE)?;
                         continue;
                     }
                     BlockingCommand::FoldOnGround => {
