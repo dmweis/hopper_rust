@@ -10,7 +10,6 @@ use async_trait::async_trait;
 use dynamixel_driver::*;
 use std::{collections::VecDeque, time::Duration};
 use tracing::*;
-use zenoh::prelude::r#async::*;
 use zenoh::publication::Publisher;
 
 #[async_trait]
@@ -44,7 +43,6 @@ pub struct AsyncBodyController {
     last_read_voltage: usize,
     last_voltages: VecDeque<f32>,
     motor_move_rate_tracker: RateTracker,
-    motor_move_rate_publisher: Publisher<'static>,
 }
 
 impl AsyncBodyController {
@@ -60,8 +58,10 @@ impl AsyncBodyController {
             body_config,
             last_read_voltage: 0,
             last_voltages: VecDeque::new(),
-            motor_move_rate_tracker: RateTracker::new(Duration::from_secs(1)),
-            motor_move_rate_publisher,
+            motor_move_rate_tracker: RateTracker::new(
+                Duration::from_secs(1),
+                motor_move_rate_publisher,
+            ),
         })
     }
 }
@@ -76,13 +76,8 @@ impl BodyController for AsyncBodyController {
             .map_err(HopperError::DynamixelSyncWriteError)?;
         // report rate
         self.motor_move_rate_tracker.tick();
-        if let Some(report) = self.motor_move_rate_tracker.report() {
-            let json = serde_json::to_string(&report)?;
-            self.motor_move_rate_publisher
-                .put(json)
-                .res()
-                .await
-                .map_err(HopperError::ZenohError)?;
+        if let Some(report) = self.motor_move_rate_tracker.report().await? {
+            debug!(?report, "motor move rate");
         }
         Ok(())
     }
@@ -98,13 +93,8 @@ impl BodyController for AsyncBodyController {
             .map_err(HopperError::DynamixelSyncWriteError)?;
         // report rate
         self.motor_move_rate_tracker.tick();
-        if let Some(report) = self.motor_move_rate_tracker.report() {
-            let json = serde_json::to_string(&report)?;
-            self.motor_move_rate_publisher
-                .put(json)
-                .res()
-                .await
-                .map_err(HopperError::ZenohError)?;
+        if let Some(report) = self.motor_move_rate_tracker.report().await? {
+            debug!(?report, "motor move rate");
         }
         Ok(())
     }

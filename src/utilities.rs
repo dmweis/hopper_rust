@@ -4,6 +4,10 @@ use std::{
 };
 
 use serde::Serialize;
+use zenoh::prelude::r#async::*;
+use zenoh::publication::Publisher;
+
+use crate::error::{HopperError, HopperResult};
 
 pub fn setup_tracing(verbosity_level: u8) {
     let filter = match verbosity_level {
@@ -42,16 +46,18 @@ pub struct RateTracker {
     last_report: Instant,
     report_rate: Duration,
     timer_buffer: Vec<Duration>,
+    publisher: Publisher<'static>,
 }
 
 impl RateTracker {
-    pub fn new(report_rate: Duration) -> Self {
+    pub fn new(report_rate: Duration, publisher: Publisher<'static>) -> Self {
         let now = Instant::now();
         Self {
             last_tick: now,
             last_report: now,
             report_rate,
             timer_buffer: Vec::new(),
+            publisher,
         }
     }
 
@@ -62,9 +68,9 @@ impl RateTracker {
         self.timer_buffer.push(elapsed);
     }
 
-    pub fn report(&mut self) -> Option<RateReport> {
+    pub async fn report(&mut self) -> HopperResult<Option<RateReport>> {
         if self.timer_buffer.is_empty() {
-            return None;
+            return Ok(None);
         }
         if self.last_report.elapsed() > self.report_rate {
             let ns: Vec<_> = self
@@ -78,14 +84,22 @@ impl RateTracker {
             let min_ns = *ns.iter().min().unwrap();
             let fps = ns.len() as f32 / self.last_report.elapsed().as_secs() as f32;
             self.last_report = Instant::now();
-            Some(RateReport {
+            let report = RateReport {
                 fps,
                 mean_ns,
                 max_ns,
                 min_ns,
-            })
+            };
+            let json = serde_json::to_string(&report)?;
+            self.publisher
+                .put(json)
+                .res()
+                .await
+                .map_err(HopperError::ZenohError)?;
+
+            Ok(Some(report))
         } else {
-            None
+            Ok(None)
         }
     }
 }

@@ -13,7 +13,7 @@ use crate::ik_controller::{
 };
 use crate::ioc_container::IocContainer;
 use crate::speech::SpeechService;
-use crate::utilities::MpscChannelHelper;
+use crate::utilities::{MpscChannelHelper, RateTracker};
 pub use choreographer::DanceMove;
 use hopper_face::FaceController;
 use nalgebra::{UnitQuaternion, Vector3};
@@ -42,14 +42,23 @@ pub struct MotionController {
 }
 
 impl MotionController {
-    pub async fn new(ik_controller: Box<dyn IkControllable>) -> HopperResult<Self> {
+    pub async fn new(
+        ik_controller: Box<dyn IkControllable>,
+
+        control_loop_rate_tracker: RateTracker,
+    ) -> HopperResult<Self> {
         let (command_sender, receiver) = last_message_channel::latest_message_channel();
         let command = MotionControllerCommand::default();
 
         let (blocking_command_sender, blocking_command_receiver) = mpsc::channel();
 
-        let motion_controller_loop =
-            MotionControllerLoop::new(ik_controller, receiver, blocking_command_receiver).await?;
+        let motion_controller_loop = MotionControllerLoop::new(
+            ik_controller,
+            receiver,
+            blocking_command_receiver,
+            control_loop_rate_tracker,
+        )
+        .await?;
         let handle = spawn(motion_controller_loop.run());
         Ok(MotionController {
             command_sender,
@@ -195,6 +204,7 @@ struct MotionControllerLoop {
     rlr_reset: bool,
     last_voltage_read: Instant,
     dance_moves: Vec<LegPositions>,
+    control_loop_rate_tracker: RateTracker,
 }
 
 impl MotionControllerLoop {
@@ -202,6 +212,7 @@ impl MotionControllerLoop {
         mut ik_controller: Box<dyn IkControllable>,
         command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
         blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
+        control_loop_rate_tracker: RateTracker,
     ) -> HopperResult<Self> {
         let last_written_pose = ik_controller.read_leg_positions().await?;
         Ok(Self {
@@ -220,6 +231,7 @@ impl MotionControllerLoop {
             rlr_reset: false,
             last_voltage_read: Instant::now(),
             dance_moves: vec![],
+            control_loop_rate_tracker,
         })
     }
 
@@ -564,6 +576,10 @@ impl MotionControllerLoop {
                 }
             }
             interval.tick().await;
+            self.control_loop_rate_tracker.tick();
+            if let Some(report) = self.control_loop_rate_tracker.report().await? {
+                debug!(?report, "motor move rate");
+            }
         }
         Ok(())
     }

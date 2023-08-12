@@ -1,11 +1,20 @@
 use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
-    body_controller, body_controller::BodyController, camera::start_camera,
-    configuration::get_configuration, error::HopperError, hopper_body_config, ik_controller,
-    ioc_container::IocContainer, lidar::start_lidar_driver, monitoring::start_monitoring_loop,
-    motion_controller, speech::SpeechService, utilities,
-    zenoh_face_controller::start_face_controller, zenoh_remote::simple_zenoh_controller,
+    body_controller,
+    body_controller::BodyController,
+    camera::start_camera,
+    configuration::get_configuration,
+    error::HopperError,
+    hopper_body_config, ik_controller,
+    ioc_container::IocContainer,
+    lidar::start_lidar_driver,
+    monitoring::start_monitoring_loop,
+    motion_controller,
+    speech::SpeechService,
+    utilities::{self, RateTracker},
+    zenoh_face_controller::start_face_controller,
+    zenoh_remote::simple_zenoh_controller,
     zenoh_speech_controller::start_speech_controller,
 };
 use std::{
@@ -90,7 +99,7 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|| Ok(hopper_body_config::HopperConfig::default()))?;
 
     let motor_rate_publisher = zenoh_session
-        .declare_publisher("hopper/motor/rate")
+        .declare_publisher("hopper/metrics/motor/rate")
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
@@ -119,7 +128,18 @@ async fn main() -> Result<()> {
     ik_controller.set_compliance_slope(64).await?;
     ik_controller.set_motor_speed(1023).await?;
 
-    let mut motion_controller = motion_controller::MotionController::new(ik_controller).await?;
+    let motion_controller_rate_publisher = zenoh_session
+        .declare_publisher("hopper/metrics/control_loop/rate")
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
+    let motion_controller_rate_reporter =
+        RateTracker::new(Duration::from_secs(1), motion_controller_rate_publisher);
+
+    let mut motion_controller =
+        motion_controller::MotionController::new(ik_controller, motion_controller_rate_reporter)
+            .await?;
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;

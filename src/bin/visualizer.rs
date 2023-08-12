@@ -1,12 +1,16 @@
 use anyhow::Result;
 use clap::Parser;
 use gilrs::Gilrs;
+use hopper_rust::error::HopperError;
+use hopper_rust::utilities::RateTracker;
 use hopper_rust::{hopper_body_config, motion_controller, utilities};
 use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;
 use std::path::Path;
 use std::{thread::sleep, time::Duration};
 use tracing::*;
+use zenoh::config::Config as ZenohConfig;
+use zenoh::prelude::r#async::*;
 
 /// Visualize Hopper
 #[derive(Parser)]
@@ -22,6 +26,14 @@ struct Args {
     /// Sets the level of verbosity
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
+
+    /// Endpoints to connect to.
+    #[clap(short = 'e', long)]
+    connect: Vec<zenoh_config::EndPoint>,
+
+    /// Endpoints to listen on.
+    #[clap(long)]
+    listen: Vec<zenoh_config::EndPoint>,
 }
 
 #[tokio::main]
@@ -35,9 +47,37 @@ async fn main() -> Result<()> {
         .map(|path| hopper_body_config::HopperConfig::load(Path::new(&path)))
         .unwrap_or_else(|| Ok(hopper_body_config::HopperConfig::default()))?;
 
+    let mut zenoh_config = ZenohConfig::default();
+
+    if !args.connect.is_empty() {
+        zenoh_config.connect.endpoints = args.connect.clone();
+    }
+    if !args.listen.is_empty() {
+        zenoh_config.listen.endpoints = args.listen.clone();
+    }
+
+    let zenoh_session = zenoh::open(zenoh_config)
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?
+        .into_arc();
+
     let visualizer = motion_controller::visualizer::HopperVisualizer::new(args.ground);
-    let mut motion_controller =
-        motion_controller::MotionController::new(Box::new(visualizer)).await?;
+
+    let motion_controller_rate_publisher = zenoh_session
+        .declare_publisher("hopper/metrics/control_loop/rate")
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
+    let motion_controller_rate_reporter =
+        RateTracker::new(Duration::from_secs(1), motion_controller_rate_publisher);
+
+    let mut motion_controller = motion_controller::MotionController::new(
+        Box::new(visualizer),
+        motion_controller_rate_reporter,
+    )
+    .await?;
 
     // gamepad
     let mut gilrs = Gilrs::new().unwrap();
