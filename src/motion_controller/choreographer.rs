@@ -348,11 +348,11 @@ impl CombatCryIter {
     fn new(starting_pose: LegPositions) -> Self {
         let lifted = starting_pose
             .transform(
-                Vector3::new(0.0, 0.0, -0.02),
-                UnitQuaternion::from_euler_angles(0.05, 0.5, 0.0),
+                Vector3::new(0.0, 0.0, 0.02),
+                UnitQuaternion::from_euler_angles(0.05, 0.05, 0.0),
             )
             .transform_selected_legs(
-                Vector3::new(0.1, -0.02, 0.0),
+                Vector3::new(0.1, -0.02, 0.06),
                 UnitQuaternion::identity(),
                 LegFlags::RIGHT_FRONT,
             );
