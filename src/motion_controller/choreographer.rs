@@ -256,7 +256,7 @@ impl RoarIter {
                 LegFlags::FRONT,
             )
             .transform(
-                Vector3::identity(),
+                Vector3::zeros(),
                 UnitQuaternion::from_euler_angles(0.0, -0.14, 0.0),
             )
             .transform_selected_legs(
