@@ -397,6 +397,77 @@ impl MotionControllerLoop {
         Ok(())
     }
 
+    async fn handle_body_state_transition(&mut self) -> HopperResult<()> {
+        if self.state != self.command.body_state {
+            info!(
+                "Transitioning body state from {:?} to {:?}",
+                self.state, self.command.body_state
+            );
+        }
+        match (self.state, self.command.body_state) {
+            (BodyState::Folded, BodyState::Grounded) => {
+                IocContainer::global_instance()
+                    .service::<FaceController>()?
+                    .larson_scanner(hopper_face::driver::PURPLE)?;
+                FoldingManager::new(&mut self.ik_controller)
+                    .await?
+                    .unfold_on_ground()
+                    .await?;
+                self.state = BodyState::Grounded;
+            }
+            (BodyState::Folded, BodyState::Standing) => {
+                IocContainer::global_instance()
+                    .service::<FaceController>()?
+                    .larson_scanner(hopper_face::driver::PURPLE)?;
+                FoldingManager::new(&mut self.ik_controller)
+                    .await?
+                    .unfold_on_ground()
+                    .await?;
+                self.stand_up().await?;
+                self.state = BodyState::Standing;
+            }
+            (BodyState::Grounded, BodyState::Standing) => {
+                self.stand_up().await?;
+                self.state = BodyState::Standing;
+            }
+            (BodyState::Standing, BodyState::Grounded) => {
+                self.sit_down().await?;
+                self.state = BodyState::Grounded;
+            }
+            (BodyState::Standing, BodyState::Folded) => {
+                self.sit_down().await?;
+                FoldingManager::new(&mut self.ik_controller)
+                    .await?
+                    .fold_on_ground()
+                    .await?;
+                IocContainer::global_instance()
+                    .service::<FaceController>()?
+                    .off()?;
+                self.state = BodyState::Folded;
+            }
+            (BodyState::Grounded, BodyState::Folded) => {
+                FoldingManager::new(&mut self.ik_controller)
+                    .await?
+                    .fold_on_ground()
+                    .await?;
+                IocContainer::global_instance()
+                    .service::<FaceController>()?
+                    .off()?;
+                self.state = BodyState::Folded;
+            }
+            (BodyState::Grounded, BodyState::Grounded) => {
+                // do nothing
+            }
+            (BodyState::Standing, BodyState::Standing) => {
+                // do nothing
+            }
+            (BodyState::Folded, BodyState::Folded) => {
+                // do nothing
+            }
+        }
+        Ok(())
+    }
+
     async fn control_loop(&mut self) -> HopperResult<()> {
         let mut interval = time::interval(TICK_DURATION);
 
@@ -442,75 +513,7 @@ impl MotionControllerLoop {
                 }
             }
 
-            match (self.state, self.command.body_state) {
-                (BodyState::Folded, BodyState::Grounded) => {
-                    IocContainer::global_instance()
-                        .service::<FaceController>()?
-                        .larson_scanner(hopper_face::driver::PURPLE)?;
-                    FoldingManager::new(&mut self.ik_controller)
-                        .await?
-                        .unfold_on_ground()
-                        .await?;
-                    self.state = BodyState::Grounded;
-                }
-                (BodyState::Folded, BodyState::Standing) => {
-                    IocContainer::global_instance()
-                        .service::<FaceController>()?
-                        .larson_scanner(hopper_face::driver::PURPLE)?;
-                    FoldingManager::new(&mut self.ik_controller)
-                        .await?
-                        .unfold_on_ground()
-                        .await?;
-                    self.stand_up().await?;
-                    self.state = BodyState::Standing;
-                }
-                (BodyState::Grounded, BodyState::Standing) => {
-                    self.stand_up().await?;
-                    self.state = BodyState::Standing;
-                }
-                (BodyState::Standing, BodyState::Grounded) => {
-                    self.sit_down().await?;
-                    self.state = BodyState::Grounded;
-                }
-                (BodyState::Standing, BodyState::Folded) => {
-                    self.sit_down().await?;
-                    FoldingManager::new(&mut self.ik_controller)
-                        .await?
-                        .fold_on_ground()
-                        .await?;
-                    IocContainer::global_instance()
-                        .service::<FaceController>()?
-                        .off()?;
-                    self.state = BodyState::Folded;
-                }
-                (BodyState::Grounded, BodyState::Folded) => {
-                    FoldingManager::new(&mut self.ik_controller)
-                        .await?
-                        .fold_on_ground()
-                        .await?;
-                    IocContainer::global_instance()
-                        .service::<FaceController>()?
-                        .off()?;
-                    self.state = BodyState::Folded;
-                }
-                (BodyState::Grounded, BodyState::Grounded) => {
-                    // do nothing
-                }
-                (BodyState::Standing, BodyState::Standing) => {
-                    // do nothing
-                }
-                (BodyState::Folded, BodyState::Folded) => {
-                    // do nothing
-                }
-            }
-
-            // if self.state != self.command.body_state {
-            //     match self.command.body_state {
-            //         BodyState::Standing => self.stand_up().await?,
-            //         BodyState::Grounded => self.sit_down().await?,
-            //         BodyState::GroundFolded =>
-            //     }
-            // }
+            self.handle_body_state_transition().await?;
 
             if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
                 self.last_voltage_read = Instant::now();

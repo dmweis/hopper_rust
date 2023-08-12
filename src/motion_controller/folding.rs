@@ -423,16 +423,18 @@ impl<'a> FoldingManager<'a> {
         let rad_150 = Some(150.0_f32.to_radians());
         let rad_60 = Some(60.0_f32.to_radians());
         let rad_240 = Some(240.0_f32.to_radians());
+        let lf_rr_unfold = Some(105.0_f32.to_radians());
+        let lr_rf_unfold = Some(195.0_f32.to_radians());
 
         let max_step = 1.0_f32.to_radians();
 
         let flat_on_ground = OptionalBodyMotorPositions::new(
+            OptionalLegMotorPositions::new(lf_rr_unfold, rad_60, Some(210.0_f32.to_radians())),
             OptionalLegMotorPositions::new(rad_150, rad_60, Some(210.0_f32.to_radians())),
-            OptionalLegMotorPositions::new(rad_150, rad_60, Some(210.0_f32.to_radians())),
-            OptionalLegMotorPositions::new(rad_150, rad_60, Some(210.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(lr_rf_unfold, rad_60, Some(210.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(lr_rf_unfold, rad_240, Some(90.0_f32.to_radians())),
             OptionalLegMotorPositions::new(rad_150, rad_240, Some(90.0_f32.to_radians())),
-            OptionalLegMotorPositions::new(rad_150, rad_240, Some(90.0_f32.to_radians())),
-            OptionalLegMotorPositions::new(rad_150, rad_240, Some(90.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(lf_rr_unfold, rad_240, Some(90.0_f32.to_radians())),
         );
         self.move_towards(&flat_on_ground, max_step).await?;
 
