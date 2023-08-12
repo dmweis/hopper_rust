@@ -352,7 +352,7 @@ impl CombatCryIter {
                 UnitQuaternion::from_euler_angles(0.1, 0.1, 0.0),
             )
             .transform_selected_legs(
-                Vector3::new(0.1, -0.02, 0.1),
+                Vector3::new(0.14, -0.02, 0.14),
                 UnitQuaternion::identity(),
                 LegFlags::RIGHT_FRONT,
             );
@@ -369,7 +369,7 @@ impl CombatCryIter {
         poses.extend(starting_pose.to_move_towards_iter(&lifted, SPEED));
 
         let mut rng = rand::thread_rng();
-        let count = rng.gen_range(4..7);
+        let count = rng.gen_range(3..5);
         for _ in 0..count {
             poses.extend(lifted.to_move_towards_iter(&paw_lifted, SPEED));
             poses.extend(paw_lifted.to_move_towards_iter(&lifted, SPEED));
