@@ -76,7 +76,10 @@ impl RateTracker {
             let mean_ns = ns.iter().sum::<u64>() / ns.len() as u64;
             let max_ns = *ns.iter().max().unwrap();
             let min_ns = *ns.iter().min().unwrap();
+            let fps = ns.len() as f32 / self.last_report.elapsed().as_secs() as f32;
+            self.last_report = Instant::now();
             Some(RateReport {
+                fps,
                 mean_ns,
                 max_ns,
                 min_ns,
@@ -89,6 +92,7 @@ impl RateTracker {
 
 #[derive(Debug, Serialize, Clone, Copy)]
 pub struct RateReport {
+    pub fps: f32,
     pub mean_ns: u64,
     pub max_ns: u64,
     pub min_ns: u64,
