@@ -308,8 +308,8 @@ impl RoarIter {
                 LegFlags::RIGHT_FRONT,
             );
 
-        const SLOW_SPEED: f32 = 0.002;
-        const FAST_SPEED: f32 = 0.005;
+        const SLOW_SPEED: f32 = 0.004;
+        const FAST_SPEED: f32 = 0.007;
 
         let mut poses = vec![];
         poses.extend(starting_pose.to_move_towards_iter(&lifted_middle, SLOW_SPEED));
