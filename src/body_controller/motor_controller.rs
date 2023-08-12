@@ -4,11 +4,14 @@ use crate::{
     error::{HopperError, HopperResult},
     hexapod::{HexapodTypes, ToSyncCommand, TripodLegType},
     hopper_body_config::{BodyConfig, LegConfig},
+    utilities::RateTracker,
 };
 use async_trait::async_trait;
 use dynamixel_driver::*;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Duration};
 use tracing::*;
+use zenoh::prelude::r#async::*;
+use zenoh::publication::Publisher;
 
 #[async_trait]
 pub trait BodyController: Send + Sync {
@@ -40,10 +43,16 @@ pub struct AsyncBodyController {
     body_config: BodyConfig,
     last_read_voltage: usize,
     last_voltages: VecDeque<f32>,
+    motor_move_rate_tracker: RateTracker,
+    motor_move_rate_publisher: Publisher<'static>,
 }
 
 impl AsyncBodyController {
-    pub fn new(port_name: &str, body_config: BodyConfig) -> HopperResult<Self> {
+    pub fn new(
+        port_name: &str,
+        body_config: BodyConfig,
+        motor_move_rate_publisher: Publisher<'static>,
+    ) -> HopperResult<Self> {
         let dynamixel_driver =
             DynamixelDriver::new(port_name).map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(Self {
@@ -51,6 +60,8 @@ impl AsyncBodyController {
             body_config,
             last_read_voltage: 0,
             last_voltages: VecDeque::new(),
+            motor_move_rate_tracker: RateTracker::new(Duration::from_secs(1)),
+            motor_move_rate_publisher,
         })
     }
 }
@@ -63,6 +74,16 @@ impl BodyController for AsyncBodyController {
             .sync_write_position_rad(commands)
             .await
             .map_err(HopperError::DynamixelSyncWriteError)?;
+        // report rate
+        self.motor_move_rate_tracker.tick();
+        if let Some(report) = self.motor_move_rate_tracker.report() {
+            let json = serde_json::to_string(&report)?;
+            self.motor_move_rate_publisher
+                .put(json)
+                .res()
+                .await
+                .map_err(HopperError::ZenohError)?;
+        }
         Ok(())
     }
 
@@ -75,6 +96,16 @@ impl BodyController for AsyncBodyController {
             .sync_write_position_rad(commands)
             .await
             .map_err(HopperError::DynamixelSyncWriteError)?;
+        // report rate
+        self.motor_move_rate_tracker.tick();
+        if let Some(report) = self.motor_move_rate_tracker.report() {
+            let json = serde_json::to_string(&report)?;
+            self.motor_move_rate_publisher
+                .put(json)
+                .res()
+                .await
+                .map_err(HopperError::ZenohError)?;
+        }
         Ok(())
     }
 

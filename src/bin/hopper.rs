@@ -89,9 +89,16 @@ async fn main() -> Result<()> {
         .map(|path| hopper_body_config::HopperConfig::load(Path::new(&path)))
         .unwrap_or_else(|| Ok(hopper_body_config::HopperConfig::default()))?;
 
+    let motor_rate_publisher = zenoh_session
+        .declare_publisher("hopper/motor/rate")
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
     let body_controller = body_controller::AsyncBodyController::new(
         &app_config.base.dynamixel_port,
         hopper_body_config.legs.clone(),
+        motor_rate_publisher,
     )
     .unwrap();
 

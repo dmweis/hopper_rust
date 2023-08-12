@@ -9,7 +9,7 @@ pub type BodyMotorPositions = HexapodTypes<LegMotorPositions>;
 
 impl LegMotorPositions {
     pub fn create_command(&self, leg_config: &LegConfig) -> [SyncCommandFloat; 3] {
-        let pairs = self.pair_with_id(leg_config);
+        let pairs: [(u8, f32); 3] = self.pair_with_id(leg_config);
         [
             SyncCommandFloat::new(pairs[0].0, pairs[0].1),
             SyncCommandFloat::new(pairs[1].0, pairs[1].1),
