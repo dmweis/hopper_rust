@@ -84,6 +84,12 @@ async fn handle_stance_command(
         controller.start_sequence(motion_controller::DanceMove::HappyDance);
     } else if &command.to_lowercase() == "wave" {
         controller.start_sequence(motion_controller::DanceMove::WaveHi);
+    } else if &command.to_lowercase() == "random" {
+        controller.start_sequence(motion_controller::DanceMove::Random);
+    } else if &command.to_lowercase() == "roar" {
+        controller.start_sequence(motion_controller::DanceMove::Roar);
+    } else if &command.to_lowercase() == "sad_emote" {
+        controller.start_sequence(motion_controller::DanceMove::SadEmote);
     } else {
         error!("Unknown command {}", command);
     }

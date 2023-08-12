@@ -3,13 +3,18 @@ use crate::{
     ik_controller::leg_positions::{LegPositions, MoveTowards},
 };
 use nalgebra::{UnitQuaternion, Vector3};
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 
 #[derive(Debug, Clone, Copy)]
 pub enum DanceMove {
+    Random,
     HappyDance,
     SadEmote,
     WaveHi,
+    Roar,
+    CombatCry,
+    BoredLookingAround,
+    BoredStretch,
 }
 
 impl DanceMove {
@@ -18,9 +23,26 @@ impl DanceMove {
         starting_pose: LegPositions,
     ) -> Box<dyn Iterator<Item = LegPositions>> {
         match self {
+            Self::Random => {
+                let moves = [
+                    Self::HappyDance,
+                    Self::SadEmote,
+                    Self::WaveHi,
+                    Self::Roar,
+                    Self::CombatCry,
+                    Self::BoredLookingAround,
+                    Self::BoredStretch,
+                ];
+                let choice = moves.choose(&mut rand::thread_rng()).unwrap();
+                choice.to_iterator(starting_pose)
+            }
             Self::HappyDance => Box::new(HappyDanceIter::new(starting_pose)),
             Self::SadEmote => Box::new(SadEmoteIter::new(starting_pose)),
             Self::WaveHi => Box::new(WaveHiIter::new(starting_pose)),
+            Self::Roar => Box::new(RoarIter::new(starting_pose)),
+            Self::CombatCry => Box::new(vec![].into_iter()),
+            Self::BoredLookingAround => Box::new(vec![].into_iter()),
+            Self::BoredStretch => Box::new(vec![].into_iter()),
         }
     }
 }
@@ -191,6 +213,131 @@ impl WaveHiIter {
 }
 
 impl Iterator for WaveHiIter {
+    type Item = LegPositions;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.poses.pop()
+    }
+}
+
+struct RoarIter {
+    poses: Vec<LegPositions>,
+}
+
+impl RoarIter {
+    fn new(starting_pose: LegPositions) -> Self {
+        let lifted_middle = starting_pose.transform_selected_legs(
+            Vector3::new(0.06, 0.0, 0.04),
+            UnitQuaternion::identity(),
+            LegFlags::MIDDLE,
+        );
+
+        let grounded_middle_front = starting_pose
+            .transform_selected_legs(
+                Vector3::new(0.06, 0.0, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::MIDDLE,
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, -0.02, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::LEFT_MIDDLE,
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.02, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::RIGHT_MIDDLE,
+            );
+
+        let lifted_front = grounded_middle_front
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.10, 0.14),
+                UnitQuaternion::identity(),
+                LegFlags::FRONT,
+            )
+            .transform(
+                Vector3::identity(),
+                UnitQuaternion::from_euler_angles(0.0, -0.14, 0.0),
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, -0.06, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::LEFT_FRONT,
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.06, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::RIGHT_FRONT,
+            );
+        let lifted_front_retracted = lifted_front
+            .transform_selected_legs(
+                Vector3::new(-0.06, 0.0, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::FRONT,
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.06, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::LEFT_FRONT,
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, -0.06, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::RIGHT_FRONT,
+            );
+        let lifted_left = lifted_front
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.0, -0.02),
+                UnitQuaternion::identity(),
+                LegFlags::LEFT_FRONT,
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.0, 0.02),
+                UnitQuaternion::identity(),
+                LegFlags::RIGHT_FRONT,
+            );
+        let lifted_right = lifted_front
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.0, 0.02),
+                UnitQuaternion::identity(),
+                LegFlags::LEFT_FRONT,
+            )
+            .transform_selected_legs(
+                Vector3::new(0.0, 0.0, -0.02),
+                UnitQuaternion::identity(),
+                LegFlags::RIGHT_FRONT,
+            );
+
+        const SLOW_SPEED: f32 = 0.002;
+        const FAST_SPEED: f32 = 0.005;
+
+        let mut poses = vec![];
+        poses.extend(starting_pose.to_move_towards_iter(&lifted_middle, SLOW_SPEED));
+        poses.extend(lifted_middle.to_move_towards_iter(&grounded_middle_front, SLOW_SPEED));
+        poses.extend(grounded_middle_front.to_move_towards_iter(&lifted_front, FAST_SPEED));
+
+        let mut rng = rand::thread_rng();
+        let count = rng.gen_range(4..7);
+
+        poses.extend(lifted_front.to_move_towards_iter(&lifted_left, FAST_SPEED));
+        for _ in 0..count {
+            poses.extend(lifted_left.to_move_towards_iter(&lifted_right, FAST_SPEED));
+            poses.extend(lifted_right.to_move_towards_iter(&lifted_left, FAST_SPEED));
+        }
+
+        poses.extend(lifted_left.to_move_towards_iter(&lifted_front, SLOW_SPEED));
+        poses.extend(lifted_front.to_move_towards_iter(&lifted_front_retracted, FAST_SPEED));
+        poses.extend(
+            lifted_front_retracted.to_move_towards_iter(&grounded_middle_front, SLOW_SPEED),
+        );
+        poses.extend(grounded_middle_front.to_move_towards_iter(&lifted_middle, SLOW_SPEED));
+        poses.extend(lifted_middle.to_move_towards_iter(&starting_pose, SLOW_SPEED));
+
+        Self { poses }
+    }
+}
+
+impl Iterator for RoarIter {
     type Item = LegPositions;
 
     fn next(&mut self) -> Option<Self::Item> {
