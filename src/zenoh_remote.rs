@@ -90,6 +90,8 @@ async fn handle_stance_command(
         controller.start_sequence(motion_controller::DanceMove::Roar);
     } else if &command.to_lowercase() == "sad_emote" {
         controller.start_sequence(motion_controller::DanceMove::SadEmote);
+    } else if &command.to_lowercase() == "combat_dry" {
+        controller.start_sequence(motion_controller::DanceMove::CombatCry);
     } else {
         error!("Unknown command {}", command);
     }

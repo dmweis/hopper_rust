@@ -30,8 +30,6 @@ impl DanceMove {
                     Self::WaveHi,
                     Self::Roar,
                     Self::CombatCry,
-                    Self::BoredLookingAround,
-                    Self::BoredStretch,
                 ];
                 let choice = moves.choose(&mut rand::thread_rng()).unwrap();
                 choice.to_iterator(starting_pose)
@@ -40,7 +38,7 @@ impl DanceMove {
             Self::SadEmote => Box::new(SadEmoteIter::new(starting_pose)),
             Self::WaveHi => Box::new(WaveHiIter::new(starting_pose)),
             Self::Roar => Box::new(RoarIter::new(starting_pose)),
-            Self::CombatCry => Box::new(vec![].into_iter()),
+            Self::CombatCry => Box::new(CombatCryIter::new(starting_pose)),
             Self::BoredLookingAround => Box::new(vec![].into_iter()),
             Self::BoredStretch => Box::new(vec![].into_iter()),
         }
@@ -109,26 +107,23 @@ impl SadEmoteIter {
 
         let mut poses = vec![];
 
-        for step in starting_pose.to_move_towards_iter(&relaxed_pose, SPEED) {
-            poses.push(step);
-        }
+        poses.extend(starting_pose.to_move_towards_iter(&relaxed_pose, SPEED));
 
         let a = relaxed_pose.transform(
             Vector3::zeros(),
             UnitQuaternion::from_euler_angles(0.0, -0.08, 0.0),
         );
-        for step in relaxed_pose.to_move_towards_iter(&a, SPEED) {
-            poses.push(step);
-        }
+        poses.extend(relaxed_pose.to_move_towards_iter(&a, SPEED));
 
+        // wait
+        let mut rng = rand::thread_rng();
+        let count = rng.gen_range(5..8) * 10;
         let last = *poses.last().unwrap();
-        for _ in 0..40 {
+        for _ in 0..count {
             poses.push(last)
         }
 
-        for step in a.to_move_towards_iter(&starting_pose, SPEED) {
-            poses.push(step);
-        }
+        poses.extend(a.to_move_towards_iter(&starting_pose, SPEED));
 
         Self { poses }
     }
@@ -338,6 +333,56 @@ impl RoarIter {
 }
 
 impl Iterator for RoarIter {
+    type Item = LegPositions;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.poses.pop()
+    }
+}
+
+struct CombatCryIter {
+    poses: Vec<LegPositions>,
+}
+
+impl CombatCryIter {
+    fn new(starting_pose: LegPositions) -> Self {
+        let lifted = starting_pose
+            .transform(
+                Vector3::new(0.0, 0.0, -0.02),
+                UnitQuaternion::from_euler_angles(0.05, 0.5, 0.0),
+            )
+            .transform_selected_legs(
+                Vector3::new(0.1, -0.02, 0.0),
+                UnitQuaternion::identity(),
+                LegFlags::RIGHT_FRONT,
+            );
+
+        let paw_lifted = lifted.transform_selected_legs(
+            Vector3::new(0.0, 0.00, 0.02),
+            UnitQuaternion::identity(),
+            LegFlags::RIGHT_FRONT,
+        );
+
+        const SPEED: f32 = 0.004;
+
+        let mut poses = vec![];
+        poses.extend(starting_pose.to_move_towards_iter(&lifted, SPEED));
+
+        let mut rng = rand::thread_rng();
+        let count = rng.gen_range(4..7);
+        for _ in 0..count {
+            poses.extend(lifted.to_move_towards_iter(&paw_lifted, SPEED));
+            poses.extend(paw_lifted.to_move_towards_iter(&lifted, SPEED));
+        }
+
+        poses.extend(paw_lifted.to_move_towards_iter(&lifted, SPEED));
+        poses.extend(lifted.to_move_towards_iter(&starting_pose, SPEED));
+
+        Self { poses }
+    }
+}
+
+impl Iterator for CombatCryIter {
     type Item = LegPositions;
 
     fn next(&mut self) -> Option<Self::Item> {
