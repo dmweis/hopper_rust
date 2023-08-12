@@ -82,6 +82,26 @@ fn move_body_motors_towards(
     OptionalBodyMotorPositions::new(lf, lm, lr, rf, rm, rr)
 }
 
+fn is_leg_near(
+    current: &LegMotorPositions,
+    desired: &OptionalLegMotorPositions,
+    max_difference: f32,
+) -> bool {
+    let coxa = desired
+        .coxa()
+        .map(|d| (d - current.coxa()).abs() < max_difference)
+        .unwrap_or(true);
+    let femur = desired
+        .femur()
+        .map(|d| (d - current.femur()).abs() < max_difference)
+        .unwrap_or(true);
+    let tibia = desired
+        .tibia()
+        .map(|d| (d - current.tibia()).abs() < max_difference)
+        .unwrap_or(true);
+    coxa && femur && tibia
+}
+
 pub struct FoldingManager<'a> {
     ik_controller: &'a mut Box<dyn IkControllable>,
     last_written_pose: BodyMotorPositions,
@@ -141,20 +161,69 @@ impl<'a> FoldingManager<'a> {
         Ok(())
     }
 
+    pub fn check_if_folded(&self) -> bool {
+        let rad_60 = Some(60.0_f32.to_radians());
+        let rad_240 = Some(240.0_f32.to_radians());
+        let max_difference = 20.0_f32.to_radians();
+
+        let lf = is_leg_near(
+            self.last_written_pose.left_front(),
+            &OptionalLegMotorPositions::new(rad_240, None, None),
+            max_difference,
+        );
+        // middle legs can be backwards and forwards
+        let lm = is_leg_near(
+            self.last_written_pose.left_middle(),
+            &OptionalLegMotorPositions::new(rad_240, None, None),
+            max_difference,
+        ) || is_leg_near(
+            self.last_written_pose.left_middle(),
+            &OptionalLegMotorPositions::new(rad_60, None, None),
+            max_difference,
+        );
+        let lr = is_leg_near(
+            self.last_written_pose.left_rear(),
+            &OptionalLegMotorPositions::new(rad_60, None, None),
+            max_difference,
+        );
+        let rf = is_leg_near(
+            self.last_written_pose.right_front(),
+            &OptionalLegMotorPositions::new(rad_60, None, None),
+            max_difference,
+        );
+        // middle legs can be backwards and forwards
+        let rm = is_leg_near(
+            self.last_written_pose.right_middle(),
+            &OptionalLegMotorPositions::new(rad_60, None, None),
+            max_difference,
+        ) || is_leg_near(
+            self.last_written_pose.right_middle(),
+            &OptionalLegMotorPositions::new(rad_240, None, None),
+            max_difference,
+        );
+        let rr = is_leg_near(
+            self.last_written_pose.right_rear(),
+            &OptionalLegMotorPositions::new(rad_240, None, None),
+            max_difference,
+        );
+        lf && lm && lr && rf && rm && rr
+    }
+
     pub async fn fold(&mut self) -> HopperResult<()> {
         self.fold_femur_tibia().await?;
         let max_step = 1.3_f32.to_radians();
-        // TODO: Check if folded
-        // straighten out side legs
-        let straightened_sides = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
-            OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
-            OptionalLegMotorPositions::default(),
-        );
-        self.move_towards(&straightened_sides, max_step).await?;
+        if self.check_if_folded() {
+            // straighten out side legs
+            let straightened_sides = OptionalBodyMotorPositions::new(
+                OptionalLegMotorPositions::default(),
+                OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+                OptionalLegMotorPositions::default(),
+                OptionalLegMotorPositions::default(),
+                OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+                OptionalLegMotorPositions::default(),
+            );
+            self.move_towards(&straightened_sides, max_step).await?;
+        }
 
         // fold edge legs
         let folded_front_and_rear = OptionalBodyMotorPositions::new(

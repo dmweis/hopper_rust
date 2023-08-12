@@ -44,7 +44,6 @@ pub struct MotionController {
 impl MotionController {
     pub async fn new(
         ik_controller: Box<dyn IkControllable>,
-
         control_loop_rate_tracker: RateTracker,
     ) -> HopperResult<Self> {
         let (command_sender, receiver) = last_message_channel::latest_message_channel();
@@ -463,10 +462,13 @@ impl MotionControllerLoop {
                             warn!("Cannot fold while not grounded");
                             continue;
                         }
-                        FoldingManager::new(&mut self.ik_controller)
-                            .await?
-                            .unfold()
-                            .await?;
+                        let mut folding_manager =
+                            FoldingManager::new(&mut self.ik_controller).await?;
+                        if !folding_manager.check_if_folded() {
+                            warn!("Not folded");
+                        } else {
+                            folding_manager.unfold().await?;
+                        }
                         self.read_current_pose().await?;
                         continue;
                     }
@@ -478,10 +480,13 @@ impl MotionControllerLoop {
                             warn!("Cannot fold while not grounded");
                             continue;
                         }
-                        FoldingManager::new(&mut self.ik_controller)
-                            .await?
-                            .unfold_on_ground()
-                            .await?;
+                        let mut folding_manager =
+                            FoldingManager::new(&mut self.ik_controller).await?;
+                        if !folding_manager.check_if_folded() {
+                            warn!("Not folded");
+                        } else {
+                            folding_manager.unfold_on_ground().await?;
+                        }
                         self.read_current_pose().await?;
                         continue;
                     }
@@ -490,10 +495,13 @@ impl MotionControllerLoop {
                             warn!("Cannot fold while not grounded");
                             continue;
                         }
-                        FoldingManager::new(&mut self.ik_controller)
-                            .await?
-                            .fold_on_ground()
-                            .await?;
+                        let mut folding_manager =
+                            FoldingManager::new(&mut self.ik_controller).await?;
+                        if folding_manager.check_if_folded() {
+                            warn!("Already folded");
+                        } else {
+                            folding_manager.fold_on_ground().await?;
+                        }
 
                         IocContainer::global_instance()
                             .service::<FaceController>()?
