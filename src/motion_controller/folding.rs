@@ -210,16 +210,20 @@ impl<'a> FoldingManager<'a> {
     }
 
     pub async fn fold(&mut self) -> HopperResult<()> {
+        let rad_150 = Some(150.0_f32.to_radians());
+        let rad_60 = Some(60.0_f32.to_radians());
+        let rad_240 = Some(240.0_f32.to_radians());
+
         self.fold_femur_tibia().await?;
         let max_step = 1.3_f32.to_radians();
         if self.check_if_folded() {
             // straighten out side legs
             let straightened_sides = OptionalBodyMotorPositions::new(
                 OptionalLegMotorPositions::default(),
-                OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+                OptionalLegMotorPositions::new(rad_150, None, None),
                 OptionalLegMotorPositions::default(),
                 OptionalLegMotorPositions::default(),
-                OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+                OptionalLegMotorPositions::new(rad_150, None, None),
                 OptionalLegMotorPositions::default(),
             );
             self.move_towards(&straightened_sides, max_step).await?;
@@ -227,21 +231,21 @@ impl<'a> FoldingManager<'a> {
 
         // fold edge legs
         let folded_front_and_rear = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::new(Some(240.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_240, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(60.0_f32.to_radians()), None, None),
-            OptionalLegMotorPositions::new(Some(60.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_60, None, None),
+            OptionalLegMotorPositions::new(rad_60, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(240.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_240, None, None),
         );
         self.move_towards(&folded_front_and_rear, max_step).await?;
         // fold sides back
         let folded_sides = OptionalBodyMotorPositions::new(
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(240.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_240, None, None),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(60.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_60, None, None),
             OptionalLegMotorPositions::default(),
         );
         self.move_towards(&folded_sides, max_step).await?;
@@ -253,27 +257,31 @@ impl<'a> FoldingManager<'a> {
     }
 
     pub async fn unfold(&mut self) -> HopperResult<()> {
+        let rad_150 = Some(150.0_f32.to_radians());
+        let lf_rr_unfold = Some(105.0_f32.to_radians());
+        let lr_rf_unfold = Some(195.0_f32.to_radians());
+
         self.fold_femur_tibia().await?;
         let max_step = 1.3_f32.to_radians();
         // straighten out side legs
         let straightened_sides = OptionalBodyMotorPositions::new(
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_150, None, None),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_150, None, None),
             OptionalLegMotorPositions::default(),
         );
         self.move_towards(&straightened_sides, max_step).await?;
 
         // straighten edge legs
         let straightened_out_front_and_readr = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(lf_rr_unfold, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(lr_rf_unfold, None, None),
+            OptionalLegMotorPositions::new(lr_rf_unfold, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(lf_rr_unfold, None, None),
         );
         self.move_towards(&straightened_out_front_and_readr, max_step)
             .await?;
@@ -296,6 +304,12 @@ impl<'a> FoldingManager<'a> {
     }
 
     pub async fn unfold_on_ground(&mut self) -> HopperResult<()> {
+        let rad_150 = Some(150.0_f32.to_radians());
+        let rad_60 = Some(60.0_f32.to_radians());
+        let rad_240 = Some(240.0_f32.to_radians());
+        let lf_rr_unfold = Some(105.0_f32.to_radians());
+        let lr_rf_unfold = Some(195.0_f32.to_radians());
+
         self.fold_femur_tibia().await?;
         let max_step = 1.0_f32.to_radians();
 
@@ -312,10 +326,10 @@ impl<'a> FoldingManager<'a> {
 
         let middle_legs_folded_out = OptionalBodyMotorPositions::new(
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_150, None, None),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_150, None, None),
             OptionalLegMotorPositions::default(),
         );
         self.move_towards(&middle_legs_folded_out, max_step).await?;
@@ -338,9 +352,9 @@ impl<'a> FoldingManager<'a> {
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(lr_rf_unfold, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(lf_rr_unfold, None, None),
         );
         self.move_towards(&unfolded_right_legs, max_step).await?;
 
@@ -364,19 +378,15 @@ impl<'a> FoldingManager<'a> {
             ),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(240.0_f32.to_radians()),
-                Some(90.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_240, Some(90.0_f32.to_radians())),
             OptionalLegMotorPositions::default(),
         );
         self.move_towards(&left_side_lifted, max_step).await?;
 
         let unfolded_left_legs = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(lf_rr_unfold, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(150.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(lr_rf_unfold, None, None),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
@@ -395,11 +405,7 @@ impl<'a> FoldingManager<'a> {
 
         let lift_left_middle = OptionalBodyMotorPositions::new(
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(60.0_f32.to_radians()),
-                Some(210.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_60, Some(210.0_f32.to_radians())),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
@@ -414,39 +420,19 @@ impl<'a> FoldingManager<'a> {
     }
 
     pub async fn fold_on_ground(&mut self) -> HopperResult<()> {
+        let rad_150 = Some(150.0_f32.to_radians());
+        let rad_60 = Some(60.0_f32.to_radians());
+        let rad_240 = Some(240.0_f32.to_radians());
+
         let max_step = 1.0_f32.to_radians();
 
         let flat_on_ground = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::new(
-                Some(150.0_f32.to_radians()),
-                Some(60.0_f32.to_radians()),
-                Some(210.0_f32.to_radians()),
-            ),
-            OptionalLegMotorPositions::new(
-                Some(150.0_f32.to_radians()),
-                Some(60.0_f32.to_radians()),
-                Some(210.0_f32.to_radians()),
-            ),
-            OptionalLegMotorPositions::new(
-                Some(150.0_f32.to_radians()),
-                Some(60.0_f32.to_radians()),
-                Some(210.0_f32.to_radians()),
-            ),
-            OptionalLegMotorPositions::new(
-                Some(150.0_f32.to_radians()),
-                Some(240.0_f32.to_radians()),
-                Some(90.0_f32.to_radians()),
-            ),
-            OptionalLegMotorPositions::new(
-                Some(150.0_f32.to_radians()),
-                Some(240.0_f32.to_radians()),
-                Some(90.0_f32.to_radians()),
-            ),
-            OptionalLegMotorPositions::new(
-                Some(150.0_f32.to_radians()),
-                Some(240.0_f32.to_radians()),
-                Some(90.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(rad_150, rad_60, Some(210.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(rad_150, rad_60, Some(210.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(rad_150, rad_60, Some(210.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(rad_150, rad_240, Some(90.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(rad_150, rad_240, Some(90.0_f32.to_radians())),
+            OptionalLegMotorPositions::new(rad_150, rad_240, Some(90.0_f32.to_radians())),
         );
         self.move_towards(&flat_on_ground, max_step).await?;
 
@@ -468,17 +454,9 @@ impl<'a> FoldingManager<'a> {
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(240.0_f32.to_radians()),
-                Some(60.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_240, rad_60),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(240.0_f32.to_radians()),
-                Some(60.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_240, rad_60),
         );
         self.move_towards(&compress_right_legs, max_step).await?;
 
@@ -486,9 +464,9 @@ impl<'a> FoldingManager<'a> {
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(60.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_60, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(240.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_240, None, None),
         );
         self.move_towards(&folded_right_legs, max_step).await?;
 
@@ -502,27 +480,15 @@ impl<'a> FoldingManager<'a> {
             ),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(240.0_f32.to_radians()),
-                Some(90.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_240, Some(90.0_f32.to_radians())),
             OptionalLegMotorPositions::default(),
         );
         self.move_towards(&left_side_lifted, max_step).await?;
 
         let compress_left_legs = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::new(
-                None,
-                Some(60.0_f32.to_radians()),
-                Some(240.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_60, rad_240),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(60.0_f32.to_radians()),
-                Some(240.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_60, rad_240),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
@@ -530,9 +496,9 @@ impl<'a> FoldingManager<'a> {
         self.move_towards(&compress_left_legs, max_step).await?;
 
         let folded_left_legs = OptionalBodyMotorPositions::new(
-            OptionalLegMotorPositions::new(Some(240.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_240, None, None),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(Some(60.0_f32.to_radians()), None, None),
+            OptionalLegMotorPositions::new(rad_60, None, None),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
@@ -541,11 +507,7 @@ impl<'a> FoldingManager<'a> {
 
         let lifted_left_middle_leg = OptionalBodyMotorPositions::new(
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(60.0_f32.to_radians()),
-                Some(210.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_60, Some(210.0_f32.to_radians())),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
@@ -565,18 +527,10 @@ impl<'a> FoldingManager<'a> {
 
         let middle_legs_compressed = OptionalBodyMotorPositions::new(
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(60.0_f32.to_radians()),
-                Some(240.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_60, rad_240),
             OptionalLegMotorPositions::default(),
             OptionalLegMotorPositions::default(),
-            OptionalLegMotorPositions::new(
-                None,
-                Some(240.0_f32.to_radians()),
-                Some(60.0_f32.to_radians()),
-            ),
+            OptionalLegMotorPositions::new(None, rad_240, rad_60),
             OptionalLegMotorPositions::default(),
         );
         self.move_towards(&middle_legs_compressed, max_step).await?;

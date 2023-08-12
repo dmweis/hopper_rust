@@ -302,6 +302,8 @@ fn get_alpha_angle(a: &f32, b: &f32, c: &f32) -> f32 {
 
 #[cfg(test)]
 mod tests {
+    use crate::motion_controller::stance;
+
     use super::*;
     use approx::assert_relative_eq;
 
@@ -431,5 +433,11 @@ mod tests {
         assert_relative_eq!(origin.right_front(), result.right_front());
         assert_relative_eq!(origin.right_middle(), result.right_middle());
         assert_relative_eq!(origin.right_rear(), result.right_rear());
+    }
+
+    #[test]
+    fn test_ik_for_grounded() {
+        let hopper_body_config = HopperConfig::default();
+        let _calculated = calculate_ik(stance::grounded_stance(), &hopper_body_config).unwrap();
     }
 }
