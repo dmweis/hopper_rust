@@ -32,6 +32,7 @@ pub enum BodyState {
     Standing,
     #[default]
     Grounded,
+    Folded,
 }
 
 pub struct MotionController {
@@ -118,30 +119,6 @@ impl MotionController {
             .send(BlockingCommand::DisableMotors)
             .unwrap();
     }
-
-    pub fn fold(&mut self) {
-        self.blocking_command_sender
-            .send(BlockingCommand::Fold)
-            .unwrap();
-    }
-
-    pub fn unfold(&mut self) {
-        self.blocking_command_sender
-            .send(BlockingCommand::Unfold)
-            .unwrap();
-    }
-
-    pub fn unfold_on_ground(&mut self) {
-        self.blocking_command_sender
-            .send(BlockingCommand::UnfoldOnGround)
-            .unwrap();
-    }
-
-    pub fn fold_on_ground(&mut self) {
-        self.blocking_command_sender
-            .send(BlockingCommand::FoldOnGround)
-            .unwrap();
-    }
 }
 
 impl Drop for MotionController {
@@ -165,10 +142,6 @@ enum BlockingCommand {
     Terminate,
     DisableMotors,
     Choreography(DanceMove),
-    Fold,
-    Unfold,
-    UnfoldOnGround,
-    FoldOnGround,
     SetCompliance(HexapodCompliance),
     SetMotorSpeed(HexapodMotorSpeed),
 }
@@ -320,7 +293,6 @@ impl MotionControllerLoop {
         .await?;
         self.transition_step(&[stance::relaxed_wide_stance(), stance::relaxed_stance()])
             .await?;
-        self.state = BodyState::Standing;
         Ok(())
     }
 
@@ -333,7 +305,6 @@ impl MotionControllerLoop {
         )
         .await?;
         self.ik_controller.disable_motors().await?;
-        self.state = BodyState::Grounded;
         Ok(())
     }
 
@@ -468,74 +439,78 @@ impl MotionControllerLoop {
                         self.ik_controller.set_body_motor_speed(speed).await?;
                         continue;
                     }
-                    BlockingCommand::Fold => {
-                        FoldingManager::new(&mut self.ik_controller)
-                            .await?
-                            .fold()
-                            .await?;
-                        self.read_current_pose().await?;
-                        continue;
-                    }
-                    BlockingCommand::Unfold => {
-                        if self.state != BodyState::Grounded {
-                            warn!("Cannot fold while not grounded");
-                            continue;
-                        }
-                        let mut folding_manager =
-                            FoldingManager::new(&mut self.ik_controller).await?;
-                        if !folding_manager.check_if_folded() {
-                            warn!("Not folded");
-                        } else {
-                            folding_manager.unfold().await?;
-                        }
-                        self.read_current_pose().await?;
-                        continue;
-                    }
-                    BlockingCommand::UnfoldOnGround => {
-                        IocContainer::global_instance()
-                            .service::<FaceController>()?
-                            .larson_scanner(hopper_face::driver::PURPLE)?;
-                        if self.state != BodyState::Grounded {
-                            warn!("Cannot fold while not grounded");
-                            continue;
-                        }
-                        let mut folding_manager =
-                            FoldingManager::new(&mut self.ik_controller).await?;
-                        if !folding_manager.check_if_folded() {
-                            warn!("Not folded");
-                        } else {
-                            folding_manager.unfold_on_ground().await?;
-                        }
-                        self.read_current_pose().await?;
-                        continue;
-                    }
-                    BlockingCommand::FoldOnGround => {
-                        if self.state != BodyState::Grounded {
-                            warn!("Cannot fold while not grounded");
-                            continue;
-                        }
-                        let mut folding_manager =
-                            FoldingManager::new(&mut self.ik_controller).await?;
-                        if folding_manager.check_if_folded() {
-                            warn!("Already folded");
-                        } else {
-                            folding_manager.fold_on_ground().await?;
-                        }
-
-                        IocContainer::global_instance()
-                            .service::<FaceController>()?
-                            .off()?;
-                        self.read_current_pose().await?;
-                    }
                 }
             }
 
-            if self.state != self.command.body_state {
-                match self.command.body_state {
-                    BodyState::Standing => self.stand_up().await?,
-                    BodyState::Grounded => self.sit_down().await?,
+            match (self.state, self.command.body_state) {
+                (BodyState::Folded, BodyState::Grounded) => {
+                    IocContainer::global_instance()
+                        .service::<FaceController>()?
+                        .larson_scanner(hopper_face::driver::PURPLE)?;
+                    FoldingManager::new(&mut self.ik_controller)
+                        .await?
+                        .unfold_on_ground()
+                        .await?;
+                    self.state = BodyState::Grounded;
+                }
+                (BodyState::Folded, BodyState::Standing) => {
+                    IocContainer::global_instance()
+                        .service::<FaceController>()?
+                        .larson_scanner(hopper_face::driver::PURPLE)?;
+                    FoldingManager::new(&mut self.ik_controller)
+                        .await?
+                        .unfold_on_ground()
+                        .await?;
+                    self.stand_up().await?;
+                    self.state = BodyState::Standing;
+                }
+                (BodyState::Grounded, BodyState::Standing) => {
+                    self.stand_up().await?;
+                    self.state = BodyState::Standing;
+                }
+                (BodyState::Standing, BodyState::Grounded) => {
+                    self.sit_down().await?;
+                    self.state = BodyState::Grounded;
+                }
+                (BodyState::Standing, BodyState::Folded) => {
+                    self.sit_down().await?;
+                    FoldingManager::new(&mut self.ik_controller)
+                        .await?
+                        .fold_on_ground()
+                        .await?;
+                    IocContainer::global_instance()
+                        .service::<FaceController>()?
+                        .off()?;
+                    self.state = BodyState::Folded;
+                }
+                (BodyState::Grounded, BodyState::Folded) => {
+                    FoldingManager::new(&mut self.ik_controller)
+                        .await?
+                        .fold_on_ground()
+                        .await?;
+                    IocContainer::global_instance()
+                        .service::<FaceController>()?
+                        .off()?;
+                    self.state = BodyState::Folded;
+                }
+                (BodyState::Grounded, BodyState::Grounded) => {
+                    // do nothing
+                }
+                (BodyState::Standing, BodyState::Standing) => {
+                    // do nothing
+                }
+                (BodyState::Folded, BodyState::Folded) => {
+                    // do nothing
                 }
             }
+
+            // if self.state != self.command.body_state {
+            //     match self.command.body_state {
+            //         BodyState::Standing => self.stand_up().await?,
+            //         BodyState::Grounded => self.sit_down().await?,
+            //         BodyState::GroundFolded =>
+            //     }
+            // }
 
             if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
                 self.last_voltage_read = Instant::now();

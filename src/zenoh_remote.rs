@@ -78,6 +78,8 @@ async fn handle_stance_command(
         controller.set_body_state(motion_controller::BodyState::Standing);
     } else if &command.to_lowercase() == "ground" {
         controller.set_body_state(motion_controller::BodyState::Grounded);
+    } else if &command.to_lowercase() == "folded" {
+        controller.set_body_state(motion_controller::BodyState::Folded);
     } else if &command.to_lowercase() == "happy" {
         controller.start_sequence(motion_controller::DanceMove::HappyDance);
     } else if &command.to_lowercase() == "wave" {
@@ -123,7 +125,7 @@ async fn handle_gamepad_command(
 
     let a_pressed =
         was_button_pressed_since_last_time(Button::South, &gamepad_message, last_gamepad_message);
-    let b_pressed =
+    let _b_pressed =
         was_button_pressed_since_last_time(Button::East, &gamepad_message, last_gamepad_message);
     let y_pressed =
         was_button_pressed_since_last_time(Button::North, &gamepad_message, last_gamepad_message);
@@ -142,9 +144,6 @@ async fn handle_gamepad_command(
     if a_pressed {
         info!("Setting stance to standing");
         controller.set_body_state(motion_controller::BodyState::Standing);
-    } else if b_pressed {
-        info!("Setting stance to grounded");
-        controller.set_body_state(motion_controller::BodyState::Grounded);
     } else if y_pressed {
         info!("Starting happy dance");
         controller.start_sequence(motion_controller::DanceMove::HappyDance);
@@ -153,10 +152,10 @@ async fn handle_gamepad_command(
         controller.start_sequence(motion_controller::DanceMove::WaveHi);
     } else if select_pressed {
         info!("Folding");
-        controller.fold_on_ground();
+        controller.set_body_state(motion_controller::BodyState::Folded);
     } else if start_pressed {
-        info!("Unfolding on ground");
-        controller.unfold_on_ground();
+        info!("Grounding");
+        controller.set_body_state(motion_controller::BodyState::Grounded);
     }
 
     if lb_pressed {
