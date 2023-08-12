@@ -257,15 +257,15 @@ impl RoarIter {
             )
             .transform(
                 Vector3::zeros(),
-                UnitQuaternion::from_euler_angles(0.0, 0.14, 0.0),
+                UnitQuaternion::from_euler_angles(0.0, 0.10, 0.0),
             )
             .transform_selected_legs(
-                Vector3::new(0.0, -0.06, 0.0),
+                Vector3::new(0.0, -0.04, 0.0),
                 UnitQuaternion::identity(),
                 LegFlags::LEFT_FRONT,
             )
             .transform_selected_legs(
-                Vector3::new(0.0, 0.06, 0.0),
+                Vector3::new(0.0, 0.04, 0.0),
                 UnitQuaternion::identity(),
                 LegFlags::RIGHT_FRONT,
             );
@@ -276,12 +276,12 @@ impl RoarIter {
                 LegFlags::FRONT,
             )
             .transform_selected_legs(
-                Vector3::new(0.0, 0.06, 0.0),
+                Vector3::new(0.0, 0.04, 0.0),
                 UnitQuaternion::identity(),
                 LegFlags::LEFT_FRONT,
             )
             .transform_selected_legs(
-                Vector3::new(0.0, -0.06, 0.0),
+                Vector3::new(0.0, -0.04, 0.0),
                 UnitQuaternion::identity(),
                 LegFlags::RIGHT_FRONT,
             );

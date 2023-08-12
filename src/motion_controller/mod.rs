@@ -239,6 +239,7 @@ impl MotionControllerLoop {
                             self.state = BodyState::Grounded;
                             self.ik_controller.disable_motors().await?;
                             tokio::time::sleep(Duration::from_millis(500)).await;
+                            self.dance_moves.clear();
                             self.read_current_pose().await?;
                         }
                         error if error.is_recoverable_driver_error() => {
