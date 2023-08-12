@@ -270,8 +270,7 @@ impl MotionControllerLoop {
                         }
                         error if error.is_recoverable_driver_error() => {
                             info!("Error is recoverable. Restarting controller");
-                            self.flush_and_clear_motors().await?;
-                            self.scan_motors().await?;
+                            self.attempt_motor_recovery().await?;
                         }
                         error => {
                             error!("Error is not recoverable. Stopping controller");
@@ -285,6 +284,26 @@ impl MotionControllerLoop {
                 }
             }
         }
+    }
+
+    async fn attempt_motor_recovery(&mut self) -> HopperResult<()> {
+        const MAX_ATTEMPTS: usize = 30;
+        for attempts in 0..MAX_ATTEMPTS {
+            warn!(attempts, "attempting  to recover motors");
+            if let Ok(()) = self.attempt_motor_recovery_internal().await {
+                return Ok(());
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+        error!("Failed to recover motors after {} attempts", MAX_ATTEMPTS);
+        Ok(())
+    }
+
+    async fn attempt_motor_recovery_internal(&mut self) -> HopperResult<()> {
+        self.flush_and_clear_motors().await?;
+        self.scan_motors().await?;
+        self.read_current_pose().await?;
+        Ok(())
     }
 
     async fn stand_up(&mut self) -> HopperResult<()> {
