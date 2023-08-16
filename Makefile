@@ -62,7 +62,7 @@ publish-mender-artifact: build-artifact
 
 .PHONY: install-dependencies
 install-dependencies:
-	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev libclang-dev -y
+	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev libclang-dev protobuf-compiler -y
 	cargo install cargo-deb cargo-get
 
 .PHONY: build-docker
