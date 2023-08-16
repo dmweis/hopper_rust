@@ -601,13 +601,7 @@ mod tests {
                 &tripod,
                 MoveCommand::new(Vector2::new(0.00, 0.0), 10_f32.to_radians()),
             );
-            for new_pose in StepIterator::step(
-                last_written,
-                step,
-                MAX_MOVE,
-                STEP_HEIGHT,
-                tripod,
-            ) {
+            for new_pose in StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod) {
                 // LRL tripod
                 assert_relative_eq!(new_pose.left_front().z, new_pose.right_middle().z);
                 assert_relative_eq!(new_pose.left_rear().z, new_pose.right_middle().z);
@@ -637,13 +631,7 @@ mod tests {
                 &tripod,
                 MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
-            for new_pose in StepIterator::step(
-                last_written,
-                step,
-                MAX_MOVE,
-                STEP_HEIGHT,
-                tripod,
-            ) {
+            for new_pose in StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod) {
                 match tripod {
                     Tripod::RLR => {
                         assert_relative_eq!(
@@ -706,13 +694,7 @@ mod tests {
                 &tripod,
                 MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
-            for new_pose in StepIterator::step(
-                last_written,
-                step,
-                MAX_MOVE,
-                STEP_HEIGHT,
-                tripod,
-            ) {
+            for new_pose in StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod) {
                 // RLR tripod
                 assert_relative_eq!(
                     distance(new_pose.right_front(), new_pose.left_middle()),
