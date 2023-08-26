@@ -140,7 +140,6 @@ async fn main() -> Result<()> {
     let mut motion_controller =
         motion_controller::MotionController::new(ik_controller, motion_controller_rate_reporter)
             .await?;
-    motion_controller.set_body_state(motion_controller::BodyState::Grounded);
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
