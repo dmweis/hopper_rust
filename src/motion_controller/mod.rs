@@ -153,10 +153,10 @@ const MAX_TRANSLATION_STEP: f32 = 0.004;
 // TODO(David): Decide on this setting or make it configurable
 // const MAX_TRANSLATION_STEP: f32 = 0.005;
 const MAX_ROTATION_STEP: f32 = std::f32::consts::PI / 180.0;
-const STEP_HEIGHT: f32 = 0.03;
+const NON_WALK_STEP_HEIGHT: f32 = 0.03;
 const GROUNDED_STEP_HEIGHT: f32 = -0.0;
 const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(200);
-const MOVE_DURATION: Duration = Duration::from_millis(400);
+// const MOVE_DURATION: Duration = Duration::from_millis(400);
 // TODO(David): this results in smoother motion
 // Step time should probably be a function of time?
 // const MOVE_DURATION: Duration = Duration::from_millis(700);
@@ -166,7 +166,6 @@ struct MotionControllerLoop {
     command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
     blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
     command: MotionControllerCommand,
-    move_duration: Duration,
     state: BodyState,
     last_tripod: Tripod,
     last_written_pose: LegPositions,
@@ -193,7 +192,6 @@ impl MotionControllerLoop {
             command_receiver,
             blocking_command_receiver,
             command: MotionControllerCommand::default(),
-            move_duration: MOVE_DURATION,
             state: BodyState::Grounded,
             last_tripod: Tripod::LRL,
             last_written_pose,
@@ -384,7 +382,7 @@ impl MotionControllerLoop {
                 self.last_written_pose,
                 target,
                 MAX_MOVE,
-                STEP_HEIGHT,
+                NON_WALK_STEP_HEIGHT,
                 self.last_tripod,
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
@@ -399,7 +397,7 @@ impl MotionControllerLoop {
                 self.last_written_pose,
                 target,
                 MAX_MOVE,
-                STEP_HEIGHT,
+                NON_WALK_STEP_HEIGHT,
                 self.last_tripod,
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
@@ -588,8 +586,8 @@ impl MotionControllerLoop {
                     for new_pose in TimedStepIterator::step(
                         self.last_written_pose,
                         target,
-                        self.move_duration,
-                        STEP_HEIGHT,
+                        self.command.move_command.step_time(),
+                        self.command.move_command.step_height(),
                         GROUNDED_STEP_HEIGHT,
                         self.last_tripod,
                     ) {
@@ -625,9 +623,13 @@ impl MotionControllerLoop {
                         self.ik_controller.move_to_positions(&dance_move).await?;
                         self.last_written_pose = dance_move;
                     }
+                    // sleep if not walking
+                    interval.tick().await;
                 }
+            } else {
+                // sleep if not stanring
+                interval.tick().await;
             }
-            interval.tick().await;
             self.control_loop_rate_tracker.tick();
             if let Some(report) = self.control_loop_rate_tracker.report().await? {
                 debug!(?report, "motor move rate");

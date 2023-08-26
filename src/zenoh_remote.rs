@@ -4,6 +4,7 @@ use crate::{error::HopperError, motion_controller::walking::MoveCommand};
 use chrono::{DateTime, Utc};
 use nalgebra::{UnitQuaternion, Vector2, Vector3};
 use serde::Deserialize;
+use std::time::Duration;
 use std::{collections::BTreeMap, sync::Arc};
 use tracing::*;
 use zenoh::prelude::r#async::*;
@@ -146,7 +147,7 @@ async fn handle_gamepad_command(
 
     let lb_pressed = is_button_down(Button::LeftTrigger, &gamepad_message);
     let rb_pressed = is_button_down(Button::RightTrigger, &gamepad_message);
-    let _lt_pressed = is_button_down(Button::LeftTrigger2, &gamepad_message);
+    let lt_pressed = is_button_down(Button::LeftTrigger2, &gamepad_message);
     let rt_pressed = is_button_down(Button::RightTrigger2, &gamepad_message);
 
     if a_pressed {
@@ -176,9 +177,7 @@ async fn handle_gamepad_command(
         let translation = Vector3::new(x, y, 0.0);
         let rotation = UnitQuaternion::from_euler_angles(0.0, pitch, yaw);
         controller.set_transformation(translation, rotation);
-    }
-
-    if rb_pressed {
+    } else if rb_pressed {
         // translation mode 2
         let x = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
         let z = -get_axis(Axis::RightStickY, &gamepad_message) * 0.05;
@@ -188,16 +187,23 @@ async fn handle_gamepad_command(
         let translation = Vector3::new(x, 0.0, z);
         let rotation = UnitQuaternion::from_euler_angles(roll, 0.0, yaw);
         controller.set_transformation(translation, rotation);
-    }
-
-    if rt_pressed {
+    } else if rt_pressed {
+        let step_time = if lt_pressed {
+            Duration::from_millis(200)
+        } else {
+            Duration::from_millis(300)
+        };
         // walking mode
-        let x = get_axis(Axis::LeftStickY, &gamepad_message) * 0.06;
-        let y = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.06;
+        let x = get_axis(Axis::LeftStickY, &gamepad_message) * 0.025;
+        let y = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.025;
         let yaw = -get_axis(Axis::RightStickX, &gamepad_message) * 15_f32.to_radians();
 
-        let move_command = MoveCommand::new(Vector2::new(x, y), yaw);
+        let move_command =
+            MoveCommand::with_optional_fields(Vector2::new(x, y), yaw, step_time, 0.03);
         controller.set_command(move_command);
+    } else {
+        controller.set_transformation(Default::default(), Default::default());
+        controller.set_command(Default::default());
     }
 
     *last_gamepad_message = Some(gamepad_message);

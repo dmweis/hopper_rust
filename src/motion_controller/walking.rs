@@ -8,12 +8,28 @@ use tracing::*;
 
 // In this mode the legs will immediately lift to full height
 // this prevents dragging of feet but also results in a very choppy movement
-const AGGRESSIVE_LEG_LIFT: bool = false;
+const AGGRESSIVE_LEG_LIFT: bool = true;
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Default)]
+const DEFAULT_STEP_TIME: Duration = Duration::from_millis(400);
+const DEFAULT_STEP_HEIGHT: f32 = 0.03;
+
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub struct MoveCommand {
     direction: Vector2<f32>,
     rotation: f32,
+    step_time: Duration,
+    step_height: f32,
+}
+
+impl Default for MoveCommand {
+    fn default() -> Self {
+        Self {
+            direction: Vector2::new(0.0, 0.0),
+            rotation: 0.0,
+            step_time: DEFAULT_STEP_TIME,
+            step_height: DEFAULT_STEP_HEIGHT,
+        }
+    }
 }
 
 impl MoveCommand {
@@ -21,6 +37,21 @@ impl MoveCommand {
         Self {
             direction,
             rotation,
+            ..Default::default()
+        }
+    }
+
+    pub fn with_optional_fields(
+        direction: Vector2<f32>,
+        rotation: f32,
+        step_time: Duration,
+        step_height: f32,
+    ) -> Self {
+        Self {
+            direction,
+            rotation,
+            step_time,
+            step_height,
         }
     }
 
@@ -30,6 +61,14 @@ impl MoveCommand {
 
     pub fn rotation(&self) -> f32 {
         self.rotation
+    }
+
+    pub fn step_time(&self) -> Duration {
+        self.step_time
+    }
+
+    pub fn step_height(&self) -> f32 {
+        self.step_height
     }
 
     pub fn should_move(&self) -> bool {
