@@ -15,6 +15,7 @@ use crate::ioc_container::IocContainer;
 use crate::speech::SpeechService;
 use crate::utilities::{MpscChannelHelper, RateTracker};
 pub use choreographer::DanceMove;
+use config::Source;
 use hopper_face::FaceController;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::time::Duration;
@@ -59,6 +60,7 @@ impl MotionController {
             control_loop_rate_tracker,
         )
         .await?;
+
         let handle = spawn(motion_controller_loop.run());
         Ok(MotionController {
             command_sender,
@@ -207,12 +209,51 @@ impl MotionControllerLoop {
         })
     }
 
+    /// Attempt to estimate current body state
+    async fn estimate_current_body_state(&mut self) -> HopperResult<BodyState> {
+        self.last_written_pose = self.ik_controller.read_leg_positions().await?;
+
+        let z_heights: Vec<_> = self
+            .last_written_pose
+            .all_legs()
+            .iter()
+            .map(|position| position.z)
+            .collect();
+
+        // estimate based on height of legs
+        let standing_z_position = stance::STANDING_LEG_HEIGHT;
+        const TOLERANCE_DISTANCE: f32 = 0.015;
+
+        // check if all legs are in standing height
+        let standing = z_heights
+            .iter()
+            .all(|&z| (z - standing_z_position).abs() < TOLERANCE_DISTANCE);
+
+        if standing {
+            self.state = BodyState::Standing;
+        } else {
+            // if grounded check if we are likely folded
+            let folded = FoldingManager::new(&mut self.ik_controller)
+                .await?
+                .check_if_folded();
+            if folded {
+                self.state = BodyState::Folded;
+            } else {
+                self.state = BodyState::Grounded;
+            }
+        }
+        Ok(self.state)
+    }
+
     async fn read_current_pose(&mut self) -> HopperResult<()> {
         self.last_written_pose = self.ik_controller.read_leg_positions().await?;
         Ok(())
     }
 
     async fn run(mut self) -> HopperResult<()> {
+        // try to estimate current body state
+        let estimate = self.estimate_current_body_state().await?;
+        info!("Estimated body state to be {:?}", estimate);
         loop {
             match self.control_loop().await {
                 Err(error) => {
