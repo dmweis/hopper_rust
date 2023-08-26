@@ -15,7 +15,6 @@ use crate::ioc_container::IocContainer;
 use crate::speech::SpeechService;
 use crate::utilities::{MpscChannelHelper, RateTracker};
 pub use choreographer::DanceMove;
-use config::Source;
 use hopper_face::FaceController;
 use nalgebra::{UnitQuaternion, Vector3};
 use std::time::Duration;
