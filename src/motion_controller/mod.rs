@@ -229,19 +229,26 @@ impl MotionControllerLoop {
             .all(|&z| (z - standing_z_position).abs() < TOLERANCE_DISTANCE);
 
         if standing {
-            self.state = BodyState::Standing;
+            Ok(BodyState::Standing)
         } else {
             // if grounded check if we are likely folded
             let folded = FoldingManager::new(&mut self.ik_controller)
                 .await?
                 .check_if_folded();
             if folded {
-                self.state = BodyState::Folded;
+                Ok(BodyState::Folded)
             } else {
-                self.state = BodyState::Grounded;
+                Ok(BodyState::Grounded)
             }
         }
-        Ok(self.state)
+    }
+
+    async fn initialize_body_state(&mut self) -> HopperResult<()> {
+        let estimate = self.estimate_current_body_state().await?;
+        info!("Estimated body state to be {:?}", estimate);
+        self.state = estimate;
+        self.command.body_state = estimate;
+        Ok(())
     }
 
     async fn read_current_pose(&mut self) -> HopperResult<()> {
@@ -250,9 +257,6 @@ impl MotionControllerLoop {
     }
 
     async fn run(mut self) -> HopperResult<()> {
-        // try to estimate current body state
-        let estimate = self.estimate_current_body_state().await?;
-        info!("Estimated body state to be {:?}", estimate);
         loop {
             match self.control_loop().await {
                 Err(error) => {
@@ -510,8 +514,10 @@ impl MotionControllerLoop {
     }
 
     async fn control_loop(&mut self) -> HopperResult<()> {
-        let mut interval = time::interval(TICK_DURATION);
+        // try to estimate current body state
+        self.initialize_body_state().await?;
 
+        let mut interval = time::interval(TICK_DURATION);
         loop {
             match self.command_receiver.try_recv() {
                 Ok(Some(command)) => self.command = command,

@@ -58,7 +58,7 @@ async fn measure(
         .strip_suffix("'C")
         .ok_or(HopperError::FailedParsingCommandOutput(text.to_owned()))?
         .to_owned();
-    tracing::info!("CPU temperature: {}", temp);
+    tracing::debug!("CPU temperature: {}", temp);
     let temperature_float = temp.parse::<f32>().unwrap_or_default();
 
     let diagnostic_data = crate::hopper::DiagnosticMessage {
