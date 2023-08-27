@@ -75,3 +75,9 @@ build-docker:
 push-docker-built: build-docker
 	rsync -avz --delete docker_out/* $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper
 	rsync -avz --delete scripts/add_udev_rules $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper/add_udev_rules
+	rsync -avz --delete scripts/install_wait_loop $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper/install_wait_loop
+
+.PHONY: install-hopper
+install-hopper: push-docker-built
+	@echo "Installing hopper on $(TARGET_HOST)"
+	mosquitto_pub -h homepi -t "hopper/build" -n
