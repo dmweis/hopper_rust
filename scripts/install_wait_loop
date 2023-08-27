@@ -1,9 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+trap "exit" INT
 while true
 do
-    echo "Waitinf for mqtt message"
+    echo "Waiting for mqtt message"
     mosquitto_sub -h homepi -t "hopper/build" -C 1
     sleep 2
     echo "Installing hopper"
