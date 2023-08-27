@@ -2,12 +2,13 @@ use super::audio_cache::AudioCache;
 use super::audio_repository::AudioRepository;
 use super::AzureVoiceStyle;
 use crate::error::{HopperError, HopperResult};
+use core::panic;
 use sha2::{Digest, Sha256};
 use std::sync::mpsc::Receiver;
 use std::{
     fs::File,
     io::Cursor,
-    sync::mpsc::{channel, Sender},
+    sync::mpsc::{sync_channel, SyncSender},
     thread,
 };
 use tracing::*;
@@ -83,8 +84,8 @@ fn audio_player_loop(receiver: &Receiver<AudioPlayerCommand>) -> HopperResult<()
     Ok(())
 }
 
-fn create_player() -> Sender<AudioPlayerCommand> {
-    let (sender, receiver) = channel();
+fn create_player() -> SyncSender<AudioPlayerCommand> {
+    let (sender, receiver) = sync_channel(3);
     thread::spawn(move || loop {
         // This may miss on sender being dead. But if sender is dead we have bigger issues
         if let Err(e) = audio_player_loop(&receiver) {
@@ -100,7 +101,7 @@ pub struct SpeechService {
     audio_repository: Option<AudioRepository>,
     azure_voice: azure_tts::VoiceSettings,
     azure_audio_format: azure_tts::AudioFormat,
-    audio_sender: Sender<AudioPlayerCommand>,
+    audio_sender: SyncSender<AudioPlayerCommand>,
 }
 
 pub trait Playable: std::io::Read + std::io::Seek + Send + Sync {}
@@ -140,9 +141,16 @@ impl SpeechService {
     }
 
     async fn play(&mut self, data: Box<dyn Playable>) -> HopperResult<()> {
-        self.audio_sender
-            .send(AudioPlayerCommand::Play(data))
-            .unwrap();
+        match self.audio_sender.try_send(AudioPlayerCommand::Play(data)) {
+            Ok(()) => {}
+            Err(std::sync::mpsc::TrySendError::Full(_)) => {
+                warn!("Audio player queue full, dropping audio");
+            }
+            Err(std::sync::mpsc::TrySendError::Disconnected(_)) => {
+                error!("Audio player queue disconnected");
+                panic!("Audio player queue disconnected");
+            }
+        }
         Ok(())
     }
 
