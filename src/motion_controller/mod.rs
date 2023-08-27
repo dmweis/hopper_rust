@@ -384,6 +384,7 @@ impl MotionControllerLoop {
                 MAX_MOVE,
                 NON_WALK_STEP_HEIGHT,
                 self.last_tripod,
+                false,
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
                 self.last_written_pose = new_pose;
@@ -399,6 +400,7 @@ impl MotionControllerLoop {
                 MAX_MOVE,
                 NON_WALK_STEP_HEIGHT,
                 self.last_tripod,
+                false,
             ) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
                 self.last_written_pose = new_pose;
@@ -590,6 +592,7 @@ impl MotionControllerLoop {
                         self.command.move_command.step_height(),
                         GROUNDED_STEP_HEIGHT,
                         self.last_tripod,
+                        self.command.move_command.aggressive_leg_lift(),
                     ) {
                         self.shift_transformation();
                         // transform pose to current tilt

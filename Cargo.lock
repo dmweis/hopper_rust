@@ -1856,7 +1856,7 @@ dependencies = [
 
 [[package]]
 name = "hopper_rust"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "anyhow",
  "approx 0.5.1",
@@ -1886,6 +1886,7 @@ dependencies = [
  "rplidar_driver",
  "serde",
  "serde_json",
+ "serde_yaml",
  "sha2",
  "thiserror",
  "tokio",

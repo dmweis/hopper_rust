@@ -1,17 +1,13 @@
 use crate::hexapod::LegFlags;
 use crate::ik_controller::leg_positions::LegPositions;
-use nalgebra::{distance, Point3, Rotation3, Vector2, Vector3};
+use nalgebra::{distance, Point3, Rotation2, Rotation3, Vector2, Vector3};
 use serde::{Deserialize, Serialize};
 use std::f32;
 use std::time::{Duration, Instant};
 use tracing::*;
 
-// In this mode the legs will immediately lift to full height
-// this prevents dragging of feet but also results in a very choppy movement
-const AGGRESSIVE_LEG_LIFT: bool = true;
-
-const DEFAULT_STEP_TIME: Duration = Duration::from_millis(400);
-const DEFAULT_STEP_HEIGHT: f32 = 0.03;
+pub const DEFAULT_STEP_TIME: Duration = Duration::from_millis(600);
+pub const DEFAULT_STEP_HEIGHT: f32 = 0.03;
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub struct MoveCommand {
@@ -19,6 +15,7 @@ pub struct MoveCommand {
     rotation: f32,
     step_time: Duration,
     step_height: f32,
+    aggressive_leg_lift: bool,
 }
 
 impl Default for MoveCommand {
@@ -28,6 +25,7 @@ impl Default for MoveCommand {
             rotation: 0.0,
             step_time: DEFAULT_STEP_TIME,
             step_height: DEFAULT_STEP_HEIGHT,
+            aggressive_leg_lift: false,
         }
     }
 }
@@ -46,12 +44,14 @@ impl MoveCommand {
         rotation: f32,
         step_time: Duration,
         step_height: f32,
+        aggressive_leg_lift: bool,
     ) -> Self {
         Self {
             direction,
             rotation,
             step_time,
             step_height,
+            aggressive_leg_lift,
         }
     }
 
@@ -69,6 +69,10 @@ impl MoveCommand {
 
     pub fn step_height(&self) -> f32 {
         self.step_height
+    }
+
+    pub fn aggressive_leg_lift(&self) -> bool {
+        self.aggressive_leg_lift
     }
 
     pub fn should_move(&self) -> bool {
@@ -110,6 +114,9 @@ pub(crate) struct StepIterator {
     step_height: f32,
     grounded_leg_descent: f32,
     tripod: Tripod,
+    /// In this mode the legs will immediately lift to full height
+    /// this prevents dragging of feet but also results in a very choppy movement
+    aggressive_leg_lift: bool,
 }
 
 impl StepIterator {
@@ -119,6 +126,7 @@ impl StepIterator {
         max_move: f32,
         step_height: f32,
         tripod: Tripod,
+        aggressive_leg_lift: bool,
     ) -> StepIterator {
         StepIterator {
             start,
@@ -128,6 +136,7 @@ impl StepIterator {
             step_height,
             grounded_leg_descent: 0.0,
             tripod,
+            aggressive_leg_lift,
         }
     }
 }
@@ -137,12 +146,12 @@ impl Iterator for StepIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         let full_distance = max_horizontal_distance(&self.start, &self.target);
+        if full_distance == 0.0 {
+            return None;
+        }
         let current_distance =
             (max_horizontal_distance(&self.last, &self.start) + self.max_move).min(full_distance);
-        let mut progress = current_distance / full_distance;
-        if !progress.is_finite() {
-            progress = 0.0;
-        }
+        let progress = current_distance / full_distance;
         let (positions, moved) = shift_legs(
             &self.start,
             &self.last,
@@ -151,6 +160,7 @@ impl Iterator for StepIterator {
             self.grounded_leg_descent,
             self.tripod,
             progress,
+            self.aggressive_leg_lift,
         );
         if moved {
             self.last = positions;
@@ -170,6 +180,9 @@ pub(crate) struct TimedStepIterator {
     grounded_leg_descent: f32,
     tripod: Tripod,
     start_time: Instant,
+    /// In this mode the legs will immediately lift to full height
+    /// this prevents dragging of feet but also results in a very choppy movement
+    aggressive_leg_lift: bool,
 }
 
 impl TimedStepIterator {
@@ -180,6 +193,7 @@ impl TimedStepIterator {
         step_height: f32,
         grounded_leg_descent: f32,
         tripod: Tripod,
+        aggressive_leg_lift: bool,
     ) -> Self {
         Self {
             start,
@@ -190,6 +204,7 @@ impl TimedStepIterator {
             grounded_leg_descent,
             tripod,
             start_time: Instant::now(),
+            aggressive_leg_lift,
         }
     }
 }
@@ -198,14 +213,14 @@ impl Iterator for TimedStepIterator {
     type Item = LegPositions;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let step_portion = self.start_time.elapsed().as_secs_f32() / self.period.as_secs_f32();
-        trace!("Step portion is {}", step_portion);
         let full_distance = max_horizontal_distance(&self.start, &self.target);
-        let current_distance = (full_distance * step_portion).min(full_distance);
-        let mut progress = current_distance / full_distance;
-        if !progress.is_finite() {
-            progress = 0.0;
+        if full_distance <= 0.0 {
+            return None;
         }
+        let step_portion = self.start_time.elapsed().as_secs_f32() / self.period.as_secs_f32();
+        let progress = step_portion / self.period.as_secs_f32();
+        trace!("Step progress is {}", progress);
+
         let (positions, moved) = shift_legs(
             &self.start,
             &self.last,
@@ -214,6 +229,7 @@ impl Iterator for TimedStepIterator {
             self.grounded_leg_descent,
             self.tripod,
             progress,
+            self.aggressive_leg_lift,
         );
         if moved {
             self.last = positions;
@@ -224,6 +240,7 @@ impl Iterator for TimedStepIterator {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn shift_legs(
     start: &LegPositions,
     last: &LegPositions,
@@ -232,6 +249,7 @@ fn shift_legs(
     grounded_leg_descent: f32,
     tripod: Tripod,
     progress: f32,
+    aggressive_leg_lift: bool,
 ) -> (LegPositions, bool) {
     match tripod {
         Tripod::LRL => {
@@ -242,6 +260,7 @@ fn shift_legs(
                 target.left_front(),
                 step_height,
                 progress,
+                aggressive_leg_lift,
             );
             let (right_middle, rm_moved) = step_lifted_leg(
                 start.right_middle(),
@@ -249,6 +268,7 @@ fn shift_legs(
                 target.right_middle(),
                 step_height,
                 progress,
+                aggressive_leg_lift,
             );
             let (left_rear, lr_moved) = step_lifted_leg(
                 start.left_rear(),
@@ -256,6 +276,7 @@ fn shift_legs(
                 target.left_rear(),
                 step_height,
                 progress,
+                aggressive_leg_lift,
             );
             // grounded
             let (right_front, rf_moved) = step_lifted_leg(
@@ -264,6 +285,7 @@ fn shift_legs(
                 target.right_front(),
                 grounded_leg_descent,
                 progress,
+                aggressive_leg_lift,
             );
             let (left_middle, lm_moved) = step_lifted_leg(
                 start.left_middle(),
@@ -271,6 +293,7 @@ fn shift_legs(
                 target.left_middle(),
                 grounded_leg_descent,
                 progress,
+                aggressive_leg_lift,
             );
             let (right_rear, rr_moved) = step_lifted_leg(
                 start.right_rear(),
@@ -278,6 +301,7 @@ fn shift_legs(
                 target.right_rear(),
                 grounded_leg_descent,
                 progress,
+                aggressive_leg_lift,
             );
             let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
             let positions = LegPositions::new(
@@ -298,6 +322,7 @@ fn shift_legs(
                 target.left_front(),
                 grounded_leg_descent,
                 progress,
+                aggressive_leg_lift,
             );
             let (right_middle, rm_moved) = step_lifted_leg(
                 start.right_middle(),
@@ -305,6 +330,7 @@ fn shift_legs(
                 target.right_middle(),
                 grounded_leg_descent,
                 progress,
+                aggressive_leg_lift,
             );
             let (left_rear, lr_moved) = step_lifted_leg(
                 start.left_rear(),
@@ -312,6 +338,7 @@ fn shift_legs(
                 target.left_rear(),
                 grounded_leg_descent,
                 progress,
+                aggressive_leg_lift,
             );
             // lifted
             let (right_front, rf_moved) = step_lifted_leg(
@@ -320,6 +347,7 @@ fn shift_legs(
                 target.right_front(),
                 step_height,
                 progress,
+                aggressive_leg_lift,
             );
             let (left_middle, lm_moved) = step_lifted_leg(
                 start.left_middle(),
@@ -327,6 +355,7 @@ fn shift_legs(
                 target.left_middle(),
                 step_height,
                 progress,
+                aggressive_leg_lift,
             );
             let (right_rear, rr_moved) = step_lifted_leg(
                 start.right_rear(),
@@ -334,6 +363,7 @@ fn shift_legs(
                 target.right_rear(),
                 step_height,
                 progress,
+                aggressive_leg_lift,
             );
             let moved = lf_moved || lm_moved || lr_moved || rf_moved || rm_moved || rr_moved;
             let positions = LegPositions::new(
@@ -355,6 +385,7 @@ pub(crate) fn step_lifted_leg(
     target: &Point3<f32>,
     step_height: f32,
     progress: f32,
+    aggressive_leg_lift: bool,
 ) -> (Point3<f32>, bool) {
     if last_written == target {
         return (*target, false);
@@ -365,7 +396,7 @@ pub(crate) fn step_lifted_leg(
     let full_ground_translation = target.xy() - start.xy();
     let current_translation = start.xy() + full_ground_translation * progress;
     // raise leg immediately then lower using sine curve
-    let height = if AGGRESSIVE_LEG_LIFT && progress < 0.5 {
+    let height = if aggressive_leg_lift && progress < 0.5 {
         step_height + start.z
     } else {
         (progress * f32::consts::PI).sin() * step_height + start.z
@@ -382,8 +413,8 @@ pub(crate) fn step_with_relaxed_transformation(
 ) -> LegPositions {
     let linear_motion = command.direction().to_homogeneous();
     let rotation = Rotation3::from_axis_angle(&Vector3::z_axis(), command.rotation() / 2.0);
-    let inverse_rotation =
-        Rotation3::from_axis_angle(&Vector3::z_axis(), -command.rotation() / 2.0);
+    // let inverse_rotation =
+    //     Rotation3::from_axis_angle(&Vector3::z_axis(), -command.rotation() / 2.0);
     match lifted_tripod {
         Tripod::LRL => {
             // lifted
@@ -391,9 +422,44 @@ pub(crate) fn step_with_relaxed_transformation(
             let right_middle = rotation * (relaxed.right_middle() + linear_motion);
             let left_rear = rotation * (relaxed.left_rear() + linear_motion);
             // grounded
-            let left_middle = inverse_rotation * (start.left_middle() - linear_motion);
-            let right_front = inverse_rotation * (start.right_front() - linear_motion);
-            let right_rear = inverse_rotation * (start.right_rear() - linear_motion);
+
+            // TODO(David): This is still dragging its feet across the floor
+            // fix it
+            let start_center_point = (start.left_middle().xy().coords
+                + start.right_front().xy().coords
+                + start.right_rear().xy().coords)
+                / 3.0;
+            let relaxed_center_point = (relaxed.left_middle().xy().coords
+                + relaxed.right_front().xy().coords
+                + relaxed.right_rear().xy().coords)
+                / 3.0;
+            let translation = (relaxed_center_point - start_center_point).to_homogeneous();
+
+            let average_rotation = start
+                .selected_legs(LegFlags::RLR_TRIPOD)
+                .into_iter()
+                .map(|position| position.xy().coords - start_center_point)
+                .zip(
+                    relaxed
+                        .selected_legs(LegFlags::RLR_TRIPOD)
+                        .into_iter()
+                        .map(|pos| pos.xy().coords),
+                )
+                .map(|(start, relaxed)| Rotation2::rotation_between(&start, &relaxed).angle())
+                .sum::<f32>()
+                / 3.0;
+
+            let correcting_rotation = Rotation3::from_axis_angle(
+                &Vector3::z_axis(),
+                average_rotation + (-command.rotation() / 2.0),
+            );
+
+            let left_middle =
+                correcting_rotation * (start.left_middle() + translation - linear_motion);
+            let right_front =
+                correcting_rotation * (start.right_front() + translation - linear_motion);
+            let right_rear =
+                correcting_rotation * (start.right_rear() + translation - linear_motion);
             LegPositions::new(
                 left_front,
                 left_middle,
@@ -409,9 +475,41 @@ pub(crate) fn step_with_relaxed_transformation(
             let left_middle = rotation * (relaxed.left_middle() + linear_motion);
             let right_rear = rotation * (relaxed.right_rear() + linear_motion);
             // grounded
-            let left_front = inverse_rotation * (start.left_front() - linear_motion);
-            let left_rear = inverse_rotation * (start.left_rear() - linear_motion);
-            let right_middle = inverse_rotation * (start.right_middle() - linear_motion);
+
+            let start_center_point = (start.left_front().xy().coords
+                + start.left_rear().xy().coords
+                + start.right_middle().xy().coords)
+                / 3.0;
+            let relaxed_center_point = (relaxed.left_front().xy().coords
+                + relaxed.left_rear().xy().coords
+                + relaxed.right_middle().xy().coords)
+                / 3.0;
+            let translation = (relaxed_center_point - start_center_point).to_homogeneous();
+
+            let average_rotation = start
+                .selected_legs(LegFlags::LRL_TRIPOD)
+                .into_iter()
+                .map(|position| position.xy().coords - start_center_point)
+                .zip(
+                    relaxed
+                        .selected_legs(LegFlags::LRL_TRIPOD)
+                        .into_iter()
+                        .map(|pos| pos.xy().coords),
+                )
+                .map(|(start, relaxed)| Rotation2::rotation_between(&start, &relaxed).angle())
+                .sum::<f32>()
+                / 3.0;
+
+            let correcting_rotation = Rotation3::from_axis_angle(
+                &Vector3::z_axis(),
+                average_rotation + (-command.rotation() / 2.0),
+            );
+
+            let left_front =
+                correcting_rotation * (start.left_front() + translation - linear_motion);
+            let left_rear = correcting_rotation * (start.left_rear() + translation - linear_motion);
+            let right_middle =
+                correcting_rotation * (start.right_middle() + translation - linear_motion);
             LegPositions::new(
                 left_front,
                 left_middle,
@@ -426,19 +524,12 @@ pub(crate) fn step_with_relaxed_transformation(
 
 // Calculate longest distance a leg has to travel
 fn max_horizontal_distance(a: &LegPositions, b: &LegPositions) -> f32 {
-    let left_front = distance(&a.left_front().xy(), &b.left_front().xy());
-    let left_middle = distance(&a.left_middle().xy(), &b.left_middle().xy());
-    let left_rear = distance(&a.left_rear().xy(), &b.left_rear().xy());
-    let right_front = distance(&a.right_front().xy(), &b.right_front().xy());
-    let right_middle = distance(&a.right_middle().xy(), &b.right_middle().xy());
-    let right_rear = distance(&a.right_rear().xy(), &b.right_rear().xy());
-
-    left_front
-        .max(left_middle)
-        .max(left_rear)
-        .max(right_front)
-        .max(right_middle)
-        .max(right_rear)
+    a.all_legs()
+        .into_iter()
+        .zip(b.all_legs())
+        .map(|(a, b)| distance(&a.xy(), &b.xy()))
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -493,7 +584,7 @@ mod tests {
         assert_relative_eq!(after_step_rlr.left_middle(), &expected_lifted_point);
         assert_relative_eq!(after_step_rlr.right_rear(), &expected_lifted_point);
 
-        let expected_grounded_point = Point3::new(-2.0, 0.0, 0.0);
+        let expected_grounded_point = Point3::new(-1.0, 0.0, 0.0);
         // grounded
         assert_relative_eq!(after_step_lrl.right_front(), &expected_grounded_point);
         assert_relative_eq!(after_step_lrl.left_middle(), &expected_grounded_point);
@@ -530,7 +621,7 @@ mod tests {
         let mut right_rear_lifted = false;
 
         let mut final_state = start;
-        for step in StepIterator::step(start, target, 0.001, 0.02, Tripod::RLR) {
+        for step in StepIterator::step(start, target, 0.001, 0.02, Tripod::RLR, false) {
             assert_relative_eq!(step.left_front().z, 0.0);
             assert_relative_eq!(step.right_middle().z, 0.0);
             assert_relative_eq!(step.left_rear().z, 0.0);
@@ -579,7 +670,7 @@ mod tests {
         let mut left_rear_lifted = false;
 
         let mut final_state = start;
-        for step in StepIterator::step(start, target, 0.001, 0.02, Tripod::LRL) {
+        for step in StepIterator::step(start, target, 0.001, 0.02, Tripod::LRL, false) {
             assert_relative_eq!(step.right_front().z, 0.0);
             assert_relative_eq!(step.left_middle().z, 0.0);
             assert_relative_eq!(step.right_rear().z, 0.0);
@@ -640,7 +731,9 @@ mod tests {
                 &tripod,
                 MoveCommand::new(Vector2::new(0.00, 0.0), 10_f32.to_radians()),
             );
-            for new_pose in StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod) {
+            for new_pose in
+                StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod, false)
+            {
                 // LRL tripod
                 assert_relative_eq!(new_pose.left_front().z, new_pose.right_middle().z);
                 assert_relative_eq!(new_pose.left_rear().z, new_pose.right_middle().z);
@@ -670,7 +763,9 @@ mod tests {
                 &tripod,
                 MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
-            for new_pose in StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod) {
+            for new_pose in
+                StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod, false)
+            {
                 match tripod {
                     Tripod::RLR => {
                         assert_relative_eq!(
@@ -733,7 +828,9 @@ mod tests {
                 &tripod,
                 MoveCommand::new(Vector2::new(0.04, 0.04), 10_f32.to_radians()),
             );
-            for new_pose in StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod) {
+            for new_pose in
+                StepIterator::step(last_written, step, MAX_MOVE, STEP_HEIGHT, tripod, false)
+            {
                 // RLR tripod
                 assert_relative_eq!(
                     distance(new_pose.right_front(), new_pose.left_middle()),
@@ -775,7 +872,8 @@ mod tests {
     fn step_iterator_handles_zero_steps() {
         let initial_pose = *relaxed_stance();
         let target = initial_pose;
-        let mut step_iterator = StepIterator::step(initial_pose, target, 1.0, 0.003, Tripod::LRL);
+        let mut step_iterator =
+            StepIterator::step(initial_pose, target, 1.0, 0.003, Tripod::LRL, false);
         assert_eq!(step_iterator.next(), None);
     }
 
@@ -806,8 +904,14 @@ mod tests {
         #[allow(clippy::clone_on_copy)]
         let mut last_written = start.clone();
         for progress in 0..=100 {
-            let (lifted_position, lifted_moved) =
-                step_lifted_leg(&start, &last_written, &target, 0.0, progress as f32 * 0.01);
+            let (lifted_position, lifted_moved) = step_lifted_leg(
+                &start,
+                &last_written,
+                &target,
+                0.0,
+                progress as f32 * 0.01,
+                false,
+            );
             let lerped = Point3::from(start.coords.lerp(&target.coords, progress as f32 * 0.01));
             assert_relative_eq!(lifted_position, lerped);
             assert!(lifted_moved);
@@ -815,7 +919,7 @@ mod tests {
         }
         // check that if we overstep progress result is clamped
         let (lifted_position, lifted_moved) =
-            step_lifted_leg(&start, &last_written, &target, 0.0, 1.0 + 0.01);
+            step_lifted_leg(&start, &last_written, &target, 0.0, 1.0 + 0.01, false);
         assert_relative_eq!(lifted_position, target);
         assert!(!lifted_moved);
         // check that last result is correct

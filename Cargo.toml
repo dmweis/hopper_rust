@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.3.3"
+version = "0.3.4"
 
 [package.metadata.deb]
 assets = [
@@ -71,6 +71,7 @@ tracing-subscriber = {version = "0.3", features = [
 # serialization
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
+serde_yaml = "0.9.25"
 toml = "0.7.6"
 
 # other projects

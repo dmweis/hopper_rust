@@ -103,6 +103,29 @@ impl<T: Clone> HexapodTypes<T> {
             &self.right_rear,
         ]
     }
+
+    pub fn selected_legs(&self, legs: LegFlags) -> Vec<&T> {
+        let mut selected = Vec::with_capacity(6);
+        if legs.contains(LegFlags::LEFT_FRONT) {
+            selected.push(&self.left_front);
+        }
+        if legs.contains(LegFlags::RIGHT_FRONT) {
+            selected.push(&self.right_front);
+        }
+        if legs.contains(LegFlags::LEFT_MIDDLE) {
+            selected.push(&self.left_middle);
+        }
+        if legs.contains(LegFlags::RIGHT_MIDDLE) {
+            selected.push(&self.right_middle);
+        }
+        if legs.contains(LegFlags::LEFT_REAR) {
+            selected.push(&self.left_rear);
+        }
+        if legs.contains(LegFlags::RIGHT_REAR) {
+            selected.push(&self.right_rear);
+        }
+        selected
+    }
 }
 
 bitflags! {
