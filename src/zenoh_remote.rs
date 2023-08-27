@@ -143,26 +143,30 @@ struct GamepadController {
     walking_config: WalkingConfig,
     single_leg_foot: LegFlags,
     feet_iterator: std::iter::Cycle<std::vec::IntoIter<LegFlags>>,
+    height_offset: f32,
 }
 
 impl Default for GamepadController {
     fn default() -> Self {
+        let feet_iterator = vec![
+            LegFlags::LEFT_FRONT,
+            LegFlags::RIGHT_FRONT,
+            LegFlags::LEFT_MIDDLE,
+            LegFlags::RIGHT_MIDDLE,
+            LegFlags::LEFT_REAR,
+            LegFlags::RIGHT_REAR,
+            LegFlags::MIDDLE,
+            LegFlags::LRL_TRIPOD,
+            LegFlags::RLR_TRIPOD,
+        ]
+        .into_iter()
+        .cycle();
+
         Self {
             walking_config: WalkingConfig::default(),
             single_leg_foot: LegFlags::LEFT_FRONT,
-            feet_iterator: vec![
-                LegFlags::LEFT_FRONT,
-                LegFlags::RIGHT_FRONT,
-                LegFlags::LEFT_MIDDLE,
-                LegFlags::RIGHT_MIDDLE,
-                LegFlags::LEFT_REAR,
-                LegFlags::RIGHT_REAR,
-                LegFlags::MIDDLE,
-                LegFlags::LRL_TRIPOD,
-                LegFlags::RLR_TRIPOD,
-            ]
-            .into_iter()
-            .cycle(),
+            feet_iterator,
+            height_offset: 0.0,
         }
     }
 }
@@ -244,6 +248,26 @@ impl GamepadController {
             info!("Switching to single leg foot {:?}", self.single_leg_foot);
         }
 
+        if was_button_pressed_since_last_time(
+            Button::DPadUp,
+            &gamepad_message,
+            last_gamepad_message,
+        ) {
+            self.height_offset += 0.01;
+            info!("Increasing height offset to {}", self.height_offset);
+        }
+        if was_button_pressed_since_last_time(
+            Button::DPadDown,
+            &gamepad_message,
+            last_gamepad_message,
+        ) {
+            self.height_offset -= 0.01;
+            info!("Decreased height offset to {}", self.height_offset);
+        }
+
+        // clamp
+        self.height_offset = self.height_offset.max(-0.03).min(0.05);
+
         let lb_pressed = is_button_down(Button::LeftTrigger, &gamepad_message);
         let rb_pressed = is_button_down(Button::RightTrigger, &gamepad_message);
         let lt_pressed = is_button_down(Button::LeftTrigger2, &gamepad_message);
@@ -317,7 +341,10 @@ impl GamepadController {
             ));
         } else {
             controller.clear_single_leg_command();
-            controller.set_transformation(Default::default(), Default::default());
+            controller.set_transformation(
+                Vector3::new(0.0, 0.0, -self.height_offset),
+                Default::default(),
+            );
             controller.set_command(MoveCommand::with_optional_fields(
                 Vector2::zeros(),
                 0.0,

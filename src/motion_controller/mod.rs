@@ -620,11 +620,9 @@ impl MotionControllerLoop {
                 } else if self.was_single_leg_mode {
                     // recover from single leg mode
                     self.was_single_leg_mode = false;
-                    self.transition_direct(
-                        &[&self.last_written_pose.clone(), &self.base_relaxed.clone()],
-                        0.005,
-                    )
-                    .await?;
+                    let relaxed = self.transformed_relaxed();
+                    self.transition_direct(&[&self.last_written_pose.clone(), &relaxed], 0.005)
+                        .await?;
                     continue;
                 }
 
@@ -632,7 +630,7 @@ impl MotionControllerLoop {
                     self.last_tripod.invert();
                     let target = step_with_relaxed_transformation(
                         &self.last_written_pose,
-                        &self.base_relaxed,
+                        &self.transformed_relaxed(),
                         &self.last_tripod,
                         self.command.move_command,
                     );
@@ -646,13 +644,8 @@ impl MotionControllerLoop {
                         self.command.move_command.aggressive_leg_lift(),
                     ) {
                         self.shift_transformation();
-                        // transform pose to current tilt
-                        let transformed_pose =
-                            new_pose.transform(self.current_translation, self.current_rotation);
-                        self.ik_controller
-                            .move_to_positions(&transformed_pose)
-                            .await?;
-                        self.last_written_pose = transformed_pose;
+                        self.ik_controller.move_to_positions(&new_pose).await?;
+                        self.last_written_pose = new_pose;
                         self.control_loop_rate_tracker.tick();
                         interval.tick().await;
                     }
@@ -677,7 +670,8 @@ impl MotionControllerLoop {
                         self.last_written_pose = transformed_pose;
                     }
                     if let Some(dance_move) = self.dance_moves.pop_front() {
-                        Choreographer::new(&mut self.ik_controller)?
+                        let transformed_relaxed = self.transformed_relaxed();
+                        Choreographer::new(&mut self.ik_controller, transformed_relaxed)?
                             .execute_move(dance_move)
                             .await?;
                     }

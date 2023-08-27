@@ -7,7 +7,10 @@ use tracing::info;
 use crate::{
     error::HopperResult,
     hexapod::LegFlags,
-    ik_controller::{leg_positions::MoveTowards, IkControllable},
+    ik_controller::{
+        leg_positions::{LegPositions, MoveTowards},
+        IkControllable,
+    },
     ioc_container::IocContainer,
     speech::SpeechService,
 };
@@ -26,13 +29,21 @@ pub enum DanceMove {
 
 pub struct Choreographer<'a> {
     ik_controller: &'a mut Box<dyn IkControllable>,
+    starting_pose: LegPositions,
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
 
 impl<'a> Choreographer<'a> {
-    pub fn new(ik_controller: &'a mut Box<dyn IkControllable>) -> HopperResult<Self> {
-        Ok(Self { ik_controller })
+    pub fn new(
+        ik_controller: &'a mut Box<dyn IkControllable>,
+
+        starting_pose: LegPositions,
+    ) -> HopperResult<Self> {
+        Ok(Self {
+            ik_controller,
+            starting_pose,
+        })
     }
 
     pub async fn execute_move(&mut self, dance: DanceMove) -> HopperResult<()> {
@@ -67,16 +78,17 @@ impl<'a> Choreographer<'a> {
         let mut interval = tokio::time::interval(TICK_DURATION);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-        let starting_pose = self.ik_controller.read_leg_positions().await?;
-
         const BODY_LIFT_SPEED: f32 = 0.003;
 
-        let lifted_body = starting_pose.transform(
+        let lifted_body = self.starting_pose.transform(
             Vector3::new(0.0, 0.0, -0.02),
             UnitQuaternion::from_euler_angles(-0.07, 0.07, 0.0),
         );
 
-        for step in starting_pose.to_move_towards_iter(&lifted_body, BODY_LIFT_SPEED) {
+        for step in self
+            .starting_pose
+            .to_move_towards_iter(&lifted_body, BODY_LIFT_SPEED)
+        {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }
@@ -148,7 +160,7 @@ impl<'a> Choreographer<'a> {
         }
 
         // lower paw
-        for step in lifted_paw.to_move_towards_iter(&starting_pose, BODY_LIFT_SPEED) {
+        for step in lifted_paw.to_move_towards_iter(&self.starting_pose, BODY_LIFT_SPEED) {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }
@@ -162,12 +174,14 @@ impl<'a> Choreographer<'a> {
 
         const SPEED: f32 = 0.001;
 
-        let starting_pose = self.ik_controller.read_leg_positions().await?;
+        let relaxed_pose = self
+            .starting_pose
+            .transform(Vector3::new(0.0, 0.0, 0.02), UnitQuaternion::identity());
 
-        let relaxed_pose =
-            starting_pose.transform(Vector3::new(0.0, 0.0, 0.02), UnitQuaternion::identity());
-
-        for step in starting_pose.to_move_towards_iter(&relaxed_pose, SPEED) {
+        for step in self
+            .starting_pose
+            .to_move_towards_iter(&relaxed_pose, SPEED)
+        {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }
@@ -195,7 +209,7 @@ impl<'a> Choreographer<'a> {
 
         interval.reset();
 
-        for step in a.to_move_towards_iter(&starting_pose, SPEED) {
+        for step in a.to_move_towards_iter(&self.starting_pose, SPEED) {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }
@@ -207,10 +221,8 @@ impl<'a> Choreographer<'a> {
         let mut interval = tokio::time::interval(TICK_DURATION);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-        let starting_pose = self.ik_controller.read_leg_positions().await?;
-
         const SPEED: f32 = 0.002;
-        let separated_legs = starting_pose.transform(
+        let separated_legs = self.starting_pose.transform(
             Vector3::zeros(),
             UnitQuaternion::from_euler_angles(0.0, 0.09, 0.0),
         );
@@ -226,7 +238,10 @@ impl<'a> Choreographer<'a> {
             let mut rng = rand::thread_rng();
             rng.gen_range(3..6)
         };
-        for step in starting_pose.to_move_towards_iter(&leaning_left, SPEED) {
+        for step in self
+            .starting_pose
+            .to_move_towards_iter(&leaning_left, SPEED)
+        {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }
@@ -240,7 +255,7 @@ impl<'a> Choreographer<'a> {
                 interval.tick().await;
             }
         }
-        for step in leaning_left.to_move_towards_iter(&starting_pose, SPEED) {
+        for step in leaning_left.to_move_towards_iter(&self.starting_pose, SPEED) {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }
@@ -251,15 +266,14 @@ impl<'a> Choreographer<'a> {
         let mut interval = tokio::time::interval(TICK_DURATION);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-        let starting_pose = self.ik_controller.read_leg_positions().await?;
-
-        let lifted_middle = starting_pose.transform_selected_legs(
+        let lifted_middle = self.starting_pose.transform_selected_legs(
             Vector3::new(0.06, 0.0, 0.04),
             UnitQuaternion::identity(),
             LegFlags::MIDDLE,
         );
 
-        let grounded_middle_front = starting_pose
+        let grounded_middle_front = self
+            .starting_pose
             .transform_selected_legs(
                 Vector3::new(0.06, 0.0, 0.0),
                 UnitQuaternion::identity(),
@@ -338,7 +352,10 @@ impl<'a> Choreographer<'a> {
         const SLOW_SPEED: f32 = 0.004;
         const FAST_SPEED: f32 = 0.007;
 
-        for step in starting_pose.to_move_towards_iter(&lifted_middle, SLOW_SPEED) {
+        for step in self
+            .starting_pose
+            .to_move_towards_iter(&lifted_middle, SLOW_SPEED)
+        {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }
@@ -381,7 +398,7 @@ impl<'a> Choreographer<'a> {
             lifted_front_retracted.to_move_towards_iter(&grounded_middle_front, SLOW_SPEED),
         );
         poses.extend(grounded_middle_front.to_move_towards_iter(&lifted_middle, SLOW_SPEED));
-        poses.extend(lifted_middle.to_move_towards_iter(&starting_pose, SLOW_SPEED));
+        poses.extend(lifted_middle.to_move_towards_iter(&self.starting_pose, SLOW_SPEED));
 
         for step in poses {
             self.ik_controller.move_to_positions(&step).await?;
@@ -395,9 +412,8 @@ impl<'a> Choreographer<'a> {
         let mut interval = tokio::time::interval(TICK_DURATION);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-        let starting_pose = self.ik_controller.read_leg_positions().await?;
-
-        let lifted = starting_pose
+        let lifted = self
+            .starting_pose
             .transform(
                 Vector3::new(0.0, 0.0, -0.02),
                 UnitQuaternion::from_euler_angles(0.1, 0.1, 0.0),
@@ -417,7 +433,7 @@ impl<'a> Choreographer<'a> {
         const SPEED: f32 = 0.004;
 
         let mut poses = vec![];
-        poses.extend(starting_pose.to_move_towards_iter(&lifted, SPEED));
+        poses.extend(self.starting_pose.to_move_towards_iter(&lifted, SPEED));
 
         let count = {
             let mut rng = rand::thread_rng();
@@ -429,7 +445,7 @@ impl<'a> Choreographer<'a> {
         }
 
         poses.extend(paw_lifted.to_move_towards_iter(&lifted, SPEED));
-        poses.extend(lifted.to_move_towards_iter(&starting_pose, SPEED));
+        poses.extend(lifted.to_move_towards_iter(&self.starting_pose, SPEED));
 
         for step in poses {
             self.ik_controller.move_to_positions(&step).await?;
