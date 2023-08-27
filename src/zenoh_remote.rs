@@ -208,7 +208,7 @@ impl GamepadController {
             &gamepad_message,
             last_gamepad_message,
         );
-        let _b_pressed = was_button_pressed_since_last_time(
+        let b_pressed = was_button_pressed_since_last_time(
             Button::East,
             &gamepad_message,
             last_gamepad_message,
@@ -264,6 +264,9 @@ impl GamepadController {
         } else if start_pressed {
             info!("Grounding");
             controller.set_body_state(motion_controller::BodyState::Grounded);
+        } else if b_pressed {
+            info!("Starting random dance");
+            controller.start_sequence(motion_controller::DanceMove::Random);
         }
 
         if lb_pressed {

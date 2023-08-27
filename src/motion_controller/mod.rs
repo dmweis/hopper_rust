@@ -18,6 +18,7 @@ use crate::utilities::{MpscChannelHelper, RateTracker};
 pub use choreographer::DanceMove;
 use hopper_face::FaceController;
 use nalgebra::{Point3, UnitQuaternion, Vector3};
+use std::collections::VecDeque;
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
 use tokio::sync::Mutex;
@@ -26,6 +27,7 @@ use tokio::{spawn, task::JoinHandle};
 use tracing::*;
 use walking::*;
 
+use self::choreographer::Choreographer;
 use self::folding::FoldingManager;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -198,7 +200,7 @@ struct MotionControllerLoop {
     lrl_reset: bool,
     rlr_reset: bool,
     last_voltage_read: Instant,
-    dance_moves: Vec<LegPositions>,
+    dance_moves: VecDeque<DanceMove>,
     control_loop_rate_tracker: RateTracker,
     was_single_leg_mode: bool,
 }
@@ -225,7 +227,7 @@ impl MotionControllerLoop {
             lrl_reset: false,
             rlr_reset: false,
             last_voltage_read: Instant::now(),
-            dance_moves: vec![],
+            dance_moves: VecDeque::new(),
             control_loop_rate_tracker,
             was_single_leg_mode: false,
         })
@@ -383,6 +385,7 @@ impl MotionControllerLoop {
         stride: f32,
     ) -> HopperResult<()> {
         let mut interval = time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
         for pose in states {
             for new_pose in self.last_written_pose.to_move_towards_iter(pose, stride) {
                 self.ik_controller.move_to_positions(&new_pose).await?;
@@ -398,6 +401,7 @@ impl MotionControllerLoop {
     /// Uses the last tripod to alternate steps
     async fn transition_step(&mut self, states: &[&LegPositions]) -> HopperResult<()> {
         let mut interval = time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
         for pose in states {
             self.last_tripod.invert();
             let target = self
@@ -548,6 +552,7 @@ impl MotionControllerLoop {
         self.initialize_body_state().await?;
 
         let mut interval = time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
         loop {
             match self.command_receiver.try_recv() {
                 Ok(Some(command)) => self.command = command,
@@ -566,12 +571,7 @@ impl MotionControllerLoop {
                         break;
                     }
                     BlockingCommand::Choreography(dance_move) => {
-                        let moves: Vec<_> = dance_move.to_iterator(self.base_relaxed).collect();
-                        if self.dance_moves.is_empty() {
-                            self.dance_moves = moves;
-                        } else {
-                            warn!("Already executing a dance move");
-                        }
+                        self.dance_moves.push_back(dance_move);
                     }
                     BlockingCommand::DisableMotors => {
                         self.ik_controller.disable_motors().await?;
@@ -676,9 +676,10 @@ impl MotionControllerLoop {
                             .await?;
                         self.last_written_pose = transformed_pose;
                     }
-                    if let Some(dance_move) = self.dance_moves.pop() {
-                        self.ik_controller.move_to_positions(&dance_move).await?;
-                        self.last_written_pose = dance_move;
+                    if let Some(dance_move) = self.dance_moves.pop_front() {
+                        Choreographer::new(&mut self.ik_controller)?
+                            .execute_move(dance_move)
+                            .await?;
                     }
                     // sleep if not walking
                     self.control_loop_rate_tracker.tick();

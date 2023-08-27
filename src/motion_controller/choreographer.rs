@@ -1,9 +1,13 @@
-use crate::{
-    hexapod::LegFlags,
-    ik_controller::leg_positions::{LegPositions, MoveTowards},
-};
 use nalgebra::{UnitQuaternion, Vector3};
 use rand::{seq::SliceRandom, Rng};
+use std::time::Duration;
+use tracing::info;
+
+use crate::{
+    error::HopperResult,
+    hexapod::LegFlags,
+    ik_controller::{leg_positions::MoveTowards, IkControllable},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum DanceMove {
@@ -17,135 +21,52 @@ pub enum DanceMove {
     BoredStretch,
 }
 
-impl DanceMove {
-    pub fn to_iterator(
-        &self,
-        starting_pose: LegPositions,
-    ) -> Box<dyn Iterator<Item = LegPositions>> {
-        match self {
-            Self::Random => {
-                let moves = [
-                    Self::HappyDance,
-                    Self::SadEmote,
-                    Self::WaveHi,
-                    Self::Roar,
-                    Self::CombatCry,
-                ];
-                let choice = moves.choose(&mut rand::thread_rng()).unwrap();
-                choice.to_iterator(starting_pose)
-            }
-            Self::HappyDance => Box::new(HappyDanceIter::new(starting_pose)),
-            Self::SadEmote => Box::new(SadEmoteIter::new(starting_pose)),
-            Self::WaveHi => Box::new(WaveHiIter::new(starting_pose)),
-            Self::Roar => Box::new(RoarIter::new(starting_pose)),
-            Self::CombatCry => Box::new(CombatCryIter::new(starting_pose)),
-            Self::BoredLookingAround => Box::new(vec![].into_iter()),
-            Self::BoredStretch => Box::new(vec![].into_iter()),
-        }
+pub struct Choreographer<'a> {
+    ik_controller: &'a mut Box<dyn IkControllable>,
+}
+
+const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
+
+impl<'a> Choreographer<'a> {
+    pub fn new(ik_controller: &'a mut Box<dyn IkControllable>) -> HopperResult<Self> {
+        Ok(Self { ik_controller })
     }
-}
 
-struct HappyDanceIter {
-    poses: Vec<LegPositions>,
-}
-
-impl HappyDanceIter {
-    pub fn new(starting_pose: LegPositions) -> Self {
-        const SPEED: f32 = 0.002;
-        let separated_legs = starting_pose.transform(
-            Vector3::zeros(),
-            UnitQuaternion::from_euler_angles(0.0, 0.09, 0.0),
-        );
-        let leaning_left = separated_legs.transform(
-            Vector3::zeros(),
-            UnitQuaternion::from_euler_angles(-0.02, 0.0, 0.0),
-        );
-        let leaning_right = separated_legs.transform(
-            Vector3::zeros(),
-            UnitQuaternion::from_euler_angles(0.02, 0.0, 0.0),
-        );
-        let mut poses = vec![];
-        let mut rng = rand::thread_rng();
-
-        let count = rng.gen_range(3..6);
-        for step in starting_pose.to_move_towards_iter(&leaning_left, SPEED) {
-            poses.push(step);
+    pub async fn execute_move(&mut self, dance: DanceMove) -> HopperResult<()> {
+        let dance = if let DanceMove::Random = dance {
+            let moves = [
+                DanceMove::HappyDance,
+                DanceMove::SadEmote,
+                DanceMove::WaveHi,
+                DanceMove::Roar,
+                DanceMove::CombatCry,
+            ];
+            let dance = *moves.choose(&mut rand::thread_rng()).unwrap();
+            info!("Executing random dance move: {:?}", dance);
+            dance
+        } else {
+            dance
+        };
+        match dance {
+            DanceMove::Random => unreachable!(),
+            DanceMove::WaveHi => self.wave_hi().await?,
+            DanceMove::SadEmote => self.sad_emote().await?,
+            DanceMove::HappyDance => self.happy_dance().await?,
+            DanceMove::Roar => self.roar().await?,
+            DanceMove::CombatCry => self.combat_cry().await?,
+            DanceMove::BoredLookingAround => (),
+            DanceMove::BoredStretch => (),
         }
-        for _ in 0..count {
-            for step in leaning_left.to_move_towards_iter(&leaning_right, SPEED) {
-                poses.push(step);
-            }
-            for step in leaning_right.to_move_towards_iter(&leaning_left, SPEED) {
-                poses.push(step);
-            }
-        }
-        for step in leaning_left.to_move_towards_iter(&starting_pose, SPEED) {
-            poses.push(step);
-        }
-        Self { poses }
+        Ok(())
     }
-}
 
-impl Iterator for HappyDanceIter {
-    type Item = LegPositions;
+    async fn wave_hi(&mut self) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.poses.pop()
-    }
-}
+        let starting_pose = self.ik_controller.read_leg_positions().await?;
 
-struct SadEmoteIter {
-    poses: Vec<LegPositions>,
-}
-
-impl SadEmoteIter {
-    pub fn new(starting_pose: LegPositions) -> Self {
-        const SPEED: f32 = 0.001;
-
-        let relaxed_pose =
-            starting_pose.transform(Vector3::new(0.0, 0.0, 0.02), UnitQuaternion::identity());
-
-        let mut poses = vec![];
-
-        poses.extend(starting_pose.to_move_towards_iter(&relaxed_pose, SPEED));
-
-        let a = relaxed_pose.transform(
-            Vector3::zeros(),
-            UnitQuaternion::from_euler_angles(0.0, -0.08, 0.0),
-        );
-        poses.extend(relaxed_pose.to_move_towards_iter(&a, SPEED));
-
-        // wait
-        let mut rng = rand::thread_rng();
-        let count = rng.gen_range(5..8) * 10;
-        let last = *poses.last().unwrap();
-        for _ in 0..count {
-            poses.push(last)
-        }
-
-        poses.extend(a.to_move_towards_iter(&starting_pose, SPEED));
-
-        Self { poses }
-    }
-}
-
-impl Iterator for SadEmoteIter {
-    type Item = LegPositions;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.poses.pop()
-    }
-}
-
-struct WaveHiIter {
-    poses: Vec<LegPositions>,
-}
-
-impl WaveHiIter {
-    pub fn new(starting_pose: LegPositions) -> Self {
         const BODY_LIFT_SPEED: f32 = 0.003;
-
-        let mut poses = vec![];
 
         let lifted_body = starting_pose.transform(
             Vector3::new(0.0, 0.0, -0.02),
@@ -153,7 +74,8 @@ impl WaveHiIter {
         );
 
         for step in starting_pose.to_move_towards_iter(&lifted_body, BODY_LIFT_SPEED) {
-            poses.push(step);
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
         }
 
         const PAW_LIFT_SPEED: f32 = 0.007;
@@ -182,45 +104,133 @@ impl WaveHiIter {
 
         // lift paw
         for step in lifted_body.to_move_towards_iter(&lifted_paw, PAW_LIFT_SPEED) {
-            poses.push(step);
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
         }
 
         const WAVE_SPEED: f32 = 0.005;
 
-        let mut rng = rand::thread_rng();
-        let count = rng.gen_range(3..6);
+        let count = {
+            let mut rng = rand::thread_rng();
+            rng.gen_range(3..6)
+        };
         for _ in 0..count {
             for step in paw_b.to_move_towards_iter(&paw_a, WAVE_SPEED) {
-                poses.push(step);
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
             }
             for step in paw_a.to_move_towards_iter(&paw_b, WAVE_SPEED) {
-                poses.push(step);
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
             }
         }
 
         // lower paw
         for step in lifted_paw.to_move_towards_iter(&starting_pose, BODY_LIFT_SPEED) {
-            poses.push(step);
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
         }
 
-        Self { poses }
+        Ok(())
     }
-}
 
-impl Iterator for WaveHiIter {
-    type Item = LegPositions;
+    async fn sad_emote(&mut self) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.poses.pop()
+        const SPEED: f32 = 0.001;
+
+        let starting_pose = self.ik_controller.read_leg_positions().await?;
+
+        let relaxed_pose =
+            starting_pose.transform(Vector3::new(0.0, 0.0, 0.02), UnitQuaternion::identity());
+
+        for step in starting_pose.to_move_towards_iter(&relaxed_pose, SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        let a = relaxed_pose.transform(
+            Vector3::zeros(),
+            UnitQuaternion::from_euler_angles(0.0, -0.08, 0.0),
+        );
+
+        for step in relaxed_pose.to_move_towards_iter(&a, SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        // wait
+        let count = {
+            let mut rng = rand::thread_rng();
+            rng.gen_range(5..8) * 10
+        };
+
+        tokio::time::sleep(Duration::from_millis(
+            TICK_DURATION.as_millis() as u64 * count,
+        ))
+        .await;
+
+        interval.reset();
+
+        for step in a.to_move_towards_iter(&starting_pose, SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        Ok(())
     }
-}
 
-struct RoarIter {
-    poses: Vec<LegPositions>,
-}
+    async fn happy_dance(&mut self) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-impl RoarIter {
-    fn new(starting_pose: LegPositions) -> Self {
+        let starting_pose = self.ik_controller.read_leg_positions().await?;
+
+        const SPEED: f32 = 0.002;
+        let separated_legs = starting_pose.transform(
+            Vector3::zeros(),
+            UnitQuaternion::from_euler_angles(0.0, 0.09, 0.0),
+        );
+        let leaning_left = separated_legs.transform(
+            Vector3::zeros(),
+            UnitQuaternion::from_euler_angles(-0.02, 0.0, 0.0),
+        );
+        let leaning_right = separated_legs.transform(
+            Vector3::zeros(),
+            UnitQuaternion::from_euler_angles(0.02, 0.0, 0.0),
+        );
+        let count = {
+            let mut rng = rand::thread_rng();
+            rng.gen_range(3..6)
+        };
+        for step in starting_pose.to_move_towards_iter(&leaning_left, SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+        for _ in 0..count {
+            for step in leaning_left.to_move_towards_iter(&leaning_right, SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+            for step in leaning_right.to_move_towards_iter(&leaning_left, SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+        }
+        for step in leaning_left.to_move_towards_iter(&starting_pose, SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+        Ok(())
+    }
+
+    async fn roar(&mut self) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        let starting_pose = self.ik_controller.read_leg_positions().await?;
+
         let lifted_middle = starting_pose.transform_selected_legs(
             Vector3::new(0.06, 0.0, 0.04),
             UnitQuaternion::identity(),
@@ -306,20 +316,43 @@ impl RoarIter {
         const SLOW_SPEED: f32 = 0.004;
         const FAST_SPEED: f32 = 0.007;
 
-        let mut poses = vec![];
-        poses.extend(starting_pose.to_move_towards_iter(&lifted_middle, SLOW_SPEED));
-        poses.extend(lifted_middle.to_move_towards_iter(&grounded_middle_front, SLOW_SPEED));
-        poses.extend(grounded_middle_front.to_move_towards_iter(&lifted_front, FAST_SPEED));
-
-        let mut rng = rand::thread_rng();
-        let count = rng.gen_range(4..7);
-
-        poses.extend(lifted_front.to_move_towards_iter(&lifted_left, FAST_SPEED));
-        for _ in 0..count {
-            poses.extend(lifted_left.to_move_towards_iter(&lifted_right, FAST_SPEED));
-            poses.extend(lifted_right.to_move_towards_iter(&lifted_left, FAST_SPEED));
+        for step in starting_pose.to_move_towards_iter(&lifted_middle, SLOW_SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
         }
 
+        for step in lifted_middle.to_move_towards_iter(&grounded_middle_front, SLOW_SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        for step in grounded_middle_front.to_move_towards_iter(&lifted_front, FAST_SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        let count = {
+            let mut rng = rand::thread_rng();
+            rng.gen_range(4..7)
+        };
+
+        for step in lifted_front.to_move_towards_iter(&lifted_left, FAST_SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        for _ in 0..count {
+            for step in lifted_left.to_move_towards_iter(&lifted_right, FAST_SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+            for step in lifted_right.to_move_towards_iter(&lifted_left, FAST_SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+        }
+
+        let mut poses = vec![];
         poses.extend(lifted_left.to_move_towards_iter(&lifted_front, SLOW_SPEED));
         poses.extend(lifted_front.to_move_towards_iter(&lifted_front_retracted, FAST_SPEED));
         poses.extend(
@@ -328,24 +361,20 @@ impl RoarIter {
         poses.extend(grounded_middle_front.to_move_towards_iter(&lifted_middle, SLOW_SPEED));
         poses.extend(lifted_middle.to_move_towards_iter(&starting_pose, SLOW_SPEED));
 
-        Self { poses }
+        for step in poses {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        Ok(())
     }
-}
 
-impl Iterator for RoarIter {
-    type Item = LegPositions;
+    async fn combat_cry(&mut self) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.poses.pop()
-    }
-}
+        let starting_pose = self.ik_controller.read_leg_positions().await?;
 
-struct CombatCryIter {
-    poses: Vec<LegPositions>,
-}
-
-impl CombatCryIter {
-    fn new(starting_pose: LegPositions) -> Self {
         let lifted = starting_pose
             .transform(
                 Vector3::new(0.0, 0.0, -0.02),
@@ -368,8 +397,10 @@ impl CombatCryIter {
         let mut poses = vec![];
         poses.extend(starting_pose.to_move_towards_iter(&lifted, SPEED));
 
-        let mut rng = rand::thread_rng();
-        let count = rng.gen_range(3..5);
+        let count = {
+            let mut rng = rand::thread_rng();
+            rng.gen_range(3..5)
+        };
         for _ in 0..count {
             poses.extend(lifted.to_move_towards_iter(&paw_lifted, SPEED));
             poses.extend(paw_lifted.to_move_towards_iter(&lifted, SPEED));
@@ -378,14 +409,11 @@ impl CombatCryIter {
         poses.extend(paw_lifted.to_move_towards_iter(&lifted, SPEED));
         poses.extend(lifted.to_move_towards_iter(&starting_pose, SPEED));
 
-        Self { poses }
-    }
-}
+        for step in poses {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
 
-impl Iterator for CombatCryIter {
-    type Item = LegPositions;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.poses.pop()
+        Ok(())
     }
 }
