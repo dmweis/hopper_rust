@@ -7,6 +7,7 @@ pub mod walking;
 
 use crate::body_controller::motor_controller::{HexapodCompliance, HexapodMotorSpeed};
 use crate::error::{HopperError, HopperResult};
+use crate::hexapod::LegFlags;
 use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
     IkControllable,
@@ -16,7 +17,7 @@ use crate::speech::SpeechService;
 use crate::utilities::{MpscChannelHelper, RateTracker};
 pub use choreographer::DanceMove;
 use hopper_face::FaceController;
-use nalgebra::{UnitQuaternion, Vector3};
+use nalgebra::{Point3, UnitQuaternion, Vector3};
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
 use tokio::sync::Mutex;
@@ -27,10 +28,9 @@ use walking::*;
 
 use self::folding::FoldingManager;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BodyState {
     Standing,
-    #[default]
     Grounded,
     Folded,
 }
@@ -92,7 +92,7 @@ impl MotionController {
     }
 
     pub fn set_body_state(&mut self, state: BodyState) {
-        self.command.body_state = state;
+        self.command.body_state = Some(state);
         self.command_sender.send(self.command.clone()).unwrap();
     }
 
@@ -120,6 +120,16 @@ impl MotionController {
             .send(BlockingCommand::DisableMotors)
             .unwrap();
     }
+
+    pub fn set_single_leg_command(&mut self, single_leg_command: SingleLegCommand) {
+        self.command.single_leg_mode_command = Some(single_leg_command);
+        self.command_sender.send(self.command.clone()).unwrap();
+    }
+
+    pub fn clear_single_leg_command(&mut self) {
+        self.command.single_leg_mode_command = None;
+        self.command_sender.send(self.command.clone()).unwrap();
+    }
 }
 
 impl Drop for MotionController {
@@ -133,9 +143,22 @@ impl Drop for MotionController {
 #[derive(Debug, Clone, Default)]
 struct MotionControllerCommand {
     move_command: MoveCommand,
-    body_state: BodyState,
+    body_state: Option<BodyState>,
     linear_translation: Vector3<f32>,
     body_rotation: UnitQuaternion<f32>,
+    single_leg_mode_command: Option<SingleLegCommand>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct SingleLegCommand {
+    leg: LegFlags,
+    translation: Vector3<f32>,
+}
+
+impl SingleLegCommand {
+    pub fn new(leg: LegFlags, translation: Vector3<f32>) -> Self {
+        Self { leg, translation }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -177,6 +200,7 @@ struct MotionControllerLoop {
     last_voltage_read: Instant,
     dance_moves: Vec<LegPositions>,
     control_loop_rate_tracker: RateTracker,
+    was_single_leg_mode: bool,
 }
 
 impl MotionControllerLoop {
@@ -203,6 +227,7 @@ impl MotionControllerLoop {
             last_voltage_read: Instant::now(),
             dance_moves: vec![],
             control_loop_rate_tracker,
+            was_single_leg_mode: false,
         })
     }
 
@@ -245,7 +270,7 @@ impl MotionControllerLoop {
         let estimate = self.estimate_current_body_state().await?;
         info!("Estimated body state to be {:?}", estimate);
         self.state = estimate;
-        self.command.body_state = estimate;
+        self.command.body_state = Some(estimate);
         Ok(())
     }
 
@@ -443,13 +468,18 @@ impl MotionControllerLoop {
     }
 
     async fn handle_body_state_transition(&mut self) -> HopperResult<()> {
-        if self.state != self.command.body_state {
+        let desired_state = if let Some(desired_state) = self.command.body_state {
+            desired_state
+        } else {
+            return Ok(());
+        };
+        if self.state != desired_state {
             info!(
                 "Transitioning body state from {:?} to {:?}",
-                self.state, self.command.body_state
+                self.state, desired_state
             );
         }
-        match (self.state, self.command.body_state) {
+        match (self.state, desired_state) {
             (BodyState::Folded, BodyState::Grounded) => {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
@@ -575,8 +605,29 @@ impl MotionControllerLoop {
 
             // only walk if standing
             if self.state == BodyState::Standing {
-                // shift transformation
-                self.shift_transformation();
+                if let Some(single_leg_command) = self.command.single_leg_mode_command {
+                    // single leg mode
+                    let new_position = single_leg_command_handler(
+                        &mut self.ik_controller,
+                        self.base_relaxed,
+                        single_leg_command,
+                    )
+                    .await?;
+                    self.last_written_pose = new_position;
+                    interval.tick().await;
+                    self.was_single_leg_mode = true;
+                    continue;
+                } else if self.was_single_leg_mode {
+                    // recover from single leg mode
+                    self.was_single_leg_mode = false;
+                    self.transition_direct(
+                        &[&self.last_written_pose.clone(), &self.base_relaxed.clone()],
+                        0.005,
+                    )
+                    .await?;
+                    continue;
+                }
+
                 if self.command.move_command.should_move() || self.should_reset_legs() {
                     self.last_tripod.invert();
                     let target = step_with_relaxed_transformation(
@@ -615,6 +666,8 @@ impl MotionControllerLoop {
                         self.rlr_reset = false;
                     }
                 } else {
+                    // shift transformation
+                    self.shift_transformation();
                     // we can do transformations here
                     let transformed_pose = self.transformed_relaxed();
                     if self.last_written_pose != transformed_pose {
@@ -667,6 +720,49 @@ impl RotateTowards for UnitQuaternion<f32> {
         }
         (self.nlerp(target, max_rotation / angle), true)
     }
+}
+
+async fn single_leg_command_handler(
+    ik_controller: &mut Box<dyn IkControllable>,
+    relaxed_positions: LegPositions,
+    single_leg_command: SingleLegCommand,
+) -> HopperResult<LegPositions> {
+    let selected_legs = relaxed_positions.selected_legs(single_leg_command.leg);
+
+    let target_positions: Vec<_> = selected_legs
+        .iter()
+        .map(|leg_position| {
+            Point3::new(
+                leg_position.x * 1.3,
+                leg_position.y * 1.3,
+                leg_position.z + 0.05,
+            ) + single_leg_command.translation
+        })
+        .collect();
+
+    let selected_legs = relaxed_positions.selected_legs(single_leg_command.leg);
+    // slightly rotate away from selected leg
+    let (x, y) = if selected_legs.len() == 1 {
+        selected_legs
+            .first()
+            .map(|point| point.coords.normalize())
+            .map(|vector| (vector.x, vector.y))
+            .unwrap_or_default()
+    } else {
+        (0.0, 0.0)
+    };
+
+    let rotation =
+        UnitQuaternion::from_euler_angles(-3_f32.to_radians() * y, 3_f32.to_radians() * x, 0.0);
+
+    let mut desired_position =
+        relaxed_positions.transform(Vector3::new(0_f32, 0_f32, -0.03_f32), rotation);
+
+    desired_position.updated_from_selected_legs(&target_positions, single_leg_command.leg)?;
+
+    ik_controller.move_to_positions(&desired_position).await?;
+
+    Ok(desired_position)
 }
 
 #[cfg(test)]

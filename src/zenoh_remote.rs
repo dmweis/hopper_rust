@@ -1,7 +1,8 @@
 use crate::body_controller::motor_controller::{HexapodCompliance, HexapodMotorSpeed};
 use crate::error::HopperResult;
-use crate::motion_controller;
+use crate::hexapod::LegFlags;
 use crate::motion_controller::walking::{DEFAULT_STEP_HEIGHT, DEFAULT_STEP_TIME};
+use crate::motion_controller::{self, SingleLegCommand};
 use crate::{error::HopperError, motion_controller::walking::MoveCommand};
 use chrono::{DateTime, Utc};
 use nalgebra::{UnitQuaternion, Vector2, Vector3};
@@ -137,9 +138,33 @@ async fn handle_body_motor_speed_command(
     Ok(())
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct GamepadController {
     walking_config: WalkingConfig,
+    single_leg_foot: LegFlags,
+    feet_iterator: std::iter::Cycle<std::vec::IntoIter<LegFlags>>,
+}
+
+impl Default for GamepadController {
+    fn default() -> Self {
+        Self {
+            walking_config: WalkingConfig::default(),
+            single_leg_foot: LegFlags::LEFT_FRONT,
+            feet_iterator: vec![
+                LegFlags::LEFT_FRONT,
+                LegFlags::RIGHT_FRONT,
+                LegFlags::LEFT_MIDDLE,
+                LegFlags::RIGHT_MIDDLE,
+                LegFlags::LEFT_REAR,
+                LegFlags::RIGHT_REAR,
+                LegFlags::MIDDLE,
+                LegFlags::LRL_TRIPOD,
+                LegFlags::RLR_TRIPOD,
+            ]
+            .into_iter()
+            .cycle(),
+        }
+    }
 }
 
 impl GamepadController {
@@ -165,7 +190,7 @@ impl GamepadController {
     }
 
     async fn handle_gamepad_command(
-        &self,
+        &mut self,
         gamepad_message: zenoh::sample::Sample,
         controller: &mut motion_controller::MotionController,
         last_gamepad_message: &mut Option<InputMessage>,
@@ -208,10 +233,20 @@ impl GamepadController {
             &gamepad_message,
             last_gamepad_message,
         );
+        let lt_pressed_since_last = was_button_pressed_since_last_time(
+            Button::LeftTrigger2,
+            &gamepad_message,
+            last_gamepad_message,
+        );
+
+        if lt_pressed_since_last {
+            self.single_leg_foot = self.feet_iterator.next().unwrap();
+            info!("Switching to single leg foot {:?}", self.single_leg_foot);
+        }
 
         let lb_pressed = is_button_down(Button::LeftTrigger, &gamepad_message);
         let rb_pressed = is_button_down(Button::RightTrigger, &gamepad_message);
-        let _lt_pressed = is_button_down(Button::LeftTrigger2, &gamepad_message);
+        let lt_pressed = is_button_down(Button::LeftTrigger2, &gamepad_message);
         let rt_pressed = is_button_down(Button::RightTrigger2, &gamepad_message);
 
         if a_pressed {
@@ -268,7 +303,17 @@ impl GamepadController {
                 self.walking_config.aggressive_leg_lift,
             );
             controller.set_command(move_command);
+        } else if lt_pressed {
+            let x = get_axis(Axis::LeftStickY, &gamepad_message) * 0.07;
+            let y = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.07;
+            let z = get_axis(Axis::RightStickY, &gamepad_message) * 0.07;
+
+            controller.set_single_leg_command(SingleLegCommand::new(
+                self.single_leg_foot,
+                Vector3::new(x, y, z),
+            ));
         } else {
+            controller.clear_single_leg_command();
             controller.set_transformation(Default::default(), Default::default());
             controller.set_command(MoveCommand::with_optional_fields(
                 Vector2::zeros(),
