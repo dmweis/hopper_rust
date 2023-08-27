@@ -1,12 +1,15 @@
 use nalgebra::{UnitQuaternion, Vector3};
 use rand::{seq::SliceRandom, Rng};
 use std::time::Duration;
+use tokio::sync::Mutex;
 use tracing::info;
 
 use crate::{
     error::HopperResult,
     hexapod::LegFlags,
     ik_controller::{leg_positions::MoveTowards, IkControllable},
+    ioc_container::IocContainer,
+    speech::SpeechService,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -114,6 +117,25 @@ impl<'a> Choreographer<'a> {
             let mut rng = rand::thread_rng();
             rng.gen_range(3..6)
         };
+
+        for _ in 0..2 {
+            for step in paw_b.to_move_towards_iter(&paw_a, WAVE_SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+            for step in paw_a.to_move_towards_iter(&paw_b, WAVE_SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+        }
+
+        IocContainer::global_instance()
+            .service::<Mutex<SpeechService>>()?
+            .lock()
+            .await
+            .play_sound("Turret_turret_active_1.wav")
+            .await?;
+
         for _ in 0..count {
             for step in paw_b.to_move_towards_iter(&paw_a, WAVE_SPEED) {
                 self.ik_controller.move_to_positions(&step).await?;
