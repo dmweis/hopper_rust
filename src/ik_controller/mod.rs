@@ -111,7 +111,7 @@ impl IkControllable for IkController {
         self.body_controller
             .move_motors_to(&motor_positions)
             .await?;
-        self.pose_publisher.set_pose(positions.clone());
+        self.pose_publisher.set_pose(*positions);
         Ok(())
     }
 
