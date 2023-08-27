@@ -6,47 +6,6 @@ use std::error::Error;
 pub type LegPositions = HexapodTypes<Point3<f32>>;
 
 impl LegPositions {
-    pub fn merge_with(&self, other: &LegPositions, legs: LegFlags) -> LegPositions {
-        let left_front = if LegFlags::LEFT_FRONT & legs == LegFlags::LEFT_FRONT {
-            other.left_front()
-        } else {
-            self.left_front()
-        };
-        let left_middle = if LegFlags::LEFT_MIDDLE & legs == LegFlags::LEFT_MIDDLE {
-            other.left_middle()
-        } else {
-            self.left_middle()
-        };
-        let left_rear = if LegFlags::LEFT_REAR & legs == LegFlags::LEFT_REAR {
-            other.left_rear()
-        } else {
-            self.left_rear()
-        };
-        let right_front = if LegFlags::RIGHT_FRONT & legs == LegFlags::RIGHT_FRONT {
-            other.right_front()
-        } else {
-            self.right_front()
-        };
-        let right_middle = if LegFlags::RIGHT_MIDDLE & legs == LegFlags::RIGHT_MIDDLE {
-            other.right_middle()
-        } else {
-            self.right_middle()
-        };
-        let right_rear = if LegFlags::RIGHT_REAR & legs == LegFlags::RIGHT_REAR {
-            other.right_rear()
-        } else {
-            self.right_rear()
-        };
-        LegPositions::new(
-            *left_front,
-            *left_middle,
-            *left_rear,
-            *right_front,
-            *right_middle,
-            *right_rear,
-        )
-    }
-
     pub fn transform(
         &self,
         translation: Vector3<f32>,
@@ -75,8 +34,8 @@ impl LegPositions {
     }
 
     pub fn longest_distance(&self, other: &LegPositions) -> f32 {
-        let self_legs = self.all_legs();
-        let other_legs = other.all_legs();
+        let self_legs = self.as_legs();
+        let other_legs = other.as_legs();
         self_legs
             .iter()
             .zip(other_legs.iter())

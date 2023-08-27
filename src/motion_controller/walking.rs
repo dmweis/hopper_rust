@@ -524,9 +524,9 @@ pub(crate) fn step_with_relaxed_transformation(
 
 // Calculate longest distance a leg has to travel
 fn max_horizontal_distance(a: &LegPositions, b: &LegPositions) -> f32 {
-    a.all_legs()
+    a.as_legs()
         .into_iter()
-        .zip(b.all_legs())
+        .zip(b.as_legs())
         .map(|(a, b)| distance(&a.xy(), &b.xy()))
         .max_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap_or_default()

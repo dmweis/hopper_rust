@@ -2,7 +2,10 @@ use bitflags::bitflags;
 use dynamixel_driver::SyncCommand;
 use serde::{Deserialize, Serialize};
 
-use crate::hopper_body_config::{BodyConfig, LegConfig};
+use crate::{
+    error::{HopperError, HopperResult},
+    hopper_body_config::{BodyConfig, LegConfig},
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct HexapodTypes<T: Clone> {
@@ -93,7 +96,18 @@ impl<T: Clone> HexapodTypes<T> {
         new
     }
 
-    pub fn all_legs(&self) -> [&T; 6] {
+    pub fn from_legs(legs: [&T; 6]) -> Self {
+        Self {
+            left_front: legs[0].clone(),
+            right_front: legs[1].clone(),
+            left_middle: legs[2].clone(),
+            right_middle: legs[3].clone(),
+            left_rear: legs[4].clone(),
+            right_rear: legs[5].clone(),
+        }
+    }
+
+    pub fn as_legs(&self) -> [&T; 6] {
         [
             &self.left_front,
             &self.right_front,
@@ -126,6 +140,76 @@ impl<T: Clone> HexapodTypes<T> {
         }
         selected
     }
+
+    pub fn updated_from_selected_legs(&mut self, values: &[T], legs: LegFlags) -> HopperResult<()> {
+        if values.len() != legs.bits().count_ones() as usize {
+            return Err(HopperError::WrongNumberOfLogs(
+                values.len(),
+                legs.bits().count_ones() as usize,
+            ));
+        }
+        let mut iterator = values.iter();
+        if legs.contains(LegFlags::LEFT_FRONT) {
+            self.left_front = iterator.next().unwrap().clone();
+        }
+        if legs.contains(LegFlags::RIGHT_FRONT) {
+            self.right_front = iterator.next().unwrap().clone();
+        }
+        if legs.contains(LegFlags::LEFT_MIDDLE) {
+            self.left_middle = iterator.next().unwrap().clone();
+        }
+        if legs.contains(LegFlags::RIGHT_MIDDLE) {
+            self.right_middle = iterator.next().unwrap().clone();
+        }
+        if legs.contains(LegFlags::LEFT_REAR) {
+            self.left_rear = iterator.next().unwrap().clone();
+        }
+        if legs.contains(LegFlags::RIGHT_REAR) {
+            self.right_rear = iterator.next().unwrap().clone();
+        }
+        Ok(())
+    }
+
+    pub fn merge_with(&self, other: &Self, legs: LegFlags) -> Self {
+        let left_front = if LegFlags::LEFT_FRONT & legs == LegFlags::LEFT_FRONT {
+            other.left_front()
+        } else {
+            self.left_front()
+        };
+        let left_middle = if LegFlags::LEFT_MIDDLE & legs == LegFlags::LEFT_MIDDLE {
+            other.left_middle()
+        } else {
+            self.left_middle()
+        };
+        let left_rear = if LegFlags::LEFT_REAR & legs == LegFlags::LEFT_REAR {
+            other.left_rear()
+        } else {
+            self.left_rear()
+        };
+        let right_front = if LegFlags::RIGHT_FRONT & legs == LegFlags::RIGHT_FRONT {
+            other.right_front()
+        } else {
+            self.right_front()
+        };
+        let right_middle = if LegFlags::RIGHT_MIDDLE & legs == LegFlags::RIGHT_MIDDLE {
+            other.right_middle()
+        } else {
+            self.right_middle()
+        };
+        let right_rear = if LegFlags::RIGHT_REAR & legs == LegFlags::RIGHT_REAR {
+            other.right_rear()
+        } else {
+            self.right_rear()
+        };
+        Self::new(
+            left_front.clone(),
+            left_middle.clone(),
+            left_rear.clone(),
+            right_front.clone(),
+            right_middle.clone(),
+            right_rear.clone(),
+        )
+    }
 }
 
 bitflags! {
@@ -144,6 +228,7 @@ bitflags! {
         const MIDDLE = Self::RIGHT_MIDDLE.bits() | Self::LEFT_MIDDLE.bits();
         const FRONT = Self::LEFT_FRONT.bits() | Self::RIGHT_FRONT.bits();
         const REAR = Self::LEFT_REAR.bits() | Self::RIGHT_REAR.bits();
+        const ALL = Self::LEFT.bits() | Self::RIGHT.bits();
     }
 }
 
@@ -206,5 +291,43 @@ where
             .into_iter()
             .map(|(id, value)| SyncCommand::new(id, value.into()))
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    type TestingHexapodType = HexapodTypes<usize>;
+
+    #[test]
+    fn from_legs_and_as_legs_are_in_the_same_order() {
+        let testing_hexapod_type = TestingHexapodType::new(0, 1, 2, 3, 4, 5);
+
+        let after_conversion = TestingHexapodType::from_legs(testing_hexapod_type.as_legs());
+        assert_eq!(testing_hexapod_type, after_conversion);
+
+        assert_eq!(
+            testing_hexapod_type.as_legs().to_vec(),
+            testing_hexapod_type.selected_legs(LegFlags::ALL),
+        );
+
+        #[allow(clippy::clone_on_copy)]
+        let mut testing_hexapod_type_clone = testing_hexapod_type.clone();
+
+        let collected = testing_hexapod_type.selected_legs(LegFlags::LRL_TRIPOD);
+
+        testing_hexapod_type_clone
+            .updated_from_selected_legs(
+                collected
+                    .into_iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+                LegFlags::LRL_TRIPOD,
+            )
+            .unwrap();
+        assert_eq!(testing_hexapod_type, testing_hexapod_type_clone);
     }
 }

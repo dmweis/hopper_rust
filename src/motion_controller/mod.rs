@@ -212,7 +212,7 @@ impl MotionControllerLoop {
 
         let z_heights: Vec<_> = self
             .last_written_pose
-            .all_legs()
+            .as_legs()
             .iter()
             .map(|position| position.z)
             .collect();
