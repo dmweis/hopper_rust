@@ -602,6 +602,7 @@ impl MotionControllerLoop {
                             .move_to_positions(&transformed_pose)
                             .await?;
                         self.last_written_pose = transformed_pose;
+                        self.control_loop_rate_tracker.tick();
                         interval.tick().await;
                     }
                     match self.last_tripod {
@@ -627,13 +628,14 @@ impl MotionControllerLoop {
                         self.last_written_pose = dance_move;
                     }
                     // sleep if not walking
+                    self.control_loop_rate_tracker.tick();
                     interval.tick().await;
                 }
             } else {
                 // sleep if not stanring
+                self.control_loop_rate_tracker.tick();
                 interval.tick().await;
             }
-            self.control_loop_rate_tracker.tick();
             if let Some(report) = self.control_loop_rate_tracker.report().await? {
                 debug!(?report, "motor move rate");
             }
