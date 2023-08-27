@@ -7,6 +7,7 @@ use crate::{
         BodyController,
     },
     error::HopperError,
+    zenoh_pose_publisher::ZenohPosePublisher,
 };
 use crate::{
     error::HopperResult,
@@ -15,9 +16,7 @@ use crate::{
 use async_trait::async_trait;
 use leg_positions::*;
 use nalgebra::{Point3, Vector3};
-use prost::Message;
 use tracing::*;
-use zenoh::prelude::r#async::*;
 
 #[async_trait]
 pub trait IkControllable: BodyController {
@@ -29,7 +28,7 @@ pub trait IkControllable: BodyController {
 pub struct IkController {
     body_controller: Box<dyn BodyController>,
     body_configuration: HopperConfig,
-    pose_publisher: zenoh::publication::Publisher<'static>,
+    pose_publisher: ZenohPosePublisher,
 }
 
 impl IkController {
@@ -38,6 +37,8 @@ impl IkController {
         body_configuration: HopperConfig,
         pose_publisher: zenoh::publication::Publisher<'static>,
     ) -> Box<Self> {
+        let pose_publisher = ZenohPosePublisher::new(pose_publisher);
+
         Box::new(IkController {
             body_controller,
             body_configuration,
@@ -110,10 +111,7 @@ impl IkControllable for IkController {
         self.body_controller
             .move_motors_to(&motor_positions)
             .await?;
-        self.pose_publisher
-            .put(positions.to_foxglove_frame_transport().encode_to_vec())
-            .res()
-            .await?;
+        self.pose_publisher.set_pose(positions.clone());
         Ok(())
     }
 
