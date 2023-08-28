@@ -2,15 +2,9 @@ use super::audio_cache::AudioCache;
 use super::audio_repository::AudioRepository;
 use super::AzureVoiceStyle;
 use crate::error::{HopperError, HopperResult};
-use core::panic;
 use sha2::{Digest, Sha256};
-use std::sync::mpsc::Receiver;
-use std::{
-    fs::File,
-    io::Cursor,
-    sync::mpsc::{sync_channel, SyncSender},
-    thread,
-};
+use std::{fs::File, io::Cursor, thread};
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::*;
 
 // Used to invalidate old cache
@@ -42,16 +36,14 @@ enum AudioPlayerCommand {
     Resume,
     Stop,
     Volume(f32),
-    Terminate,
 }
 
-fn audio_player_loop(receiver: &Receiver<AudioPlayerCommand>) -> HopperResult<()> {
+fn audio_player_loop(receiver: &mut Receiver<AudioPlayerCommand>) -> HopperResult<()> {
     let (_output_stream, output_stream_handle) = rodio::OutputStream::try_default()
         .map_err(|_| HopperError::FailedToCreateAudioOutputStream)?;
     let sink = rodio::Sink::try_new(&output_stream_handle)
         .map_err(|_| HopperError::FailedToCreateAudioSink)?;
-    loop {
-        let command = receiver.recv().unwrap();
+    while let Some(command) = receiver.blocking_recv() {
         match command {
             AudioPlayerCommand::Play(sound) => {
                 sink.append(
@@ -75,21 +67,22 @@ fn audio_player_loop(receiver: &Receiver<AudioPlayerCommand>) -> HopperResult<()
                 info!("Settings volume to {}", volume);
                 sink.set_volume(volume)
             }
-            AudioPlayerCommand::Terminate => {
-                warn!("Audio player loop terminated");
-                break;
-            }
         }
     }
+    warn!("Audio player loop exiting");
+
     Ok(())
 }
 
-fn create_player() -> SyncSender<AudioPlayerCommand> {
-    let (sender, receiver) = sync_channel(3);
-    thread::spawn(move || loop {
-        // This may miss on sender being dead. But if sender is dead we have bigger issues
-        if let Err(e) = audio_player_loop(&receiver) {
-            error!("Audio player loop failed with {}", e);
+fn create_player() -> Sender<AudioPlayerCommand> {
+    let (sender, receiver) = channel(100);
+    thread::spawn(move || {
+        let mut receiver = receiver;
+        loop {
+            // This may miss on sender being dead. But if sender is dead we have bigger issues
+            if let Err(e) = audio_player_loop(&mut receiver) {
+                error!("Audio player loop failed with {}", e);
+            }
         }
     });
     sender
@@ -101,7 +94,7 @@ pub struct SpeechService {
     audio_repository: Option<AudioRepository>,
     azure_voice: azure_tts::VoiceSettings,
     azure_audio_format: azure_tts::AudioFormat,
-    audio_sender: SyncSender<AudioPlayerCommand>,
+    audio_sender: Sender<AudioPlayerCommand>,
 }
 
 pub trait Playable: std::io::Read + std::io::Seek + Send + Sync {}
@@ -140,18 +133,11 @@ impl SpeechService {
         })
     }
 
-    async fn play(&mut self, data: Box<dyn Playable>) -> HopperResult<()> {
-        match self.audio_sender.try_send(AudioPlayerCommand::Play(data)) {
-            Ok(()) => {}
-            Err(std::sync::mpsc::TrySendError::Full(_)) => {
-                warn!("Audio player queue full, dropping audio");
-            }
-            Err(std::sync::mpsc::TrySendError::Disconnected(_)) => {
-                error!("Audio player queue disconnected");
-                panic!("Audio player queue disconnected");
-            }
-        }
-        Ok(())
+    async fn play(&mut self, data: Box<dyn Playable>) {
+        self.audio_sender
+            .send(AudioPlayerCommand::Play(data))
+            .await
+            .unwrap();
     }
 
     async fn say_azure_with_voice(
@@ -210,7 +196,7 @@ impl SpeechService {
                 .await?;
             Box::new(Cursor::new(data))
         };
-        self.play(sound).await?;
+        self.play(sound).await;
         Ok(())
     }
 
@@ -218,7 +204,7 @@ impl SpeechService {
         info!("Playing sound {}", sound_name);
         if let Some(ref audio_repository) = self.audio_repository {
             if let Some(data) = audio_repository.load(sound_name) {
-                self.play(data).await?;
+                self.play(data).await;
             } else {
                 error!("No sound found with name {}", sound_name);
             }
@@ -245,7 +231,8 @@ impl SpeechService {
             error!("No audio repository configured");
         }
         for sound in sounds {
-            self.play(sound).await?;
+            // send manually to prevent dropping
+            self.play(sound).await;
         }
         Ok(())
     }
@@ -261,7 +248,7 @@ impl SpeechService {
         }
 
         for sound in sounds {
-            self.play(sound).await?;
+            self.play(sound).await;
         }
         Ok(())
     }
@@ -282,29 +269,31 @@ impl SpeechService {
             .await
     }
 
-    pub fn pause(&self) {
-        self.audio_sender.send(AudioPlayerCommand::Pause).unwrap();
-    }
-
-    pub fn resume(&self) {
-        self.audio_sender.send(AudioPlayerCommand::Resume).unwrap();
-    }
-
-    pub fn stop(&self) {
-        self.audio_sender.send(AudioPlayerCommand::Stop).unwrap();
-    }
-
-    pub fn volume(&self, volume: f32) {
+    pub async fn pause(&self) {
         self.audio_sender
-            .send(AudioPlayerCommand::Volume(volume))
+            .send(AudioPlayerCommand::Pause)
+            .await
             .unwrap();
     }
-}
 
-impl Drop for SpeechService {
-    fn drop(&mut self) {
+    pub async fn resume(&self) {
         self.audio_sender
-            .send(AudioPlayerCommand::Terminate)
+            .send(AudioPlayerCommand::Resume)
+            .await
+            .unwrap();
+    }
+
+    pub async fn stop(&self) {
+        self.audio_sender
+            .send(AudioPlayerCommand::Stop)
+            .await
+            .unwrap();
+    }
+
+    pub async fn volume(&self, volume: f32) {
+        self.audio_sender
+            .send(AudioPlayerCommand::Volume(volume))
+            .await
             .unwrap();
     }
 }
