@@ -52,7 +52,7 @@ RUN cargo build \
     --bin hopper \
     --features audio
 
-RUN cargo deb --no-build
+RUN cargo deb --no-build --fast
 
 # Copy to exporter
 FROM scratch AS export
