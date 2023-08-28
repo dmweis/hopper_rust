@@ -7,6 +7,6 @@ do
     echo "Waiting for mqtt message"
     mosquitto_sub -h homepi -t "hopper/build" -C 1
     echo "Installing hopper"
-    sudo dpkg -i hopper-rust.deb
+    sudo dpkg --force-confold -i hopper-rust.deb
     echo "Installed new hopper version"
 done

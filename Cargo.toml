@@ -23,7 +23,7 @@ assets = [
     "644",
   ],
 ]
-conf-files = ["/etc/home_speak/settings.yaml"]
+conf-files = ["/etc/hopper/settings.yaml"]
 maintainer = "David Weis <dweis7@gmail.com>"
 maintainer-scripts = "debian/"
 

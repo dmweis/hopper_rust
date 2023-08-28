@@ -8,3 +8,4 @@ dev_settings.yaml
 docker_out/
 *.mcap
 Makefile
+scripts/
