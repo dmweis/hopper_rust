@@ -2,7 +2,7 @@ use super::speech_service::Playable;
 use crate::error::{HopperError, HopperResult};
 use rand::seq::SliceRandom;
 use std::fs::{self, File};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct AudioRepository {
     dir_path: String,
@@ -55,5 +55,30 @@ impl AudioRepository {
         } else {
             None
         }
+    }
+
+    pub fn random_file_recursive(&self) -> Option<(Box<File>, PathBuf)> {
+        let walker = walkdir::WalkDir::new(Path::new(&self.dir_path)).into_iter();
+
+        let files = walker
+            // ignore errors
+            .filter_map(|entry| entry.ok())
+            // take only files
+            .filter(|entry| entry.file_type().is_file())
+            // turn to paths
+            .map(|file_entry| file_entry.path().to_path_buf())
+            // ignore astromech because those files are boring
+            .filter(|path| !path.to_string_lossy().contains("astromech"))
+            .collect::<Vec<_>>();
+
+        let mut rng = rand::thread_rng();
+
+        files.choose(&mut rng).and_then(|path| {
+            if let Ok(file) = File::open(path) {
+                Some((Box::new(file), path.to_owned()))
+            } else {
+                None
+            }
+        })
     }
 }

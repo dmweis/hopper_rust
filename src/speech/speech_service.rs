@@ -214,6 +214,20 @@ impl SpeechService {
         Ok(())
     }
 
+    pub async fn play_random_sound(&mut self) -> HopperResult<()> {
+        if let Some(ref audio_repository) = self.audio_repository {
+            if let Some((sound, path)) = audio_repository.random_file_recursive() {
+                info!("Playing random sound {:?}", path);
+                self.play(sound).await;
+            } else {
+                error!("No sounds found");
+            }
+        } else {
+            error!("No audio repository configured");
+        }
+        Ok(())
+    }
+
     pub async fn say_astromech(&mut self, phrase: &str) -> HopperResult<()> {
         let mut sounds = vec![];
         if let Some(ref audio_repository) = self.audio_repository {

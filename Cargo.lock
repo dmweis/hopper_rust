@@ -1856,7 +1856,7 @@ dependencies = [
 
 [[package]]
 name = "hopper_rust"
-version = "0.3.7"
+version = "0.3.8"
 dependencies = [
  "anyhow",
  "approx 0.5.1",
@@ -1894,6 +1894,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "v4l",
+ "walkdir",
  "zenoh",
  "zenoh-config",
 ]
