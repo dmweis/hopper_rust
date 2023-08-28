@@ -111,9 +111,9 @@ impl LegPositions {
             parent_frame_id: "body".to_string(),
             child_frame_id: "hopper_camera".to_string(),
             translation: Some(crate::foxglove::Vector3 {
-                x: 0.100,
+                x: 0.050,
                 y: 0.0,
-                z: 0.112,
+                z: 0.0,
             }),
             rotation: None,
         };

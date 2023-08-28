@@ -1,6 +1,9 @@
 use crate::body_controller::motor_controller::{HexapodCompliance, HexapodMotorSpeed};
 use crate::error::HopperResult;
 use crate::hexapod::LegFlags;
+use crate::high_five::HighFiveServiceController;
+use crate::ioc_container::IocContainer;
+use crate::lidar::LidarServiceController;
 use crate::motion_controller::walking::{DEFAULT_STEP_HEIGHT, DEFAULT_STEP_TIME};
 use crate::motion_controller::{self, SingleLegCommand};
 use crate::{error::HopperError, motion_controller::walking::MoveCommand};
@@ -264,6 +267,30 @@ impl GamepadController {
             self.height_offset -= 0.01;
             info!("Decreased height offset to {}", self.height_offset);
         }
+        if was_button_pressed_since_last_time(
+            Button::DPadRight,
+            &gamepad_message,
+            last_gamepad_message,
+        ) {
+            self.height_offset = 0.0;
+            info!("Resetting height offset");
+        }
+
+        if was_button_pressed_since_last_time(
+            Button::DPadLeft,
+            &gamepad_message,
+            last_gamepad_message,
+        ) {
+            let high_five_controller =
+                IocContainer::global_instance().service::<HighFiveServiceController>()?;
+            let is_active = high_five_controller.is_active();
+            let desired_state = !is_active;
+            info!("Toggling high five controller to {}", desired_state);
+            high_five_controller.set_active(desired_state);
+            IocContainer::global_instance()
+                .service::<LidarServiceController>()?
+                .set_active(desired_state);
+        }
 
         // clamp
         self.height_offset = self.height_offset.max(-0.03).min(0.05);
@@ -328,6 +355,11 @@ impl GamepadController {
                 self.walking_config.step_time,
                 self.walking_config.step_height_m,
                 self.walking_config.aggressive_leg_lift,
+            );
+
+            controller.set_transformation(
+                Vector3::new(0.0, 0.0, -self.height_offset),
+                Default::default(),
             );
             controller.set_command(move_command);
         } else if lt_pressed {

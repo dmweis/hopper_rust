@@ -6,7 +6,6 @@ while true
 do
     echo "Waiting for mqtt message"
     mosquitto_sub -h homepi -t "hopper/build" -C 1
-    sleep 2
     echo "Installing hopper"
     sudo dpkg -i hopper-rust.deb
     echo "Installed new hopper version"

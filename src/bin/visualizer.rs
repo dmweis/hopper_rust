@@ -8,6 +8,7 @@ use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;
 use std::path::Path;
 use std::{thread::sleep, time::Duration};
+use tokio::sync::mpsc::channel;
 use tracing::*;
 use zenoh::config::Config as ZenohConfig;
 use zenoh::prelude::r#async::*;
@@ -73,9 +74,12 @@ async fn main() -> Result<()> {
     let motion_controller_rate_reporter =
         RateTracker::new(Duration::from_secs(1), motion_controller_rate_publisher);
 
+    let (_tx, rx) = channel(10);
+
     let mut motion_controller = motion_controller::MotionController::new(
         Box::new(visualizer),
         motion_controller_rate_reporter,
+        rx,
     )
     .await?;
 

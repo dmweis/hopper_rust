@@ -5,6 +5,7 @@ pub mod camera;
 pub mod configuration;
 pub mod error;
 mod hexapod;
+pub mod high_five;
 pub mod hopper_body_config;
 pub mod ik_controller;
 pub mod ioc_container;

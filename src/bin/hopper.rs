@@ -6,6 +6,7 @@ use hopper_rust::{
     camera::start_camera,
     configuration::get_configuration,
     error::HopperError,
+    high_five::HighFiveDetector,
     hopper_body_config, ik_controller,
     ioc_container::IocContainer,
     lidar::start_lidar_driver,
@@ -69,7 +70,15 @@ async fn main() -> Result<()> {
     )
     .await?;
 
-    start_lidar_driver(zenoh_session.clone(), &app_config.lidar).await?;
+    let (high_five_detector, high_five_receiver, high_five_service_controller) =
+        HighFiveDetector::new();
+
+    ioc_container.register(high_five_service_controller);
+
+    let lidar_service_controller =
+        start_lidar_driver(zenoh_session.clone(), &app_config.lidar, high_five_detector).await?;
+
+    ioc_container.register(lidar_service_controller);
 
     start_monitoring_loop(zenoh_session.clone()).await?;
 
@@ -137,9 +146,12 @@ async fn main() -> Result<()> {
     let motion_controller_rate_reporter =
         RateTracker::new(Duration::from_secs(1), motion_controller_rate_publisher);
 
-    let mut motion_controller =
-        motion_controller::MotionController::new(ik_controller, motion_controller_rate_reporter)
-            .await?;
+    let mut motion_controller = motion_controller::MotionController::new(
+        ik_controller,
+        motion_controller_rate_reporter,
+        high_five_receiver,
+    )
+    .await?;
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 

@@ -1,4 +1,5 @@
 use crate::foxglove;
+use crate::high_five::HighFiveDetector;
 use crate::{configuration::LidarConfig, error::HopperError};
 use prost::Message;
 use prost_types::Timestamp;
@@ -15,11 +16,33 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::{error, info, log::warn};
 use zenoh::prelude::r#async::*;
 
+#[derive(Clone, Debug, Default)]
+pub struct LidarServiceController {
+    active: Arc<AtomicBool>,
+}
+
+impl LidarServiceController {
+    fn new(initial_state: bool) -> Self {
+        Self {
+            active: Arc::new(AtomicBool::new(initial_state)),
+        }
+    }
+
+    pub fn set_active(&self, active: bool) {
+        self.active.store(active, Ordering::Relaxed);
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.active.load(Ordering::Relaxed)
+    }
+}
+
 pub async fn start_lidar_driver(
     zenoh_session: Arc<Session>,
     config: &LidarConfig,
-) -> anyhow::Result<()> {
-    let (mut scan_receiver, should_lidar_run) =
+    high_give_detector: HighFiveDetector,
+) -> anyhow::Result<LidarServiceController> {
+    let (mut scan_receiver, lidar_service_controller) =
         start_lidar_driver_internal(&config.serial_port, config.start_state_on)?;
 
     let subscriber = zenoh_session
@@ -78,22 +101,25 @@ pub async fn start_lidar_driver(
         },
     ];
 
-    tokio::spawn(async move {
-        loop {
-            if let Ok(sample) = subscriber.recv_async().await {
-                info!("Received message: {}", sample);
-                if let Ok(message) = TryInto::<String>::try_into(&sample.value) {
-                    info!("Message: {}", message);
-                    let lidar_command_on = message.to_lowercase().ends_with("on");
-                    if lidar_command_on {
-                        info!("Starting scan");
-                        should_lidar_run.store(true, Ordering::Relaxed);
+    tokio::spawn({
+        let lidar_service_controller = lidar_service_controller.clone();
+        async move {
+            loop {
+                if let Ok(sample) = subscriber.recv_async().await {
+                    info!("Received message: {}", sample);
+                    if let Ok(message) = TryInto::<String>::try_into(&sample.value) {
+                        info!("Message: {}", message);
+                        let lidar_command_on = message.to_lowercase().ends_with("on");
+                        if lidar_command_on {
+                            info!("Starting scan");
+                            lidar_service_controller.set_active(true);
+                        } else {
+                            info!("Stopping scan");
+                            lidar_service_controller.set_active(false);
+                        }
                     } else {
-                        info!("Stopping scan");
-                        should_lidar_run.store(false, Ordering::Relaxed);
+                        warn!("Failed to parse message: {:?}", sample.value);
                     }
-                } else {
-                    warn!("Failed to parse message: {:?}", sample.value);
                 }
             }
         }
@@ -101,6 +127,7 @@ pub async fn start_lidar_driver(
 
     tokio::spawn(async move {
         let mut scan_counter = 0;
+        let mut high_give_detector = high_give_detector;
         while let Some(mut scan) = scan_receiver.recv().await {
             let capture_time = SystemTime::now();
             scan_counter += 1;
@@ -110,6 +137,8 @@ pub async fn start_lidar_driver(
             }
 
             sort_scan(&mut scan).unwrap();
+
+            high_give_detector.process_scan(&scan).await;
 
             // point cloud
             let projected_scan = scan
@@ -151,7 +180,7 @@ pub async fn start_lidar_driver(
         }
     });
 
-    Ok(())
+    Ok(lidar_service_controller)
 }
 
 fn system_time_to_proto_time(time: &SystemTime) -> Timestamp {
@@ -167,34 +196,35 @@ fn system_time_to_proto_time(time: &SystemTime) -> Timestamp {
 fn start_lidar_driver_internal(
     port: &str,
     start_with_lidar_running: bool,
-) -> anyhow::Result<(Receiver<Vec<ScanPoint>>, Arc<AtomicBool>)> {
+) -> anyhow::Result<(Receiver<Vec<ScanPoint>>, LidarServiceController)> {
     let (scan_sender, scan_receiver) = channel(10);
-    let should_lidar_run = Arc::new(AtomicBool::new(start_with_lidar_running));
-
+    let lidar_service_controller = LidarServiceController::new(start_with_lidar_running);
     thread::spawn({
         let port = port.to_owned();
-        let should_lidar_run = Arc::clone(&should_lidar_run);
+        let lidar_service_controller = lidar_service_controller.clone();
         move || loop {
-            if let Err(err) = lidar_loop(&port, scan_sender.clone(), should_lidar_run.clone()) {
+            if let Err(err) =
+                lidar_loop(&port, scan_sender.clone(), lidar_service_controller.clone())
+            {
                 error!("Lidar loop error: {}", err);
                 thread::sleep(Duration::from_secs(1));
             }
         }
     });
 
-    Ok((scan_receiver, should_lidar_run))
+    Ok((scan_receiver, lidar_service_controller))
 }
 
 fn lidar_loop(
     port: &str,
     scan_sender: Sender<Vec<ScanPoint>>,
-    should_lidar_run: Arc<AtomicBool>,
+    lidar_service_controller: LidarServiceController,
 ) -> anyhow::Result<()> {
     let mut lidar = RplidarDevice::open_port(port)?;
     // start with this flag opposite of desired so that we set the lidar to correct start
-    let mut lidar_running = !should_lidar_run.load(Ordering::Relaxed);
+    let mut lidar_running = !lidar_service_controller.is_active();
     loop {
-        match should_lidar_run.load(Ordering::Relaxed) {
+        match lidar_service_controller.is_active() {
             true => {
                 if !lidar_running {
                     lidar.start_motor()?;
@@ -208,7 +238,10 @@ fn lidar_loop(
                     }
                     Err(err) => match err {
                         RposError::OperationTimeout => continue,
-                        _ => info!("Error: {:?}", err),
+                        _ => {
+                            error!("Lidar failed with: {:?}", err);
+                            return Err(err.into());
+                        }
                     },
                 }
             }

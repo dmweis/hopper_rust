@@ -8,6 +8,7 @@ pub mod walking;
 use crate::body_controller::motor_controller::{HexapodCompliance, HexapodMotorSpeed};
 use crate::error::{HopperError, HopperResult};
 use crate::hexapod::LegFlags;
+use crate::high_five::{HighFiveCommand, HighFiveDetector};
 use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
     IkControllable,
@@ -21,6 +22,7 @@ use nalgebra::{Point3, UnitQuaternion, Vector3};
 use std::collections::VecDeque;
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
+use tokio::sync::mpsc::Receiver;
 use tokio::sync::Mutex;
 use tokio::time;
 use tokio::{spawn, task::JoinHandle};
@@ -48,6 +50,7 @@ impl MotionController {
     pub async fn new(
         ik_controller: Box<dyn IkControllable>,
         control_loop_rate_tracker: RateTracker,
+        high_five_receiver: Receiver<HighFiveCommand>,
     ) -> HopperResult<Self> {
         let (command_sender, receiver) = last_message_channel::latest_message_channel();
         let command = MotionControllerCommand::default();
@@ -59,6 +62,7 @@ impl MotionController {
             receiver,
             blocking_command_receiver,
             control_loop_rate_tracker,
+            high_five_receiver,
         )
         .await?;
 
@@ -203,6 +207,7 @@ struct MotionControllerLoop {
     dance_moves: VecDeque<DanceMove>,
     control_loop_rate_tracker: RateTracker,
     was_single_leg_mode: bool,
+    high_five_receiver: Receiver<HighFiveCommand>,
 }
 
 impl MotionControllerLoop {
@@ -211,6 +216,7 @@ impl MotionControllerLoop {
         command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
         blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
         control_loop_rate_tracker: RateTracker,
+        high_five_receiver: Receiver<HighFiveCommand>,
     ) -> HopperResult<Self> {
         let last_written_pose = ik_controller.read_leg_positions().await?;
         Ok(Self {
@@ -230,6 +236,7 @@ impl MotionControllerLoop {
             dance_moves: VecDeque::new(),
             control_loop_rate_tracker,
             was_single_leg_mode: false,
+            high_five_receiver,
         })
     }
 
@@ -588,6 +595,16 @@ impl MotionControllerLoop {
                         continue;
                     }
                 }
+            }
+
+            let high_five_command = self.high_five_receiver.try_recv();
+            if let Ok(high_five_command) = high_five_command {
+                HighFiveDetector::execute_high_five(
+                    &mut self.ik_controller,
+                    self.base_relaxed.to_owned(),
+                    high_five_command,
+                )
+                .await?;
             }
 
             self.handle_body_state_transition().await?;
