@@ -597,16 +597,6 @@ impl MotionControllerLoop {
                 }
             }
 
-            let high_five_command = self.high_five_receiver.try_recv();
-            if let Ok(high_five_command) = high_five_command {
-                HighFiveDetector::execute_high_five(
-                    &mut self.ik_controller,
-                    self.base_relaxed.to_owned(),
-                    high_five_command,
-                )
-                .await?;
-            }
-
             self.handle_body_state_transition().await?;
 
             if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
@@ -622,6 +612,17 @@ impl MotionControllerLoop {
 
             // only walk if standing
             if self.state == BodyState::Standing {
+                // only do high fives if standing
+                let high_five_command = self.high_five_receiver.try_recv();
+                if let Ok(high_five_command) = high_five_command {
+                    HighFiveDetector::execute_high_five(
+                        &mut self.ik_controller,
+                        self.base_relaxed.to_owned(),
+                        high_five_command,
+                    )
+                    .await?;
+                }
+
                 if let Some(single_leg_command) = self.command.single_leg_mode_command {
                     // single leg mode
                     let new_position = single_leg_command_handler(
