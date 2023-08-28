@@ -1588,6 +1588,7 @@ dependencies = [
  "fnv",
  "gilrs-core",
  "log",
+ "serde",
  "uuid",
  "vec_map",
 ]
@@ -1605,6 +1606,7 @@ dependencies = [
  "libudev-sys",
  "log",
  "nix 0.26.2",
+ "serde",
  "uuid",
  "vec_map",
  "wasm-bindgen",
@@ -1856,7 +1858,7 @@ dependencies = [
 
 [[package]]
 name = "hopper_rust"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "anyhow",
  "approx 0.5.1",

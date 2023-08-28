@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.3.8"
+version = "0.3.9"
 
 [package.metadata.deb]
 assets = [
@@ -42,7 +42,7 @@ required-features = ["visualizer"]
 
 [features]
 audio = ["rodio", "azure_tts"]
-default = ["visualizer", "audio"]
+default = ["visualizer", "audio", "gilrs"]
 visualizer = ["kiss3d", "gilrs"]
 
 [dependencies]
@@ -83,7 +83,7 @@ rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "ma
 
 v4l = "0.14.0"
 
-gilrs = {version = "0.10", optional = true}
+gilrs = {version = "0.10", optional = true, features = ["serde-serialize"]}
 kiss3d = {optional = true, version = "0.35"}
 last-message-channel = {branch = "main", git = "https://github.com/dmweis/last-message-channel"}
 mint = "0.5"

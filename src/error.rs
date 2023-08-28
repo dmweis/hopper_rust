@@ -45,6 +45,8 @@ pub enum HopperError {
     HopperFaceError(#[from] hopper_face::LedControllerError),
     #[error("Number of values doesn't align with number of selected legs {0} {1}")]
     WrongNumberOfLogs(usize, usize),
+    #[error("Gilrs error {0:?}")]
+    GilrsError(String),
 }
 
 impl HopperError {

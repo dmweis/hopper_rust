@@ -8,6 +8,7 @@ User=hopper
 DynamicUser=yes
 SupplementaryGroups=audio
 SupplementaryGroups=video
+SupplementaryGroups=input
 StateDirectory=hopper
 CacheDirectory=hopper
 Type=simple

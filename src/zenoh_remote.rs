@@ -8,10 +8,12 @@ use crate::motion_controller::walking::{DEFAULT_STEP_HEIGHT, DEFAULT_STEP_TIME};
 use crate::motion_controller::{self, SingleLegCommand};
 use crate::{error::HopperError, motion_controller::walking::MoveCommand};
 use chrono::{DateTime, Utc};
+use gilrs::{GilrsBuilder, PowerInfo};
 use nalgebra::{UnitQuaternion, Vector2, Vector3};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use std::{collections::BTreeMap, sync::Arc};
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::*;
 use zenoh::prelude::r#async::*;
 
@@ -50,6 +52,8 @@ pub async fn simple_zenoh_controller(
         .await
         .map_err(HopperError::ZenohError)?;
 
+    let mut controller_reader = start_controller_reader();
+
     let mut last_gamepad_message: Option<InputMessage> = None;
 
     let mut gamepad_controller = GamepadController::default();
@@ -80,7 +84,13 @@ pub async fn simple_zenoh_controller(
             gamepad_message = gamepad_subscriber.recv_async() => {
                 trace!("got new gamepad message");
                 let gamepad_message = gamepad_message?;
-                gamepad_controller.handle_gamepad_command(gamepad_message, controller, &mut last_gamepad_message).await?;
+                gamepad_controller.handle_gamepad_command_zenoh(gamepad_message, controller, &mut last_gamepad_message).await?;
+            }
+            controller_message = controller_reader.recv() => {
+                trace!("got new controller message");
+                if let Some(controller_message) = controller_message {
+                    gamepad_controller.handle_gamepad_command(controller_message, controller, &mut last_gamepad_message).await?;
+                }
             }
             _ = tokio::signal::ctrl_c() => {
                 info!("Got ctrl-c");
@@ -196,7 +206,7 @@ impl GamepadController {
         Ok(())
     }
 
-    async fn handle_gamepad_command(
+    async fn handle_gamepad_command_zenoh(
         &mut self,
         gamepad_message: zenoh::sample::Sample,
         controller: &mut motion_controller::MotionController,
@@ -204,7 +214,16 @@ impl GamepadController {
     ) -> anyhow::Result<()> {
         let gamepad_message: String = gamepad_message.value.try_into()?;
         let gamepad_message: InputMessage = serde_json::from_str(&gamepad_message)?;
+        self.handle_gamepad_command(gamepad_message, controller, last_gamepad_message)
+            .await
+    }
 
+    async fn handle_gamepad_command(
+        &mut self,
+        gamepad_message: InputMessage,
+        controller: &mut motion_controller::MotionController,
+        last_gamepad_message: &mut Option<InputMessage>,
+    ) -> anyhow::Result<()> {
         if gamepad_message.gamepads.len() != 1 {
             warn!("Expected 1 gamepad, got {}", gamepad_message.gamepads.len());
             return Ok(());
@@ -451,14 +470,14 @@ fn is_button_down(button: Button, gamepad_message: &InputMessage) -> bool {
         .unwrap_or_default()
 }
 
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 #[allow(unused)]
 pub struct InputMessage {
     gamepads: BTreeMap<usize, GamepadMessage>,
     time: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 #[allow(unused)]
 pub struct GamepadMessage {
     name: String,
@@ -470,9 +489,7 @@ pub struct GamepadMessage {
     last_event_time: DateTime<Utc>,
 }
 
-impl GamepadMessage {}
-
-#[derive(Debug, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
 pub enum Button {
     South,
     East,
@@ -496,7 +513,60 @@ pub enum Button {
     Unknown,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
+impl Button {
+    pub fn all_gilrs_buttons() -> &'static [gilrs::ev::Button] {
+        &[
+            gilrs::ev::Button::South,
+            gilrs::ev::Button::East,
+            gilrs::ev::Button::North,
+            gilrs::ev::Button::West,
+            gilrs::ev::Button::C,
+            gilrs::ev::Button::Z,
+            gilrs::ev::Button::LeftTrigger,
+            gilrs::ev::Button::LeftTrigger2,
+            gilrs::ev::Button::RightTrigger,
+            gilrs::ev::Button::RightTrigger2,
+            gilrs::ev::Button::Select,
+            gilrs::ev::Button::Start,
+            gilrs::ev::Button::Mode,
+            gilrs::ev::Button::LeftThumb,
+            gilrs::ev::Button::RightThumb,
+            gilrs::ev::Button::DPadUp,
+            gilrs::ev::Button::DPadDown,
+            gilrs::ev::Button::DPadLeft,
+            gilrs::ev::Button::DPadRight,
+        ]
+    }
+}
+
+impl From<gilrs::ev::Button> for Button {
+    fn from(value: gilrs::ev::Button) -> Self {
+        match value {
+            gilrs::ev::Button::South => Button::South,
+            gilrs::ev::Button::East => Button::East,
+            gilrs::ev::Button::North => Button::North,
+            gilrs::ev::Button::West => Button::West,
+            gilrs::ev::Button::C => Button::C,
+            gilrs::ev::Button::Z => Button::Z,
+            gilrs::ev::Button::LeftTrigger => Button::LeftTrigger,
+            gilrs::ev::Button::LeftTrigger2 => Button::LeftTrigger2,
+            gilrs::ev::Button::RightTrigger => Button::RightTrigger,
+            gilrs::ev::Button::RightTrigger2 => Button::RightTrigger2,
+            gilrs::ev::Button::Select => Button::Select,
+            gilrs::ev::Button::Start => Button::Start,
+            gilrs::ev::Button::Mode => Button::Mode,
+            gilrs::ev::Button::LeftThumb => Button::LeftThumb,
+            gilrs::ev::Button::RightThumb => Button::RightThumb,
+            gilrs::ev::Button::DPadUp => Button::DPadUp,
+            gilrs::ev::Button::DPadDown => Button::DPadDown,
+            gilrs::ev::Button::DPadLeft => Button::DPadLeft,
+            gilrs::ev::Button::DPadRight => Button::DPadRight,
+            gilrs::ev::Button::Unknown => Button::Unknown,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
 pub enum Axis {
     LeftStickX,
     LeftStickY,
@@ -507,6 +577,22 @@ pub enum Axis {
     DPadX,
     DPadY,
     Unknown,
+}
+
+impl From<gilrs::ev::Axis> for Axis {
+    fn from(value: gilrs::ev::Axis) -> Self {
+        match value {
+            gilrs::ev::Axis::LeftStickX => Axis::LeftStickX,
+            gilrs::ev::Axis::LeftStickY => Axis::LeftStickY,
+            gilrs::ev::Axis::LeftZ => Axis::LeftZ,
+            gilrs::ev::Axis::RightStickX => Axis::RightStickX,
+            gilrs::ev::Axis::RightStickY => Axis::RightStickY,
+            gilrs::ev::Axis::RightZ => Axis::RightZ,
+            gilrs::ev::Axis::DPadX => Axis::DPadX,
+            gilrs::ev::Axis::DPadY => Axis::DPadY,
+            gilrs::ev::Axis::Unknown => Axis::Unknown,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -562,4 +648,118 @@ pub struct WalkingConfigMsg {
     max_yaw_rate_deg: Option<f32>,
     #[serde(default)]
     aggressive_leg_lift: Option<bool>,
+}
+
+fn start_controller_reader() -> Receiver<InputMessage> {
+    let (tx, rx) = channel(10);
+    std::thread::spawn(move || {
+        let mut sender = tx;
+        loop {
+            if let Err(err) = controller_reader(&mut sender) {
+                error!("Error in controller reader: {}", err);
+            }
+        }
+    });
+    rx
+}
+
+fn controller_reader(sender: &mut Sender<InputMessage>) -> HopperResult<()> {
+    info!("Starting gamepad reader");
+
+    let mut gilrs = GilrsBuilder::new()
+        .with_default_filters(true)
+        .build()
+        .map_err(|err| HopperError::GilrsError(err.to_string()))?;
+
+    info!("{} gamepad(s) found", gilrs.gamepads().count());
+    for (_id, gamepad) in gilrs.gamepads() {
+        info!("{} is {:?}", gamepad.name(), gamepad.power_info());
+    }
+
+    let mut message_data = InputMessage {
+        gamepads: BTreeMap::new(),
+        time: std::time::SystemTime::now().into(),
+    };
+
+    loop {
+        while let Some(gilrs_event) = gilrs.next_event() {
+            let gamepad_id: usize = gilrs_event.id.into();
+            let gamepad_data = message_data.gamepads.entry(gamepad_id).or_default();
+
+            gamepad_data.last_event_time = std::time::SystemTime::now().into();
+            match gilrs_event.event {
+                gilrs::EventType::ButtonPressed(button, _) => {
+                    *gamepad_data
+                        .button_down_event_counter
+                        .entry(button.into())
+                        .or_default() += 1;
+                }
+                gilrs::EventType::ButtonReleased(button, _) => {
+                    *gamepad_data
+                        .button_up_event_counter
+                        .entry(button.into())
+                        .or_default() += 1;
+                }
+                gilrs::EventType::AxisChanged(axis, value, _) => {
+                    gamepad_data.axis_state.insert(axis.into(), value);
+                }
+                gilrs::EventType::Connected => {
+                    gamepad_data.connected = true;
+                    let power_info = gilrs
+                        .connected_gamepad(gilrs_event.id)
+                        .map(|gamepad| gamepad.power_info())
+                        .unwrap_or(PowerInfo::Unknown);
+                    info!(
+                        "Gamepad {} - {} : {:?} connected",
+                        gamepad_id, gamepad_data.name, power_info
+                    )
+                }
+                gilrs::EventType::Disconnected => {
+                    gamepad_data.connected = false;
+                    warn!(
+                        "Gamepad {} - {} disconnected",
+                        gamepad_id, gamepad_data.name
+                    )
+                }
+                _ => {}
+            }
+        }
+
+        if let Some((gamepad_id, gamepad)) = gilrs.gamepads().next() {
+            let gamepad_id: usize = gamepad_id.into();
+            let gamepad_data = message_data.gamepads.entry(gamepad_id).or_default();
+
+            gamepad_data.connected = gamepad.is_connected();
+            gamepad_data.name = gamepad.name().to_string();
+
+            if gamepad.is_connected() {
+                for button in Button::all_gilrs_buttons() {
+                    gamepad_data
+                        .button_pressed
+                        .insert(Button::from(*button), gamepad.is_pressed(*button));
+                }
+
+                // should we also get stick values here or use events?
+                // let x = gamepad.value(gilrs::Axis::LeftStickY);
+                // let x = if x.abs() > 0.2 { x } else { 0.0 };
+            }
+        }
+
+        message_data.time = std::time::SystemTime::now().into();
+
+        if !message_data.gamepads.is_empty() {
+            match sender.try_send(message_data.clone()) {
+                Ok(()) => (),
+                Err(tokio::sync::mpsc::error::TrySendError::Full(_)) => {
+                    warn!("Controller reader queue is full");
+                }
+                Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
+                    error!("Controller reader queue is closed");
+                    panic!("Controller reader queue is closed");
+                }
+            }
+        }
+
+        std::thread::sleep(Duration::from_millis(50));
+    }
 }
