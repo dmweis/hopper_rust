@@ -157,6 +157,7 @@ struct GamepadController {
     single_leg_foot: LegFlags,
     feet_iterator: std::iter::Cycle<std::vec::IntoIter<LegFlags>>,
     height_offset: f32,
+    last_gamepad_event_time: DateTime<Utc>,
 }
 
 impl Default for GamepadController {
@@ -180,6 +181,7 @@ impl Default for GamepadController {
             single_leg_foot: LegFlags::LEFT_FRONT,
             feet_iterator,
             height_offset: 0.0,
+            last_gamepad_event_time: Utc::now(),
         }
     }
 }
@@ -220,48 +222,53 @@ impl GamepadController {
 
     async fn handle_gamepad_command(
         &mut self,
-        gamepad_message: InputMessage,
+        input_message: InputMessage,
         controller: &mut motion_controller::MotionController,
-        last_gamepad_message: &mut Option<InputMessage>,
+        last_input_message: &mut Option<InputMessage>,
     ) -> anyhow::Result<()> {
-        if gamepad_message.gamepads.len() != 1 {
-            warn!("Expected 1 gamepad, got {}", gamepad_message.gamepads.len());
+        let (index, gamepad_message) = input_message
+            .gamepads
+            .iter()
+            .max_by_key(|(_, gamepad)| gamepad.last_event_time)
+            .unwrap();
+
+        // skip outdated messages
+        if gamepad_message.last_event_time <= self.last_gamepad_event_time {
             return Ok(());
         }
+        self.last_gamepad_event_time = gamepad_message.last_event_time;
+
+        let last_gamepad_message = last_input_message
+            .as_ref()
+            .and_then(|input_message| input_message.gamepads.get(index));
 
         let a_pressed = was_button_pressed_since_last_time(
             Button::South,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         );
-        let b_pressed = was_button_pressed_since_last_time(
-            Button::East,
-            &gamepad_message,
-            last_gamepad_message,
-        );
+        let b_pressed =
+            was_button_pressed_since_last_time(Button::East, gamepad_message, last_gamepad_message);
         let y_pressed = was_button_pressed_since_last_time(
             Button::North,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         );
-        let x_pressed = was_button_pressed_since_last_time(
-            Button::West,
-            &gamepad_message,
-            last_gamepad_message,
-        );
+        let x_pressed =
+            was_button_pressed_since_last_time(Button::West, gamepad_message, last_gamepad_message);
         let select_pressed = was_button_pressed_since_last_time(
             Button::Select,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         );
         let start_pressed = was_button_pressed_since_last_time(
             Button::Start,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         );
         let lt_pressed_since_last = was_button_pressed_since_last_time(
             Button::LeftTrigger2,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         );
 
@@ -270,17 +277,14 @@ impl GamepadController {
             info!("Switching to single leg foot {:?}", self.single_leg_foot);
         }
 
-        if was_button_pressed_since_last_time(
-            Button::DPadUp,
-            &gamepad_message,
-            last_gamepad_message,
-        ) {
+        if was_button_pressed_since_last_time(Button::DPadUp, gamepad_message, last_gamepad_message)
+        {
             self.height_offset += 0.01;
             info!("Increasing height offset to {}", self.height_offset);
         }
         if was_button_pressed_since_last_time(
             Button::DPadDown,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         ) {
             self.height_offset -= 0.01;
@@ -288,7 +292,7 @@ impl GamepadController {
         }
         if was_button_pressed_since_last_time(
             Button::DPadRight,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         ) {
             self.height_offset = 0.0;
@@ -297,7 +301,7 @@ impl GamepadController {
 
         if was_button_pressed_since_last_time(
             Button::DPadLeft,
-            &gamepad_message,
+            gamepad_message,
             last_gamepad_message,
         ) {
             let high_five_controller =
@@ -314,10 +318,10 @@ impl GamepadController {
         // clamp
         self.height_offset = self.height_offset.max(-0.03).min(0.05);
 
-        let lb_pressed = is_button_down(Button::LeftTrigger, &gamepad_message);
-        let rb_pressed = is_button_down(Button::RightTrigger, &gamepad_message);
-        let lt_pressed = is_button_down(Button::LeftTrigger2, &gamepad_message);
-        let rt_pressed = is_button_down(Button::RightTrigger2, &gamepad_message);
+        let lb_pressed = is_button_down(Button::LeftTrigger, gamepad_message);
+        let rb_pressed = is_button_down(Button::RightTrigger, gamepad_message);
+        let lt_pressed = is_button_down(Button::LeftTrigger2, gamepad_message);
+        let rt_pressed = is_button_down(Button::RightTrigger2, gamepad_message);
 
         if a_pressed {
             info!("Setting stance to standing");
@@ -341,31 +345,31 @@ impl GamepadController {
 
         if lb_pressed {
             // translation mode
-            let x = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
-            let y = get_axis(Axis::LeftStickX, &gamepad_message) * 0.05;
-            let pitch = -(get_axis(Axis::RightStickY, &gamepad_message) * 10.0).to_radians();
-            let yaw = (get_axis(Axis::RightStickX, &gamepad_message) * 10.0).to_radians();
+            let x = -get_axis(Axis::LeftStickY, gamepad_message) * 0.05;
+            let y = get_axis(Axis::LeftStickX, gamepad_message) * 0.05;
+            let pitch = -(get_axis(Axis::RightStickY, gamepad_message) * 10.0).to_radians();
+            let yaw = (get_axis(Axis::RightStickX, gamepad_message) * 10.0).to_radians();
 
             let translation = Vector3::new(x, y, 0.0);
             let rotation = UnitQuaternion::from_euler_angles(0.0, pitch, yaw);
             controller.set_transformation(translation, rotation);
         } else if rb_pressed {
             // translation mode 2
-            let x = -get_axis(Axis::LeftStickY, &gamepad_message) * 0.05;
-            let z = -get_axis(Axis::RightStickY, &gamepad_message) * 0.05;
-            let roll = (get_axis(Axis::LeftStickX, &gamepad_message) * 10.0).to_radians();
-            let yaw = (get_axis(Axis::RightStickX, &gamepad_message) * 10.0).to_radians();
+            let x = -get_axis(Axis::LeftStickY, gamepad_message) * 0.05;
+            let z = -get_axis(Axis::RightStickY, gamepad_message) * 0.05;
+            let roll = (get_axis(Axis::LeftStickX, gamepad_message) * 10.0).to_radians();
+            let yaw = (get_axis(Axis::RightStickX, gamepad_message) * 10.0).to_radians();
 
             let translation = Vector3::new(x, 0.0, z);
             let rotation = UnitQuaternion::from_euler_angles(roll, 0.0, yaw);
             controller.set_transformation(translation, rotation);
         } else if rt_pressed {
             // walking mode
-            let x = get_axis(Axis::LeftStickY, &gamepad_message)
+            let x = get_axis(Axis::LeftStickY, gamepad_message)
                 * self.walking_config.max_step_distance_m;
-            let y = -get_axis(Axis::LeftStickX, &gamepad_message)
+            let y = -get_axis(Axis::LeftStickX, gamepad_message)
                 * self.walking_config.max_step_distance_m;
-            let yaw = -get_axis(Axis::RightStickX, &gamepad_message)
+            let yaw = -get_axis(Axis::RightStickX, gamepad_message)
                 * self.walking_config.max_yaw_rate_deg.to_radians();
 
             let move_command = MoveCommand::with_optional_fields(
@@ -382,9 +386,9 @@ impl GamepadController {
             );
             controller.set_command(move_command);
         } else if lt_pressed {
-            let x = get_axis(Axis::LeftStickY, &gamepad_message) * 0.07;
-            let y = -get_axis(Axis::LeftStickX, &gamepad_message) * 0.07;
-            let z = get_axis(Axis::RightStickY, &gamepad_message) * 0.07;
+            let x = get_axis(Axis::LeftStickY, gamepad_message) * 0.07;
+            let y = -get_axis(Axis::LeftStickX, gamepad_message) * 0.07;
+            let z = get_axis(Axis::RightStickY, gamepad_message) * 0.07;
 
             controller.set_single_leg_command(SingleLegCommand::new(
                 self.single_leg_foot,
@@ -405,68 +409,46 @@ impl GamepadController {
             ));
         }
 
-        *last_gamepad_message = Some(gamepad_message);
+        *last_input_message = Some(input_message);
         Ok(())
     }
 }
 
 fn was_button_pressed_since_last_time(
     button: Button,
-    gamepad_message: &InputMessage,
-    last_gamepad_message: &Option<InputMessage>,
+    gamepad_message: &GamepadMessage,
+    last_gamepad_message: Option<&GamepadMessage>,
 ) -> bool {
     let last_gamepad_message = match last_gamepad_message {
         Some(last_gamepad_message) => last_gamepad_message,
         None => return false,
     };
     let button_down_event_counter = gamepad_message
-        .gamepads
-        .values()
-        .next()
-        .map(|gamepad| {
-            gamepad
-                .button_down_event_counter
-                .get(&button)
-                .cloned()
-                .unwrap_or_default()
-        })
+        .button_down_event_counter
+        .get(&button)
+        .cloned()
         .unwrap_or_default();
     let last_button_down_event_counter = last_gamepad_message
-        .gamepads
-        .values()
-        .next()
-        .map(|gamepad| {
-            gamepad
-                .button_down_event_counter
-                .get(&button)
-                .cloned()
-                .unwrap_or_default()
-        })
+        .button_down_event_counter
+        .get(&button)
+        .cloned()
         .unwrap_or_default();
     button_down_event_counter > last_button_down_event_counter
 }
 
-fn get_axis(axis: Axis, gamepad_message: &InputMessage) -> f32 {
+fn get_axis(axis: Axis, gamepad_message: &GamepadMessage) -> f32 {
     gamepad_message
-        .gamepads
-        .values()
-        .next()
-        .map(|gamepad| gamepad.axis_state.get(&axis).cloned().unwrap_or_default())
+        .axis_state
+        .get(&axis)
+        .cloned()
         .unwrap_or_default()
 }
 
-fn is_button_down(button: Button, gamepad_message: &InputMessage) -> bool {
+fn is_button_down(button: Button, gamepad_message: &GamepadMessage) -> bool {
     gamepad_message
-        .gamepads
-        .values()
-        .next()
-        .map(|gamepad| {
-            gamepad
-                .button_pressed
-                .get(&button)
-                .cloned()
-                .unwrap_or_default()
-        })
+        .button_pressed
+        .get(&button)
+        .cloned()
         .unwrap_or_default()
 }
 
