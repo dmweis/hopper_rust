@@ -230,16 +230,21 @@ impl GamepadController {
         controller: &mut motion_controller::MotionController,
         last_input_message: &mut Option<InputMessage>,
     ) -> anyhow::Result<()> {
-        let (index, gamepad_message) = input_message
+        let found = input_message
             .gamepads
             .iter()
-            .max_by_key(|(_, gamepad)| gamepad.last_event_time)
-            .unwrap();
+            .max_by_key(|(_, gamepad)| gamepad.last_event_time);
+
+        let (index, gamepad_message) = if let Some((index, gamepad_message)) = found {
+            (index, gamepad_message)
+        } else {
+            return Ok(());
+        };
 
         // skip outdated messages
         if gamepad_message.last_event_time <= self.last_gamepad_event_time {
             return Ok(());
-        }
+        };
         self.last_gamepad_event_time = gamepad_message.last_event_time;
 
         let last_gamepad_message = last_input_message
