@@ -15,6 +15,7 @@ pub mod motion_controller;
 pub mod speech;
 pub mod udp_remote;
 pub mod utilities;
+pub mod zenoh_consts;
 pub mod zenoh_face_controller;
 mod zenoh_pose_publisher;
 pub mod zenoh_remote;

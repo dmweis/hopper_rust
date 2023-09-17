@@ -1,5 +1,9 @@
 use crate::error::HopperError;
 use crate::speech::SpeechService;
+use crate::zenoh_consts::{
+    SPEECH_PLAY_SOUND_RANDOM_SUBSCRIBER, SPEECH_PLAY_SOUND_SUBSCRIBER,
+    SPEECH_SAY_ASTROMECH_RANDOM_SUBSCRIBER, SPEECH_SAY_ASTROMECH_SUBSCRIBER, SPEECH_SAY_SUBSCRIBER,
+};
 use std::sync::Arc;
 use tokio::{select, sync::Mutex};
 use tracing::*;
@@ -11,31 +15,31 @@ pub async fn start_speech_controller(
     zenoh_session: Arc<Session>,
 ) -> anyhow::Result<()> {
     let say_command_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/speech/say")
+        .declare_subscriber(SPEECH_SAY_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let say_astromech_command_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/speech/astromech")
+        .declare_subscriber(SPEECH_SAY_ASTROMECH_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let random_astromech_command = zenoh_session
-        .declare_subscriber("hopper/command/speech/astromech/random")
+        .declare_subscriber(SPEECH_SAY_ASTROMECH_RANDOM_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let play_sound_command_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/speech/play_sound")
+        .declare_subscriber(SPEECH_PLAY_SOUND_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let random_sound_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/speech/play_sound/random")
+        .declare_subscriber(SPEECH_PLAY_SOUND_RANDOM_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;

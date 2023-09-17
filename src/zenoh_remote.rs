@@ -6,6 +6,10 @@ use crate::ioc_container::IocContainer;
 use crate::lidar::LidarServiceController;
 use crate::motion_controller::walking::{DEFAULT_STEP_HEIGHT, DEFAULT_STEP_TIME};
 use crate::motion_controller::{self, SingleLegCommand};
+use crate::zenoh_consts::{
+    BODY_MOTOR_SPEED_SUBSCRIBER, COMPLIANCE_SLOPE_SUBSCRIBER, HOPPER_WALKING_CONFIG_PUBLISHER,
+    REMOTE_CONTROL_SUBSCRIBER, STANCE_SUBSCRIBER, WALKING_CONFIG_SUBSCRIBER,
+};
 use crate::{error::HopperError, motion_controller::walking::MoveCommand};
 use chrono::{DateTime, Utc};
 use gilrs::{GilrsBuilder, PowerInfo};
@@ -23,31 +27,31 @@ pub async fn simple_zenoh_controller(
 ) -> anyhow::Result<()> {
     info!("Starting simple zenoh controller");
     let stance_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/simple/stance")
+        .declare_subscriber(STANCE_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let gamepad_subscriber = zenoh_session
-        .declare_subscriber("remote-control/gamepad")
+        .declare_subscriber(REMOTE_CONTROL_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let walking_config_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/simple/walking_config")
+        .declare_subscriber(WALKING_CONFIG_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let compliance_slope_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/config/compliance_slope")
+        .declare_subscriber(COMPLIANCE_SLOPE_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let body_motor_speed_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/config/motor_speed")
+        .declare_subscriber(BODY_MOTOR_SPEED_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
@@ -201,7 +205,7 @@ impl GamepadController {
     async fn publish_walking_config(&self, zenoh_session: &zenoh::Session) -> HopperResult<()> {
         let message = serde_yaml::to_string(&self.walking_config).unwrap();
         zenoh_session
-            .put("hopper/status/simple/walking_config", message)
+            .put(HOPPER_WALKING_CONFIG_PUBLISHER, message)
             .res()
             .await
             .map_err(HopperError::ZenohError)?;

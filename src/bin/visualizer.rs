@@ -3,6 +3,7 @@ use clap::Parser;
 use gilrs::Gilrs;
 use hopper_rust::error::HopperError;
 use hopper_rust::utilities::RateTracker;
+use hopper_rust::zenoh_consts::HOPPER_CONTROL_LOOP_RATE;
 use hopper_rust::{hopper_body_config, motion_controller, utilities};
 use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;
@@ -66,7 +67,7 @@ async fn main() -> Result<()> {
     let visualizer = motion_controller::visualizer::HopperVisualizer::new(args.ground);
 
     let motion_controller_rate_publisher = zenoh_session
-        .declare_publisher("hopper/metrics/control_loop/rate")
+        .declare_publisher(HOPPER_CONTROL_LOOP_RATE)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;

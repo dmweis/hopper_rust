@@ -1,4 +1,7 @@
 use crate::error::{HopperError, HopperResult};
+use crate::zenoh_consts::{
+    FACE_ANIMATION_SUBSCRIBER, FACE_COLOR_SUBSCRIBER, FACE_RANDOM_SUBSCRIBER,
+};
 use hopper_face::FaceController;
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -13,19 +16,19 @@ pub async fn start_face_controller(
     zenoh_session: Arc<Session>,
 ) -> anyhow::Result<()> {
     let face_color_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/face/color")
+        .declare_subscriber(FACE_COLOR_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let face_animation_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/face/animation")
+        .declare_subscriber(FACE_ANIMATION_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let random_face_animation_subscriber = zenoh_session
-        .declare_subscriber("hopper/command/face/random")
+        .declare_subscriber(FACE_RANDOM_SUBSCRIBER)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;

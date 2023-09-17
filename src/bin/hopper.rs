@@ -14,6 +14,7 @@ use hopper_rust::{
     motion_controller,
     speech::SpeechService,
     utilities::{self, RateTracker},
+    zenoh_consts::{HOPPER_CONTROL_LOOP_RATE, HOPPER_MOTOR_RATE, HOPPER_POSE_FRAMES},
     zenoh_face_controller::start_face_controller,
     zenoh_remote::simple_zenoh_controller,
     zenoh_speech_controller::start_speech_controller,
@@ -108,7 +109,7 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|| Ok(hopper_body_config::HopperConfig::default()))?;
 
     let motor_rate_publisher = zenoh_session
-        .declare_publisher("hopper/metrics/motor/rate")
+        .declare_publisher(HOPPER_MOTOR_RATE)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
@@ -121,7 +122,7 @@ async fn main() -> Result<()> {
     .unwrap();
 
     let pose_publisher = zenoh_session
-        .declare_publisher("hopper/pose/frames")
+        .declare_publisher(HOPPER_POSE_FRAMES)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
@@ -138,7 +139,7 @@ async fn main() -> Result<()> {
     ik_controller.set_motor_speed(1023).await?;
 
     let motion_controller_rate_publisher = zenoh_session
-        .declare_publisher("hopper/metrics/control_loop/rate")
+        .declare_publisher(HOPPER_CONTROL_LOOP_RATE)
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
