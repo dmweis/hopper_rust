@@ -2,6 +2,7 @@ use super::audio_cache::AudioCache;
 use super::audio_repository::AudioRepository;
 use super::AzureVoiceStyle;
 use crate::error::{HopperError, HopperResult};
+use anyhow::Context;
 use sha2::{Digest, Sha256};
 use std::{fs::File, io::Cursor, thread};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -30,6 +31,15 @@ fn hash_azure_tts(
     hasher.update(serde_json::to_string(&voice.gender).unwrap());
     let hashed = hasher.finalize();
     format!("{}-{:x}", voice.name, hashed)
+}
+
+fn hash_eleven_labs_tts(text: &str, voice_id: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(text);
+    hasher.update(voice_id);
+    hasher.update(AZURE_FORMAT_VERSION.to_be_bytes());
+    let hashed = hasher.finalize();
+    format!("eleven-{:x}", hashed)
 }
 
 enum AudioPlayerCommand {
@@ -128,6 +138,8 @@ fn create_player() -> Sender<AudioPlayerCommand> {
 
 pub struct SpeechService {
     azure_speech_client: azure_tts::VoiceService,
+    eleven_labs_client: super::eleven_labs_client::ElevenLabsTtsClient,
+    voice_name_to_voice_id_table: std::collections::HashMap<String, String>,
     audio_cache: Option<AudioCache>,
     audio_repository: Option<AudioRepository>,
     azure_voice: azure_tts::VoiceSettings,
@@ -140,14 +152,24 @@ pub trait Playable: std::io::Read + std::io::Seek + Send + Sync {}
 impl Playable for Cursor<Vec<u8>> {}
 impl Playable for File {}
 
+/// voice Freya
+const DEFAULT_ELEVEN_LABS_VOICE_ID: &str = "jsCqWAovK2LkecY7zXl4";
+
 impl SpeechService {
-    pub fn new(
+    pub async fn new(
         azure_subscription_key: String,
+        eleven_labs_api_key: String,
         cache_dir_path: Option<String>,
         audio_repository_path: Option<String>,
-    ) -> HopperResult<SpeechService> {
+    ) -> anyhow::Result<SpeechService> {
         let azure_speech_client =
             azure_tts::VoiceService::new(&azure_subscription_key, azure_tts::Region::uksouth);
+
+        let eleven_labs_client =
+            super::eleven_labs_client::ElevenLabsTtsClient::new(eleven_labs_api_key);
+
+        let voices = eleven_labs_client.voices().await?;
+        let voice_name_to_voice_id_table = voices.name_to_id_table();
 
         let audio_cache = match cache_dir_path {
             Some(path) => Some(AudioCache::new(path)?),
@@ -163,6 +185,8 @@ impl SpeechService {
 
         Ok(SpeechService {
             azure_speech_client,
+            eleven_labs_client,
+            voice_name_to_voice_id_table,
             audio_cache,
             audio_repository,
             azure_voice: azure_tts::EnUsVoices::SaraNeural.to_voice_settings(),
@@ -319,6 +343,48 @@ impl SpeechService {
         // This cloning here is lame...
         self.say_azure_with_voice(text, &self.azure_voice.clone(), style)
             .await
+    }
+
+    pub async fn say_eleven_with_default_voice(&mut self, text: &str) -> anyhow::Result<()> {
+        self.say_eleven_with_voice_id(text, DEFAULT_ELEVEN_LABS_VOICE_ID)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn say_eleven(&mut self, text: &str, voice_name: &str) -> anyhow::Result<()> {
+        let voice_id = self
+            .voice_name_to_voice_id_table
+            .get(voice_name)
+            .context("Unknown voice")?
+            .clone();
+        info!("Using voice id {} for voice {}", voice_id, voice_name);
+        self.say_eleven_with_voice_id(text, &voice_id).await?;
+        Ok(())
+    }
+
+    pub async fn say_eleven_with_voice_id(
+        &mut self,
+        text: &str,
+        voice_id: &str,
+    ) -> anyhow::Result<()> {
+        let sound: Box<dyn Playable> = if let Some(ref audio_cache) = self.audio_cache {
+            let file_key = hash_eleven_labs_tts(text, voice_id);
+            if let Some(file) = audio_cache.get(&file_key) {
+                info!("Using cached value with key {}", file_key);
+                file
+            } else {
+                info!("Writing new file with key {}", file_key);
+                let data = self.eleven_labs_client.tts(text, voice_id).await?;
+                let sound: Box<dyn Playable> = Box::new(Cursor::new(data.to_vec()));
+                audio_cache.set(&file_key, data.to_vec())?;
+                sound
+            }
+        } else {
+            let data = self.eleven_labs_client.tts(text, voice_id).await?;
+            Box::new(Cursor::new(data.to_vec()))
+        };
+        self.play(sound).await;
+        Ok(())
     }
 
     pub async fn pause(&self) {

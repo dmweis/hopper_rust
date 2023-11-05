@@ -3,6 +3,7 @@ base:
   face_port: "/dev/hopper_face"
 tts_service_config:
   azure_api_key: ""
+  eleven_labs_api_key: ""
   cache_dir_path: "/var/cache/hopper/audio_cache"
   audio_repository_path: "/etc/hopper/audio/"
 lidar:

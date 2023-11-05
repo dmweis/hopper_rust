@@ -1836,13 +1836,14 @@ dependencies = [
 
 [[package]]
 name = "hopper_rust"
-version = "0.3.11"
+version = "0.3.12"
 dependencies = [
  "anyhow",
  "approx 0.5.1",
  "async-trait",
  "azure_tts",
  "bitflags 2.3.3",
+ "bytes",
  "chrono",
  "clap 4.3.19",
  "config",
@@ -1862,6 +1863,7 @@ dependencies = [
  "prost-reflect-build",
  "prost-types",
  "rand",
+ "reqwest",
  "rodio",
  "rplidar_driver",
  "serde",

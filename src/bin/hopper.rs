@@ -85,13 +85,20 @@ async fn main() -> Result<()> {
 
     let mut speech_service = SpeechService::new(
         app_config.tts_service_config.azure_api_key,
+        app_config.tts_service_config.eleven_labs_api_key,
         app_config.tts_service_config.cache_dir_path,
         app_config.tts_service_config.audio_repository_path,
     )
+    .await
     .unwrap();
 
     speech_service
         .play_sound("hopper_sounds/windows_startup.wav")
+        .await
+        .unwrap();
+
+    speech_service
+        .say_eleven("Hopper ready", "Natasha")
         .await
         .unwrap();
 

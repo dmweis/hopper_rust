@@ -8,6 +8,9 @@ mod audio_repository;
 mod speech_service;
 
 #[cfg(feature = "audio")]
+mod eleven_labs_client;
+
+#[cfg(feature = "audio")]
 pub use speech_service::SpeechService;
 
 #[cfg(not(feature = "audio"))]

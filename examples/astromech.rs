@@ -17,7 +17,10 @@ struct Args {
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    let mut speech_service = SpeechService::new(String::from(""), None, Some(args.audio)).unwrap();
+    let mut speech_service =
+        SpeechService::new(String::from(""), String::from(""), None, Some(args.audio))
+            .await
+            .unwrap();
 
     if let Some(text) = args.text {
         speech_service.say_astromech(&text).await.unwrap();
