@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.3.10"
+version = "0.3.11"
 
 [package.metadata.deb]
 assets = [
@@ -88,7 +88,11 @@ kiss3d = {optional = true, version = "0.35"}
 last-message-channel = {branch = "main", git = "https://github.com/dmweis/last-message-channel"}
 mint = "0.5"
 nalgebra = {version = "0.30", features = ["serde-serialize"]}
-rodio = {git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true}
+
+# fix weird bug with mp3 not playing from start
+rodio = { version = "0.17",  optional = true}
+# rodio = {git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true}
+
 tokio = {version = "1.6", features = [
   "macros",
   "rt-multi-thread",
@@ -96,8 +100,6 @@ tokio = {version = "1.6", features = [
   "process",
   "signal",
 ], default-features = false}
-# fix weird bug with mp3 not playing from start
-# rodio = "0.15"
 
 # zenoh
 zenoh = "0.7.2-rc"

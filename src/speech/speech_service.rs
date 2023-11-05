@@ -7,6 +7,8 @@ use std::{fs::File, io::Cursor, thread};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::*;
 
+use rodio::cpal::traits::{DeviceTrait, HostTrait};
+
 // Used to invalidate old cache
 const AZURE_FORMAT_VERSION: u32 = 3;
 
@@ -38,9 +40,45 @@ enum AudioPlayerCommand {
     Volume(f32),
 }
 
+/// Select the first audio output device that contains "CARD=Device" in its name
+/// This is a hack to select the USB audio device on the raspberry pi
+/// Based on https://github.com/RustAudio/rodio/blob/4973f330e07be8480c35f145c9da84dc60e2184c/src/stream.rs#L57
+fn select_output_device() -> anyhow::Result<(rodio::OutputStream, rodio::OutputStreamHandle)> {
+    let host_ids = rodio::cpal::available_hosts();
+    for host_id in host_ids {
+        let host = rodio::cpal::host_from_id(host_id).unwrap();
+        info!("Found audio host {}", host_id.name());
+        let output_devices = host.devices().unwrap();
+        for device in output_devices {
+            let device_name = device.name().unwrap_or_default();
+            if device_name.contains("CARD=Device") {
+                let default_stream = rodio::OutputStream::try_from_device(&device);
+
+                return Ok(default_stream.or_else(|original_err| {
+                    // default device didn't work, try other ones
+                    let mut devices = match rodio::cpal::default_host().output_devices() {
+                        Ok(d) => d,
+                        Err(_) => return Err(original_err),
+                    };
+
+                    devices
+                        .find_map(|d| rodio::OutputStream::try_from_device(&d).ok())
+                        .ok_or(original_err)
+                })?);
+            }
+        }
+    }
+    anyhow::bail!("No audio output device found");
+}
+
 fn audio_player_loop(receiver: &mut Receiver<AudioPlayerCommand>) -> HopperResult<()> {
-    let (_output_stream, output_stream_handle) = rodio::OutputStream::try_default()
-        .map_err(|_| HopperError::FailedToCreateAudioOutputStream)?;
+    // This is the default output stream, but it doesn't ALWAYS work on the raspberry pi
+    // let (_output_stream, output_stream_handle) = rodio::OutputStream::try_default()
+    //     .map_err(|_| HopperError::FailedToCreateAudioOutputStream)?;
+
+    let (_output_stream, output_stream_handle) =
+        select_output_device().map_err(|_| HopperError::FailedToCreateAudioOutputStream)?;
+
     let sink = rodio::Sink::try_new(&output_stream_handle)
         .map_err(|_| HopperError::FailedToCreateAudioSink)?;
     while let Some(command) = receiver.blocking_recv() {
