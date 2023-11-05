@@ -11,12 +11,6 @@ RELEASE_CROSS_BINARY_PATH := ./target/${TARGET_ARCH}/release/hopper
 
 TARGET_PATH := ~/src/hopper_rust/
 
-VERSION_TAG = $(shell cargo get version)
-
-MENDER_ARTIFACT_NAME ?= hopper-$(VERSION_TAG)
-MENDER_ARTIFACT_FILE ?= $(MENDER_ARTIFACT_NAME).mender
-MENDER_ARTIFACT_OUTPUT_PATH := target/mender
-
 .PHONY: build
 build:
 	cargo build \
@@ -42,28 +36,10 @@ deploy: build-deb
 	@echo "Sending $(DEB_BUILD_PATH) to $(TARGET_HOST):$(REMOTE_DIRECTORY)"
 	rsync -avz --delete $(DEB_BUILD_PATH) $(TARGET_HOST):$(REMOTE_DIRECTORY)
 
-.PHONY: build-artifact
-build-artifact: build-deb
-	mkdir -p $(MENDER_ARTIFACT_OUTPUT_PATH)
-	rm -f $(MENDER_ARTIFACT_OUTPUT_PATH)/*
-	mender-artifact write module-image --type deb \
-		--software-name hopper_rust \
-		--software-version $(VERSION_TAG) \
-		--artifact-name $(MENDER_ARTIFACT_NAME) \
-		--device-type raspberrypi4 \
-		--device-type raspberrypi3 \
-		--output-path $(MENDER_ARTIFACT_OUTPUT_PATH)/$(MENDER_ARTIFACT_FILE) \
-		--file $(DEB_BUILD_PATH) \
-		--script mender/ArtifactInstall_Enter_00
-
-.PHONY: publish-mender-artifact
-publish-mender-artifact: build-artifact
-	mender-cli artifacts --server https://hosted.mender.io upload $(MENDER_ARTIFACT_OUTPUT_PATH)/$(MENDER_ARTIFACT_FILE)
-
 .PHONY: install-dependencies
 install-dependencies:
 	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev libclang-dev protobuf-compiler -y
-	cargo install cargo-deb cargo-get
+	cargo install cargo-deb
 
 .PHONY: build-docker
 build-docker:

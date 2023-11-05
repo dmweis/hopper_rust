@@ -1,5 +1,0 @@
-#!/bin/sh
-
-mosquitto_pub -h homepi.local -t home_speak/say -m '{"content":"Updating hopper","style":"Cheerful","template":false}'
-
-exit 0
