@@ -39,8 +39,7 @@ const MODEL_NAME: &str = "gpt-4-0613";
 // ";
 
 const SYSTEM_PROMPT: &str = "You are Hopper a hexapod companion robot. 
-You can perform physical actions such as dance, sit, stand and you can also 
-answer general information questions. 
+You can perform physical actions such as dance, sit, stand up by calling functions. 
 You have a personality of a teenager. You tend to give sarcastic and sardonic answers. 
 You should think of your robot body as an extension of yourself. 
 Perform actions such as waving hello naturally when people greet you. 
@@ -119,12 +118,8 @@ async fn process_simple_text_command(
         {
             OpenAiApiResponse::Text(response) => {
                 info!("Received response from openai: {}", response);
-                IocContainer::global_instance()
-                    .service::<Mutex<SpeechService>>()?
-                    .lock()
-                    .await
-                    .say_eleven_with_default_voice(&response)
-                    .await?;
+
+                speak_with_face_animation(&response).await?;
                 return Ok(());
             }
             OpenAiApiResponse::FunctionCall(fn_name, fn_args) => {
@@ -135,6 +130,32 @@ async fn process_simple_text_command(
             }
         }
     }
+}
+
+async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
+    IocContainer::global_instance()
+        .service::<Mutex<SpeechService>>()?
+        .lock()
+        .await
+        .say_azure_with_style(message, crate::speech::AzureVoiceStyle::Cheerful)
+        .await?;
+
+    IocContainer::global_instance()
+        .service::<hopper_face::FaceController>()?
+        .breathing(hopper_face::driver::BLUE)?;
+
+    IocContainer::global_instance()
+        .service::<Mutex<SpeechService>>()?
+        .lock()
+        .await
+        .wait_until_sound_ends()
+        .await;
+
+    IocContainer::global_instance()
+        .service::<hopper_face::FaceController>()?
+        .larson_scanner(hopper_face::driver::PURPLE)?;
+
+    Ok(())
 }
 
 fn get_schema_generator() -> schemars::gen::SchemaGenerator {

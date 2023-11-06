@@ -53,6 +53,7 @@ enum AudioPlayerCommand {
     Resume,
     Stop,
     Volume(f32),
+    WaitUntilSoundEnds(tokio::sync::oneshot::Sender<()>),
 }
 
 /// Select the first audio output device that contains "CARD=Device" in its name
@@ -119,6 +120,12 @@ fn audio_player_loop(receiver: &mut Receiver<AudioPlayerCommand>) -> HopperResul
             AudioPlayerCommand::Volume(volume) => {
                 info!("Settings volume to {}", volume);
                 sink.set_volume(volume)
+            }
+            AudioPlayerCommand::WaitUntilSoundEnds(sender) => {
+                info!("Waiting until sound ends");
+                sink.sleep_until_end();
+                info!("Sound ended");
+                _ = sender.send(());
             }
         }
     }
@@ -402,6 +409,15 @@ impl SpeechService {
             .await
             .map_err(HopperError::ZenohError)?;
         Ok(())
+    }
+
+    pub async fn wait_until_sound_ends(&self) {
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        self.audio_sender
+            .send(AudioPlayerCommand::WaitUntilSoundEnds(sender))
+            .await
+            .unwrap();
+        _ = receiver.await;
     }
 
     pub async fn pause(&self) {
