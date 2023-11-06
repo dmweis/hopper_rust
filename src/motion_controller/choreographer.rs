@@ -1,5 +1,7 @@
 use nalgebra::{UnitQuaternion, Vector3};
 use rand::{seq::SliceRandom, Rng};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tokio::sync::Mutex;
 use tracing::info;
@@ -15,16 +17,21 @@ use crate::{
     speech::SpeechService,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum DanceMove {
+    /// Perform a random dance move
     Random,
+    /// Do a little happy shake to express that you are happy and content
     HappyDance,
     SadEmote,
+    /// Wave hello with your paw
     WaveHi,
+    /// Wave hello with your paw while playing a sound bite
+    WaveHiWithSound,
+    /// Lift front legs and roar threateningly
     Roar,
     CombatCry,
-    BoredLookingAround,
-    BoredStretch,
 }
 
 pub struct Choreographer<'a> {
@@ -63,18 +70,17 @@ impl<'a> Choreographer<'a> {
         };
         match dance {
             DanceMove::Random => unreachable!(),
-            DanceMove::WaveHi => self.wave_hi().await?,
+            DanceMove::WaveHi => self.wave_hi(false).await?,
+            DanceMove::WaveHiWithSound => self.wave_hi(true).await?,
             DanceMove::SadEmote => self.sad_emote().await?,
             DanceMove::HappyDance => self.happy_dance().await?,
             DanceMove::Roar => self.roar().await?,
             DanceMove::CombatCry => self.combat_cry().await?,
-            DanceMove::BoredLookingAround => (),
-            DanceMove::BoredStretch => (),
         }
         Ok(())
     }
 
-    async fn wave_hi(&mut self) -> HopperResult<()> {
+    async fn wave_hi(&mut self, play_audio: bool) -> HopperResult<()> {
         let mut interval = tokio::time::interval(TICK_DURATION);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
@@ -141,12 +147,14 @@ impl<'a> Choreographer<'a> {
             }
         }
 
-        IocContainer::global_instance()
-            .service::<Mutex<SpeechService>>()?
-            .lock()
-            .await
-            .play_sound("Turret_turret_active_1.wav")
-            .await?;
+        if play_audio {
+            IocContainer::global_instance()
+                .service::<Mutex<SpeechService>>()?
+                .lock()
+                .await
+                .play_sound("Turret_turret_active_1.wav")
+                .await?;
+        }
 
         for _ in 0..count {
             for step in paw_b.to_move_towards_iter(&paw_a, WAVE_SPEED) {
