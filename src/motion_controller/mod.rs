@@ -136,6 +136,12 @@ impl MotionController {
         self.command.single_leg_mode_command = None;
         self.command_sender.send(self.command.clone()).unwrap();
     }
+
+    pub fn create_dance_service(&self) -> DanceService {
+        DanceService {
+            blocking_command_sender: self.blocking_command_sender.clone(),
+        }
+    }
 }
 
 impl Drop for MotionController {
@@ -143,6 +149,18 @@ impl Drop for MotionController {
         self.blocking_command_sender
             .send(BlockingCommand::Terminate)
             .expect("Failed to send termination command");
+    }
+}
+
+pub struct DanceService {
+    blocking_command_sender: mpsc::Sender<BlockingCommand>,
+}
+
+impl DanceService {
+    pub fn start_sequence(&self, dance_move: DanceMove) {
+        self.blocking_command_sender
+            .send(BlockingCommand::Choreography(dance_move))
+            .unwrap();
     }
 }
 

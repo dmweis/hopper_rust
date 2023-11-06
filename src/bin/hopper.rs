@@ -153,6 +153,9 @@ async fn main() -> Result<()> {
     )
     .await?;
 
+    let dance_service = motion_controller.create_dance_service();
+    ioc_container.register(dance_service);
+
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
     start_openai_controller(&app_config.openai.api_key, zenoh_session.clone()).await?;
@@ -166,15 +169,15 @@ async fn main() -> Result<()> {
         let speech_service = ioc_container.service::<TokioMutex<SpeechService>>()?;
         let mut speech_service = speech_service.lock().await;
 
-        speech_service
-            .play_sound("hopper_sounds/windows_startup.wav")
-            .await
-            .unwrap();
+        // speech_service
+        //     .play_sound("hopper_sounds/windows_startup.wav")
+        //     .await
+        //     .unwrap();
         speech_service
             .say_eleven_with_default_voice("Hopper ready")
             .await
             .unwrap();
-        speech_service.say_home_speak("Hopper ready").await.unwrap();
+        // speech_service.say_home_speak("Hopper ready").await.unwrap();
     }
 
     simple_zenoh_controller(&mut motion_controller, zenoh_session.clone()).await?;
