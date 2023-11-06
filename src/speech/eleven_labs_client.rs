@@ -115,6 +115,8 @@ impl ElevenLabsTtsClient {
 
         let body = TtsRequest {
             text: text.to_owned(),
+            // switch to better model that is slower
+            // model_id: Some(String::from("eleven_multilingual_v2")),
             model_id: Some(String::from("eleven_multilingual_v1")),
             voice_settings: Some(VoiceSettings {
                 similarity_boost: 0.5,

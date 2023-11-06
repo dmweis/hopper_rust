@@ -20,11 +20,37 @@ use zenoh::prelude::r#async::*;
 use crate::{
     error::HopperError,
     ioc_container::IocContainer,
+    motion_controller::{DanceMove, DanceService},
     speech::SpeechService,
     zenoh_consts::{HOPPER_OPENAI_COMMAND_SUBSCRIBER, STANCE_SUBSCRIBER},
 };
 
-const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
+// const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
+const MODEL_NAME: &str = "gpt-4-0613";
+
+// const SYSTEM_PROMPT: &str = "You are Hopper. A hexapod companion robot.
+// You can perform physical actions such as dance, sit, stand and you can also
+// answer general information questions.
+// You have a sarcastic and humorous personality.
+// You should think of your body as an extension of yourself.
+// And perform actions such as waving hello naturally when people say hello to you.
+// Take time to think about what physical fit each request best.
+// Do not narrate your actions.
+// ";
+
+const SYSTEM_PROMPT: &str = "You are Hopper a hexapod companion robot. 
+You can perform physical actions such as dance, sit, stand and you can also 
+answer general information questions. 
+You have a personality of a teenager. You tend to give sarcastic and sardonic answers. 
+You should think of your robot body as an extension of yourself. 
+Perform actions such as waving hello naturally when people greet you. 
+Take time to think about what physical action best fits each message. 
+Do not narrate your actions. 
+Give short and concise answers. 
+";
+
+// Add to make robot speak slovak
+// You can also speak slovak.
 
 pub async fn start_openai_controller(
     openai_api_key: &str,
@@ -33,19 +59,19 @@ pub async fn start_openai_controller(
     let config = OpenAIConfig::new().with_api_key(openai_api_key);
     let client = Client::with_config(config);
 
-    let mut chat_gpt_conversation = ChatGptConversation::new("", MODEL_NAME);
+    let mut chat_gpt_conversation = ChatGptConversation::new(SYSTEM_PROMPT, MODEL_NAME);
 
     chat_gpt_conversation.add_function::<HopperBodyPoseFuncArgs>(
-        "set_hopper_body_pose",
+        "set_body_pose",
         "set the body pose of the hopper hexapod robot",
         Arc::new(HopperBodyPoseFuncCallback {
             zenoh_session: zenoh_session.clone(),
         }),
     )?;
 
-    chat_gpt_conversation.add_function::<HopperDanceFunc>(
-        "do_hopper_dance",
-        "perform dance move with the hopper hexapod robot",
+    chat_gpt_conversation.add_function::<HopperDanceFuncArgs>(
+        "execute_hopper_dance",
+        "perform a dance move with your body. Can be useful to express emotion or react to what user is saying",
         Arc::new(HopperDanceFuncCallback),
     )?;
 
@@ -62,35 +88,10 @@ pub async fn start_openai_controller(
                     text_command_msg = simple_text_command_subscriber.recv_async() => {
                         let text_command_msg = text_command_msg?;
                         let text_command: String = text_command_msg.value.try_into()?;
-                        info!("Received openai text command {}", text_command);
-
-                        let mut chat_gpt_conversation_clone = chat_gpt_conversation.clone();
-
-                        let mut command = Some(text_command.as_str());
-                        // get responses
-
-                        loop {
-                            match chat_gpt_conversation_clone
-                            .next_message_stream(command.take(), &client)
-                            .await? {
-                        OpenAiApiResponse::Text(response) => {
-                            info!("Received response from openai: {}", response);
-                            IocContainer::global_instance()
-                                .service::<Mutex<SpeechService>>()?
-                                .lock()
-                                .await
-                                .say_azure(&response)
-                                .await?;
-                            break Ok(());
+                        process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone()).await?;
                         }
-                        OpenAiApiResponse::FunctionCall(fn_name, fn_args) => {
-                            info!("Received function call from openai: {}({})", fn_name, fn_args);
-                        }
-
-                        }
-
-                        }}
                 }
+                Ok(())
             }
             .await;
             if let Err(e) = res {
@@ -98,8 +99,42 @@ pub async fn start_openai_controller(
             }
         }
     });
-
     Ok(())
+}
+
+async fn process_simple_text_command(
+    text_command: &str,
+    mut conversation: ChatGptConversation,
+    open_ai_client: Client<OpenAIConfig>,
+) -> anyhow::Result<()> {
+    info!("Received openai text command {}", text_command);
+
+    let mut command = Some(text_command);
+    // get responses
+
+    loop {
+        match conversation
+            .next_message_stream(command.take(), &open_ai_client)
+            .await?
+        {
+            OpenAiApiResponse::Text(response) => {
+                info!("Received response from openai: {}", response);
+                IocContainer::global_instance()
+                    .service::<Mutex<SpeechService>>()?
+                    .lock()
+                    .await
+                    .say_eleven_with_default_voice(&response)
+                    .await?;
+                return Ok(());
+            }
+            OpenAiApiResponse::FunctionCall(fn_name, fn_args) => {
+                info!(
+                    "Received function call from openai: {}({})",
+                    fn_name, fn_args
+                );
+            }
+        }
+    }
 }
 
 fn get_schema_generator() -> schemars::gen::SchemaGenerator {
@@ -354,9 +389,9 @@ impl AsyncCallback for HopperBodyPoseFuncCallback {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct HopperDanceFunc {
+pub struct HopperDanceFuncArgs {
     /// dance move to perform
-    pub dance_move: HopperDance,
+    pub dance_move: DanceMove,
 }
 
 struct HopperDanceFuncCallback;
@@ -365,18 +400,16 @@ struct HopperDanceFuncCallback;
 impl AsyncCallback for HopperDanceFuncCallback {
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
         info!("do_hopper_dance called with args: {}", args);
+
+        let hopper_dance_move: HopperDanceFuncArgs = serde_json::from_str(args)?;
+
+        IocContainer::global_instance()
+            .service::<DanceService>()?
+            .start_sequence(hopper_dance_move.dance_move);
+
         let result = json!({
             "success": true
         });
         Ok(result)
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum HopperDance {
-    HappyDance,
-    HighFive,
-    Hurray,
-    HandShake,
 }
