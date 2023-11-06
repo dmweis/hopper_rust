@@ -24,3 +24,5 @@ camera:
   image_topic: "hopper/camera/image"
   image_width: 320
   image_height: 240
+openai:
+  api_key: "API_KEY"

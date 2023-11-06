@@ -37,6 +37,7 @@ pub struct HopperConfig {
     pub lidar: LidarConfig,
     pub zenoh: HopperZenohConfig,
     pub camera: CameraConfig,
+    pub openai: HopperOpenAiConfig,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -51,6 +52,12 @@ pub struct TtsServiceConfig {
     pub eleven_labs_api_key: String,
     pub cache_dir_path: Option<String>,
     pub audio_repository_path: Option<String>,
+}
+
+/// Named like this because OpenAiConfig is already a type in the openai crate
+#[derive(Deserialize, Debug, Clone)]
+pub struct HopperOpenAiConfig {
+    pub api_key: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

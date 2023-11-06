@@ -25,3 +25,6 @@ pub const DIAGNOSTIC_METRICS_JSON: &str = "hopper/metrics/diagnostic/json";
 pub const HOPPER_MOTOR_RATE: &str = "hopper/metrics/motor/rate";
 pub const HOPPER_POSE_FRAMES: &str = "hopper/pose/frames";
 pub const HOPPER_CONTROL_LOOP_RATE: &str = "hopper/metrics/control_loop/rate";
+
+// openai
+pub const HOPPER_OPENAI_COMMAND_SUBSCRIBER: &str = "hopper/openai/simple/text/command";

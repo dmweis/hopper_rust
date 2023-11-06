@@ -12,6 +12,7 @@ use hopper_rust::{
     lidar::start_lidar_driver,
     monitoring::start_monitoring_loop,
     motion_controller,
+    openai::start_openai_controller,
     speech::SpeechService,
     utilities::{self, RateTracker},
     zenoh_consts::{HOPPER_CONTROL_LOOP_RATE, HOPPER_MOTOR_RATE, HOPPER_POSE_FRAMES},
@@ -84,7 +85,7 @@ async fn main() -> Result<()> {
 
     start_monitoring_loop(zenoh_session.clone()).await?;
 
-    let mut speech_service = SpeechService::new(
+    let speech_service = SpeechService::new(
         app_config.tts_service_config.azure_api_key,
         app_config.tts_service_config.eleven_labs_api_key,
         app_config.tts_service_config.cache_dir_path,
@@ -92,18 +93,6 @@ async fn main() -> Result<()> {
     )
     .await
     .unwrap();
-
-    speech_service
-        .play_sound("hopper_sounds/windows_startup.wav")
-        .await
-        .unwrap();
-
-    speech_service
-        .say_eleven_with_default_voice("Hopper ready")
-        .await
-        .unwrap();
-
-    speech_service.say_home_speak("Hopper ready").await.unwrap();
 
     ioc_container.register(TokioMutex::new(speech_service));
 
@@ -166,9 +155,27 @@ async fn main() -> Result<()> {
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
+    start_openai_controller(&app_config.openai.api_key, zenoh_session.clone()).await?;
+
     // hopper_rust::udp_remote::udp_controller_handler(&mut motion_controller)
     //     .await
     //     .unwrap();
+
+    // announce that we are ready
+    {
+        let speech_service = ioc_container.service::<TokioMutex<SpeechService>>()?;
+        let mut speech_service = speech_service.lock().await;
+
+        speech_service
+            .play_sound("hopper_sounds/windows_startup.wav")
+            .await
+            .unwrap();
+        speech_service
+            .say_eleven_with_default_voice("Hopper ready")
+            .await
+            .unwrap();
+        speech_service.say_home_speak("Hopper ready").await.unwrap();
+    }
 
     simple_zenoh_controller(&mut motion_controller, zenoh_session.clone()).await?;
 

@@ -12,6 +12,7 @@ pub mod ioc_container;
 pub mod lidar;
 pub mod monitoring;
 pub mod motion_controller;
+pub mod openai;
 pub mod speech;
 pub mod udp_remote;
 pub mod utilities;

@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.3.12"
+version = "0.3.13"
 
 [package.metadata.deb]
 assets = [
@@ -49,7 +49,6 @@ visualizer = ["kiss3d", "gilrs"]
 
 # Utilities
 anyhow = "1.0"
-async-trait = "0.1"
 bitflags = "2.3.3"
 chrono = {version = "0.4", features = ["serde"]}
 clap = {version = "4", features = ["derive"]}
@@ -62,6 +61,17 @@ thiserror = "1.0"
 walkdir = "2.3.3"
 bytes = "1.4"
 reqwest = {version = "0.11", features = ["json"]}
+
+# async
+futures = "0.3"
+async-trait = "0.1"
+tokio = {version = "1.6", features = [
+  "macros",
+  "rt-multi-thread",
+  "time",
+  "process",
+  "signal",
+], default-features = false}
 
 # logging
 tracing = {version = "0.1", features = ["log"]}
@@ -76,13 +86,15 @@ serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 serde_yaml = "0.9.25"
 toml = "0.7.6"
+schemars = "0.8.12"
+
 
 # other projects
 azure_tts = {git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true}
 dynamixel-driver = {branch = "main", git = "https://github.com/dmweis/dynamixel-driver"}
 hopper_face = {branch = "main", git = "https://github.com/dmweis/hopper_face"}
 rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "main"}
-
+async-openai = {version = "0.15"}
 v4l = "0.14.0"
 
 gilrs = {version = "0.10", optional = true, features = ["serde-serialize"]}
@@ -91,17 +103,10 @@ last-message-channel = {branch = "main", git = "https://github.com/dmweis/last-m
 mint = "0.5"
 nalgebra = {version = "0.30", features = ["serde-serialize"]}
 
-# fix weird bug with mp3 not playing from start
 rodio = { version = "0.17",  optional = true}
+# fix weird bug with mp3 not playing from start
 # rodio = {git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true}
 
-tokio = {version = "1.6", features = [
-  "macros",
-  "rt-multi-thread",
-  "time",
-  "process",
-  "signal",
-], default-features = false}
 
 # zenoh
 zenoh = "0.7.2-rc"
