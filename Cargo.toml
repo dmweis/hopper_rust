@@ -61,6 +61,7 @@ thiserror = "1.0"
 walkdir = "2.3.3"
 bytes = "1.4"
 reqwest = {version = "0.11", features = ["json"]}
+tempdir = "0.3.7"
 
 # async
 futures = "0.3"
@@ -88,7 +89,7 @@ serde_yaml = "0.9.25"
 toml = "0.7.6"
 schemars = "0.8.12"
 cobs-rs = "1.1.1"
-
+base64 = "0.21.0"
 
 # other projects
 azure_tts = {git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true}

@@ -51,10 +51,22 @@ Give short and concise answers.
 // Add to make robot speak slovak
 // You can also speak slovak.
 
+#[derive(Clone)]
+pub struct OpenAiService {
+    sender: tokio::sync::mpsc::Sender<String>,
+}
+
+impl OpenAiService {
+    pub async fn send_command(&self, command: &str) -> anyhow::Result<()> {
+        self.sender.send(command.to_string()).await?;
+        Ok(())
+    }
+}
+
 pub async fn start_openai_controller(
     openai_api_key: &str,
     zenoh_session: Arc<zenoh::Session>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<OpenAiService> {
     let config = OpenAIConfig::new().with_api_key(openai_api_key);
     let client = Client::with_config(config);
 
@@ -80,15 +92,24 @@ pub async fn start_openai_controller(
         .await
         .map_err(HopperError::ZenohError)?;
 
+    let (sender, mut receiver) = tokio::sync::mpsc::channel::<String>(10);
+
     tokio::spawn(async move {
         loop {
             let res: anyhow::Result<()> = async {
                 select! {
                     text_command_msg = simple_text_command_subscriber.recv_async() => {
+                        info!("Received new zenoh text command");
                         let text_command_msg = text_command_msg?;
                         let text_command: String = text_command_msg.value.try_into()?;
                         process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone()).await?;
                         }
+                    text_command = receiver.recv() => {
+                        if let Some(text_command) = text_command {
+                            info!("Received new text command");
+                            process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone()).await?;
+                        }
+                    }
                 }
                 Ok(())
             }
@@ -98,7 +119,10 @@ pub async fn start_openai_controller(
             }
         }
     });
-    Ok(())
+
+    let open_ai_service = OpenAiService { sender };
+
+    Ok(open_ai_service)
 }
 
 async fn process_simple_text_command(

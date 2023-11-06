@@ -28,3 +28,4 @@ pub const HOPPER_CONTROL_LOOP_RATE: &str = "hopper/metrics/control_loop/rate";
 
 // openai
 pub const HOPPER_OPENAI_COMMAND_SUBSCRIBER: &str = "hopper/openai/simple/text/command";
+pub const HOPPER_OPENAI_VOICE_COMMAND_SUBSCRIBER: &str = "z/audio_to_mqtt/windows/simple";

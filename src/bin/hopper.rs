@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
+    audio_transcribe::start_audio_transcribe_service,
     body_controller,
     body_controller::BodyController,
     camera::start_camera,
@@ -158,7 +159,12 @@ async fn main() -> Result<()> {
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
-    start_openai_controller(&app_config.openai.api_key, zenoh_session.clone()).await?;
+    let open_ai_service =
+        start_openai_controller(&app_config.openai.api_key, zenoh_session.clone()).await?;
+
+    ioc_container.register(open_ai_service);
+
+    start_audio_transcribe_service(&app_config.openai.api_key, zenoh_session.clone()).await?;
 
     // hopper_rust::udp_remote::udp_controller_handler(&mut motion_controller)
     //     .await

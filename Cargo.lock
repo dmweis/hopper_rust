@@ -333,7 +333,7 @@ dependencies = [
  "base64 0.21.2",
  "derive_builder",
  "futures",
- "rand",
+ "rand 0.8.5",
  "reqwest",
  "reqwest-eventsource",
  "secrecy",
@@ -465,7 +465,7 @@ dependencies = [
  "getrandom",
  "instant",
  "pin-project-lite",
- "rand",
+ "rand 0.8.5",
  "tokio",
 ]
 
@@ -1520,6 +1520,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fuchsia-cprng"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06f77d526c1a601b7c4cdd98f54b5eaabffc14d5f2f0296febdc7f357c6d3ba"
+
+[[package]]
 name = "fuchsia-zircon"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1951,6 +1957,7 @@ dependencies = [
  "async-openai",
  "async-trait",
  "azure_tts",
+ "base64 0.21.2",
  "bitflags 2.3.3",
  "bytes",
  "chrono",
@@ -1972,7 +1979,7 @@ dependencies = [
  "prost-reflect",
  "prost-reflect-build",
  "prost-types",
- "rand",
+ "rand 0.8.5",
  "reqwest",
  "rodio",
  "rplidar_driver",
@@ -1982,6 +1989,7 @@ dependencies = [
  "serde_yaml",
  "serialport",
  "sha2",
+ "tempdir",
  "thiserror",
  "tokio",
  "toml 0.7.6",
@@ -3002,7 +3010,7 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-traits",
- "rand",
+ "rand 0.8.5",
  "smallvec",
  "zeroize",
 ]
@@ -3810,7 +3818,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8c8bb234e70c863204303507d841e7fa2295e95c822b2bb4ca8ebf57f17b1cb"
 dependencies = [
  "bytes",
- "rand",
+ "rand 0.8.5",
  "ring",
  "rustc-hash",
  "rustls",
@@ -3845,13 +3853,26 @@ dependencies = [
 
 [[package]]
 name = "rand"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "552840b97013b1a26992c11eac34bdd778e464601a4c2054b5f0bff7c6761293"
+dependencies = [
+ "fuchsia-cprng",
+ "libc",
+ "rand_core 0.3.1",
+ "rdrand",
+ "winapi 0.3.9",
+]
+
+[[package]]
+name = "rand"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
  "libc",
  "rand_chacha",
- "rand_core",
+ "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -3861,8 +3882,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core",
+ "rand_core 0.6.4",
 ]
+
+[[package]]
+name = "rand_core"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a6fdeb83b075e8266dcc8762c22776f6877a63111121f5f8c7411e5be7eed4b"
+dependencies = [
+ "rand_core 0.4.2",
+]
+
+[[package]]
+name = "rand_core"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c33a3c44ca05fa6f1807d8e6743f3824e8509beca625669633be0acbdf509dc"
 
 [[package]]
 name = "rand_core"
@@ -3924,6 +3960,15 @@ dependencies = [
  "crossbeam-deque 0.8.3",
  "crossbeam-utils 0.8.16",
  "num_cpus",
+]
+
+[[package]]
+name = "rdrand"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "678054eb77286b51581ba43620cc911abf02758c91f93f479767aed0f90458b2"
+dependencies = [
+ "rand_core 0.3.1",
 ]
 
 [[package]]
@@ -4007,6 +4052,15 @@ name = "regex-syntax"
 version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5ea92a5b6195c6ef2a0295ea818b312502c6fc94dde986c5553242e18fd4ce2"
+
+[[package]]
+name = "remove_dir_all"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
+dependencies = [
+ "winapi 0.3.9",
+]
 
 [[package]]
 name = "reqwest"
@@ -4143,7 +4197,7 @@ dependencies = [
  "num-traits",
  "pkcs1",
  "pkcs8",
- "rand_core",
+ "rand_core 0.6.4",
  "signature",
  "subtle",
  "zeroize",
@@ -4595,7 +4649,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e1788eed21689f9cf370582dfc467ef36ed9c707f073528ddafa8d83e3b8500"
 dependencies = [
  "digest",
- "rand_core",
+ "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -4814,6 +4868,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tempdir"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15f2b5fb00ccdf689e0149d1b1b3c03fead81c2b37735d812fa8bddbbf41b6d8"
+dependencies = [
+ "rand 0.4.6",
+ "remove_dir_all",
 ]
 
 [[package]]
@@ -5169,7 +5233,7 @@ dependencies = [
  "http",
  "httparse",
  "log",
- "rand",
+ "rand 0.8.5",
  "sha1",
  "thiserror",
  "url",
@@ -5208,7 +5272,7 @@ dependencies = [
  "humantime",
  "lazy_static",
  "log",
- "rand",
+ "rand 0.8.5",
  "serde",
  "spin 0.9.8",
 ]
@@ -5932,7 +5996,7 @@ dependencies = [
  "log",
  "ordered-float 3.7.0",
  "petgraph",
- "rand",
+ "rand 0.8.5",
  "regex",
  "rustc_version",
  "serde",
@@ -6033,7 +6097,7 @@ checksum = "41e2b1c3850d7f052daa24823c4b496610d0b150d3624e08d9383d7b9c97714b"
 dependencies = [
  "aes",
  "hmac",
- "rand",
+ "rand 0.8.5",
  "rand_chacha",
  "sha3",
  "zenoh-result",
@@ -6047,7 +6111,7 @@ checksum = "ecf3b237a6d2ac9df0b4204fe5a178ddb586a4a7e7dd73fe680e0cb0517dab86"
 dependencies = [
  "hashbrown 0.13.2",
  "keyed-set",
- "rand",
+ "rand 0.8.5",
  "serde",
  "token-cell",
  "zenoh-result",
@@ -6253,7 +6317,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e52290acad7decbae601bce3b6c394d584c41ca93d948aac27be964eeb38ee48"
 dependencies = [
  "hex",
- "rand",
+ "rand 0.8.5",
  "serde",
  "uhlc",
  "uuid",
@@ -6301,7 +6365,7 @@ dependencies = [
  "log",
  "lz4_flex",
  "paste",
- "rand",
+ "rand 0.8.5",
  "ringbuffer-spsc",
  "rsa",
  "serde",

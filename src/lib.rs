@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+pub mod audio_transcribe;
 pub mod body_controller;
 pub mod camera;
 pub mod configuration;
