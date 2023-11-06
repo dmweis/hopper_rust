@@ -122,9 +122,9 @@ fn audio_player_loop(receiver: &mut Receiver<AudioPlayerCommand>) -> HopperResul
                 sink.set_volume(volume)
             }
             AudioPlayerCommand::WaitUntilSoundEnds(sender) => {
-                info!("Waiting until sound ends");
+                debug!("Waiting until sound ends");
                 sink.sleep_until_end();
-                info!("Sound ended");
+                debug!("Sound ended");
                 _ = sender.send(());
             }
         }

@@ -340,7 +340,7 @@ impl GamepadController {
             controller.start_sequence(motion_controller::DanceMove::HappyDance);
         } else if x_pressed {
             info!("Starting wave");
-            controller.start_sequence(motion_controller::DanceMove::WaveHi);
+            controller.start_sequence(motion_controller::DanceMove::WaveHiWithSound);
         } else if select_pressed {
             info!("Folding");
             controller.set_body_state(motion_controller::BodyState::Folded);

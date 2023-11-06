@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc};
 use tokio::{select, sync::Mutex};
-use tracing::{info, warn};
+use tracing::info;
 use zenoh::prelude::r#async::*;
 
 use crate::{
@@ -106,7 +106,7 @@ async fn process_simple_text_command(
     mut conversation: ChatGptConversation,
     open_ai_client: Client<OpenAIConfig>,
 ) -> anyhow::Result<()> {
-    info!("Received openai text command {}", text_command);
+    info!("Received hopper command {:?}", text_command);
 
     let mut command = Some(text_command);
     // get responses
@@ -116,17 +116,19 @@ async fn process_simple_text_command(
             .next_message_stream(command.take(), &open_ai_client)
             .await?
         {
-            OpenAiApiResponse::Text(response) => {
-                info!("Received response from openai: {}", response);
+            OpenAiApiResponse::AssistantResponse(response) => {
+                info!("Assistant response form ChatGPT: {:?}", response);
 
-                speak_with_face_animation(&response).await?;
+                tokio::spawn(async move {
+                    if let Err(err) = speak_with_face_animation(&response).await {
+                        tracing::error!("Failed to speak with face animation: {}", err);
+                    }
+                });
+
                 return Ok(());
             }
-            OpenAiApiResponse::FunctionCall(fn_name, fn_args) => {
-                info!(
-                    "Received function call from openai: {}({})",
-                    fn_name, fn_args
-                );
+            OpenAiApiResponse::FunctionCallWithNoResponse => {
+                // nothing to do here
             }
         }
     }
@@ -142,7 +144,7 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
 
     IocContainer::global_instance()
         .service::<crate::face::FaceController>()?
-        .speaking(crate::face::driver::PURPLE)?;
+        .speaking(crate::face::driver::CYAN)?;
 
     IocContainer::global_instance()
         .service::<Mutex<SpeechService>>()?
@@ -167,8 +169,8 @@ fn get_schema_generator() -> schemars::gen::SchemaGenerator {
 }
 
 pub enum OpenAiApiResponse {
-    Text(String),
-    FunctionCall(String, String),
+    AssistantResponse(String),
+    FunctionCallWithNoResponse,
 }
 
 #[async_trait]
@@ -225,6 +227,7 @@ impl ChatGptConversation {
     }
 
     async fn call_function(&self, name: &str, args: &str) -> anyhow::Result<serde_json::Value> {
+        info!("Calling function {:?} with args {:?}", name, args);
         let function = self
             .function_table
             .get(name)
@@ -343,10 +346,20 @@ impl ChatGptConversation {
                     self.history.push(function_call_result);
 
                     if !response_content_buffer.is_empty() {
-                        warn!("Function call has response: {}", response_content_buffer)
-                    }
+                        // function calls can also include a response
 
-                    return Ok(OpenAiApiResponse::FunctionCall(fn_name, fn_args));
+                        let added_response = ChatCompletionRequestMessageArgs::default()
+                            .content(&response_content_buffer)
+                            .role(response_role.unwrap_or(Role::Assistant))
+                            .build()?;
+
+                        self.history.push(added_response);
+                        return Ok(OpenAiApiResponse::AssistantResponse(
+                            response_content_buffer,
+                        ));
+                    } else {
+                        return Ok(OpenAiApiResponse::FunctionCallWithNoResponse);
+                    }
                 } else {
                     // other reasons ass message from assistant
                     let added_response = ChatCompletionRequestMessageArgs::default()
@@ -355,13 +368,17 @@ impl ChatGptConversation {
                         .build()?;
 
                     self.history.push(added_response);
-                    return Ok(OpenAiApiResponse::Text(response_content_buffer));
+                    return Ok(OpenAiApiResponse::AssistantResponse(
+                        response_content_buffer,
+                    ));
                 }
             }
         }
 
         // return text anyway even if we don't get an end reason
-        Ok(OpenAiApiResponse::Text(response_content_buffer))
+        Ok(OpenAiApiResponse::AssistantResponse(
+            response_content_buffer,
+        ))
     }
 }
 
@@ -386,8 +403,6 @@ struct HopperBodyPoseFuncCallback {
 #[async_trait]
 impl AsyncCallback for HopperBodyPoseFuncCallback {
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
-        info!("set_hopper_body_pose called with args: {}", args);
-
         let hopper_body_pose_func: HopperBodyPoseFuncArgs = serde_json::from_str(args)?;
 
         let message = match hopper_body_pose_func.body_pose {
@@ -420,8 +435,6 @@ struct HopperDanceFuncCallback;
 #[async_trait]
 impl AsyncCallback for HopperDanceFuncCallback {
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
-        info!("do_hopper_dance called with args: {}", args);
-
         let hopper_dance_move: HopperDanceFuncArgs = serde_json::from_str(args)?;
 
         IocContainer::global_instance()
