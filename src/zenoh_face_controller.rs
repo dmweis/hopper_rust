@@ -1,8 +1,8 @@
 use crate::error::{HopperError, HopperResult};
+use crate::face::FaceController;
 use crate::zenoh_consts::{
     FACE_ANIMATION_SUBSCRIBER, FACE_COLOR_SUBSCRIBER, FACE_RANDOM_SUBSCRIBER,
 };
-use hopper_face::FaceController;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::sync::Arc;
@@ -34,7 +34,7 @@ pub async fn start_face_controller(
         .map_err(HopperError::ZenohError)?;
 
     tokio::spawn(async move {
-        let mut selected_color = hopper_face::driver::PURPLE;
+        let mut selected_color = crate::face::driver::PURPLE;
         let mut selected_animation = String::from("larson_scanner");
 
         loop {
@@ -45,12 +45,13 @@ pub async fn start_face_controller(
                         let color: String = color.value.try_into()?;
                         info!("Received face color command {}", color);
                         match color.to_lowercase().as_str() {
-                            "red" => selected_color = hopper_face::driver::RED,
-                            "green" => selected_color = hopper_face::driver::GREEN,
-                            "blue" => selected_color = hopper_face::driver::BLUE,
-                            "yellow" => selected_color = hopper_face::driver::YELLOW,
-                            "purple" => selected_color = hopper_face::driver::PURPLE,
-                            "off" => selected_color = hopper_face::driver::OFF,
+                            "red" => selected_color = crate::face::driver::RED,
+                            "green" => selected_color = crate::face::driver::GREEN,
+                            "blue" => selected_color = crate::face::driver::BLUE,
+                            "yellow" => selected_color = crate::face::driver::YELLOW,
+                            "purple" => selected_color = crate::face::driver::PURPLE,
+                            "cyan" => selected_color = crate::face::driver::CYAN,
+                            "off" => selected_color = crate::face::driver::OFF,
                             _ => error!("Unknown color {}", color),
                         }
                         set_animation(&face_controller, &selected_animation, selected_color)?;
@@ -81,7 +82,7 @@ pub async fn start_face_controller(
 fn set_animation(
     face_controller: &FaceController,
     animation: &str,
-    color: hopper_face::driver::RGB,
+    color: crate::face::driver::RGB,
 ) -> anyhow::Result<()> {
     match animation.to_lowercase().as_str() {
         "larson_scanner" => face_controller.larson_scanner(color)?,
@@ -93,6 +94,7 @@ fn set_animation(
         "count_down_basic" => face_controller.count_down_basic()?,
         "breathing" => face_controller.breathing(color)?,
         "solid_color" => face_controller.solid_color(color)?,
+        "speaking" => face_controller.speaking(color)?,
         _ => error!("Unknown animation {}", animation),
     }
     Ok(())
@@ -100,7 +102,7 @@ fn set_animation(
 
 fn random_face(face_controller: &Arc<FaceController>) -> HopperResult<()> {
     let mut rng = rand::thread_rng();
-    let random_color = hopper_face::driver::ALL_COLORS.choose(&mut rng).unwrap();
+    let random_color = crate::face::driver::ALL_COLORS.choose(&mut rng).unwrap();
 
     let choice: u8 = rng.gen_range(0..8);
 

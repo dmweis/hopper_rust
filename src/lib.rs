@@ -4,6 +4,7 @@ pub mod body_controller;
 pub mod camera;
 pub mod configuration;
 pub mod error;
+pub mod face;
 mod hexapod;
 pub mod high_five;
 pub mod hopper_body_config;

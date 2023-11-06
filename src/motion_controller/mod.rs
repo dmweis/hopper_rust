@@ -7,6 +7,7 @@ pub mod walking;
 
 use crate::body_controller::motor_controller::{HexapodCompliance, HexapodMotorSpeed};
 use crate::error::{HopperError, HopperResult};
+use crate::face::FaceController;
 use crate::hexapod::LegFlags;
 use crate::high_five::{HighFiveCommand, HighFiveDetector};
 use crate::ik_controller::{
@@ -17,7 +18,6 @@ use crate::ioc_container::IocContainer;
 use crate::speech::SpeechService;
 use crate::utilities::{MpscChannelHelper, RateTracker};
 pub use choreographer::DanceMove;
-use hopper_face::FaceController;
 use nalgebra::{Point3, UnitQuaternion, Vector3};
 use std::collections::VecDeque;
 use std::time::Duration;
@@ -512,7 +512,7 @@ impl MotionControllerLoop {
             (BodyState::Folded, BodyState::Grounded) => {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
-                    .larson_scanner(hopper_face::driver::PURPLE)?;
+                    .larson_scanner(crate::face::driver::PURPLE)?;
                 FoldingManager::new(&mut self.ik_controller)
                     .await?
                     .unfold_on_ground()
@@ -522,7 +522,7 @@ impl MotionControllerLoop {
             (BodyState::Folded, BodyState::Standing) => {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
-                    .larson_scanner(hopper_face::driver::PURPLE)?;
+                    .larson_scanner(crate::face::driver::PURPLE)?;
                 FoldingManager::new(&mut self.ik_controller)
                     .await?
                     .unfold_on_ground()

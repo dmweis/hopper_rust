@@ -60,15 +60,15 @@ async fn main() -> Result<()> {
         .map_err(HopperError::ZenohError)?
         .into_arc();
 
-    let face_controller = hopper_face::FaceController::open(&app_config.base.face_port)?;
-    face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
+    let face_controller = hopper_rust::face::FaceController::open(&app_config.base.face_port)?;
+    face_controller.larson_scanner(hopper_rust::face::driver::PURPLE)?;
 
     let ioc_container = IocContainer::global_instance();
     ioc_container.register(zenoh_session.clone());
 
     ioc_container.register(face_controller);
     start_face_controller(
-        ioc_container.service::<hopper_face::FaceController>()?,
+        ioc_container.service::<hopper_rust::face::FaceController>()?,
         zenoh_session.clone(),
     )
     .await?;

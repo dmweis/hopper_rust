@@ -87,15 +87,17 @@ serde_json = "1.0"
 serde_yaml = "0.9.25"
 toml = "0.7.6"
 schemars = "0.8.12"
+cobs-rs = "1.1.1"
 
 
 # other projects
 azure_tts = {git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true}
 dynamixel-driver = {branch = "main", git = "https://github.com/dmweis/dynamixel-driver"}
-hopper_face = {branch = "main", git = "https://github.com/dmweis/hopper_face"}
+# hopper_face = {branch = "main", git = "https://github.com/dmweis/hopper_face"}
 rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "main"}
 async-openai = {version = "0.15"}
 v4l = "0.14.0"
+serialport = { version = "4.0.1", default-features = false }
 
 gilrs = {version = "0.10", optional = true, features = ["serde-serialize"]}
 kiss3d = {optional = true, version = "0.35"}

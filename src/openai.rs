@@ -25,8 +25,8 @@ use crate::{
     zenoh_consts::{HOPPER_OPENAI_COMMAND_SUBSCRIBER, STANCE_SUBSCRIBER},
 };
 
-// const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
-const MODEL_NAME: &str = "gpt-4-0613";
+const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
+// const MODEL_NAME: &str = "gpt-4-0613";
 
 // const SYSTEM_PROMPT: &str = "You are Hopper. A hexapod companion robot.
 // You can perform physical actions such as dance, sit, stand and you can also
@@ -141,8 +141,8 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
         .await?;
 
     IocContainer::global_instance()
-        .service::<hopper_face::FaceController>()?
-        .breathing(hopper_face::driver::BLUE)?;
+        .service::<crate::face::FaceController>()?
+        .speaking(crate::face::driver::PURPLE)?;
 
     IocContainer::global_instance()
         .service::<Mutex<SpeechService>>()?
@@ -152,8 +152,8 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
         .await;
 
     IocContainer::global_instance()
-        .service::<hopper_face::FaceController>()?
-        .larson_scanner(hopper_face::driver::PURPLE)?;
+        .service::<crate::face::FaceController>()?
+        .larson_scanner(crate::face::driver::PURPLE)?;
 
     Ok(())
 }
