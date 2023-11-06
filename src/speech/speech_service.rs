@@ -1,12 +1,17 @@
 use super::audio_cache::AudioCache;
 use super::audio_repository::AudioRepository;
 use super::AzureVoiceStyle;
-use crate::error::{HopperError, HopperResult};
+use crate::{
+    error::{HopperError, HopperResult},
+    ioc_container::IocContainer,
+};
 use anyhow::Context;
 use sha2::{Digest, Sha256};
-use std::{fs::File, io::Cursor, thread};
+use std::{fs::File, io::Cursor, sync::Arc, thread};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::*;
+use zenoh::prelude::r#async::*;
+use zenoh::Session as ZenohSession;
 
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 
@@ -153,7 +158,7 @@ impl Playable for Cursor<Vec<u8>> {}
 impl Playable for File {}
 
 /// voice Freya
-const DEFAULT_ELEVEN_LABS_VOICE_ID: &str = "jsCqWAovK2LkecY7zXl4";
+const DEFAULT_ELEVEN_LABS_VOICE_NAME: &str = "Natasha";
 
 impl SpeechService {
     pub async fn new(
@@ -346,7 +351,7 @@ impl SpeechService {
     }
 
     pub async fn say_eleven_with_default_voice(&mut self, text: &str) -> anyhow::Result<()> {
-        self.say_eleven_with_voice_id(text, DEFAULT_ELEVEN_LABS_VOICE_ID)
+        self.say_eleven(text, DEFAULT_ELEVEN_LABS_VOICE_NAME)
             .await?;
         Ok(())
     }
@@ -384,6 +389,18 @@ impl SpeechService {
             Box::new(Cursor::new(data.to_vec()))
         };
         self.play(sound).await;
+        Ok(())
+    }
+
+    /// Say using the home speak speaker system
+    pub async fn say_home_speak(&self, text: &str) -> anyhow::Result<()> {
+        IocContainer::global_instance()
+            .service::<Arc<ZenohSession>>()?
+            // hardcoded path for my zenoh to mqtt relay
+            .put("z_home_speak/say/eleven/voice/Natasha", text)
+            .res()
+            .await
+            .map_err(HopperError::ZenohError)?;
         Ok(())
     }
 

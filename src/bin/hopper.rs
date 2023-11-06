@@ -63,6 +63,7 @@ async fn main() -> Result<()> {
     face_controller.larson_scanner(hopper_face::driver::PURPLE)?;
 
     let ioc_container = IocContainer::global_instance();
+    ioc_container.register(zenoh_session.clone());
 
     ioc_container.register(face_controller);
     start_face_controller(
@@ -98,9 +99,11 @@ async fn main() -> Result<()> {
         .unwrap();
 
     speech_service
-        .say_eleven("Hopper ready", "Natasha")
+        .say_eleven_with_default_voice("Hopper ready")
         .await
         .unwrap();
+
+    speech_service.say_home_speak("Hopper ready").await.unwrap();
 
     ioc_container.register(TokioMutex::new(speech_service));
 
