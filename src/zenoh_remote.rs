@@ -723,6 +723,22 @@ fn controller_reader(sender: &mut Sender<InputMessage>) -> HopperResult<()> {
             gamepad_data.connected = gamepad.is_connected();
             gamepad_data.name = gamepad.name().to_string();
 
+            // steam controller hack
+            // Might need to do axis remapping for steam controller here
+            // https://github.com/dmweis/Hopper_ROS/blob/229d373305078640cd88984f12a9368f8ddf2347/hopper_steamcontroller/src/controller_node.py#L37
+            for (axis_code, axis_data) in gamepad.state().axes() {
+                if axis_code.into_u32() == 196625 {
+                    gamepad_data
+                        .axis_state
+                        .insert(Axis::DPadX, axis_data.value());
+                }
+                if axis_code.into_u32() == 196624 {
+                    gamepad_data
+                        .axis_state
+                        .insert(Axis::DPadY, axis_data.value());
+                }
+            }
+
             if gamepad.is_connected() {
                 for button in Button::all_gilrs_buttons() {
                     gamepad_data
