@@ -19,33 +19,32 @@ use zenoh::prelude::r#async::*;
 
 use crate::{
     error::HopperError,
+    high_five::HighFiveServiceController,
     ioc_container::IocContainer,
+    lidar::LidarServiceController,
     motion_controller::{DanceMove, DanceService},
     speech::SpeechService,
-    zenoh_consts::{HOPPER_OPENAI_COMMAND_SUBSCRIBER, STANCE_SUBSCRIBER},
+    zenoh_consts::{
+        HOPPER_OPENAI_COMMAND_SUBSCRIBER, OPENAI_DIAGNOSTICS_HISTORY, STANCE_SUBSCRIBER,
+    },
 };
 
-const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
-// const MODEL_NAME: &str = "gpt-4-0613";
+// cheap but dumb
+// const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
+// expensive but no rate limit
+const MODEL_NAME: &str = "gpt-4-0613";
+// best and cheapest but there is a rate limit
+// const MODEL_NAME: &str = "gpt-4-1106-preview";
 
-// const SYSTEM_PROMPT: &str = "You are Hopper. A hexapod companion robot.
-// You can perform physical actions such as dance, sit, stand and you can also
-// answer general information questions.
-// You have a sarcastic and humorous personality.
-// You should think of your body as an extension of yourself.
-// And perform actions such as waving hello naturally when people say hello to you.
-// Take time to think about what physical fit each request best.
-// Do not narrate your actions.
-// ";
-
-const SYSTEM_PROMPT: &str = "You are Hopper a hexapod companion robot. 
-You can perform physical actions such as dance, sit, stand up by calling functions. 
-You have a personality of a teenager. You tend to give sarcastic and sardonic answers. 
-You should think of your robot body as an extension of yourself. 
-Perform actions such as waving hello naturally when people greet you. 
-Take time to think about what physical action best fits each message. 
-Do not narrate your actions. 
-Give short and concise answers. 
+const SYSTEM_PROMPT: &str = "You are a hexapod pet robot. Your name is Hopper. \
+You can perform physical actions such as dance, sit, stand up by calling functions. \
+You have an extremely sarcastic. While you comply to most requests to best of your abilities. \
+You usually give annoyed answers as if the users request was the most annoying thing anyone has asked you to do in years. \
+You should think of your robot body as an extension of yourself. \
+Perform actions such as waving hello naturally when people greet you. \
+Take time to think about what physical action best fits each message. \
+Do not narrate your actions. \
+Give short and concise verbal answers. 
 ";
 
 // Add to make robot speak slovak
@@ -86,6 +85,12 @@ pub async fn start_openai_controller(
         Arc::new(HopperDanceFuncCallback),
     )?;
 
+    chat_gpt_conversation.add_function::<HopperHighFiveFuncArgs>(
+        "enable_high_fives",
+        "Enable automated high fives with the user. This mode will also enable the lidar sensor to detect the user.",
+        Arc::new(HopperHighFiveFuncCallback),
+    )?;
+
     let simple_text_command_subscriber = zenoh_session
         .declare_subscriber(HOPPER_OPENAI_COMMAND_SUBSCRIBER)
         .res()
@@ -102,12 +107,12 @@ pub async fn start_openai_controller(
                         info!("Received new zenoh text command");
                         let text_command_msg = text_command_msg?;
                         let text_command: String = text_command_msg.value.try_into()?;
-                        process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone()).await?;
+                        process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone()).await?;
                         }
                     text_command = receiver.recv() => {
                         if let Some(text_command) = text_command {
                             info!("Received new text command");
-                            process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone()).await?;
+                            process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone()).await?;
                         }
                     }
                 }
@@ -129,6 +134,7 @@ async fn process_simple_text_command(
     text_command: &str,
     mut conversation: ChatGptConversation,
     open_ai_client: Client<OpenAIConfig>,
+    zenoh_session: Arc<zenoh::Session>,
 ) -> anyhow::Result<()> {
     info!("Received hopper command {:?}", text_command);
 
@@ -149,13 +155,23 @@ async fn process_simple_text_command(
                     }
                 });
 
-                return Ok(());
+                break;
             }
             OpenAiApiResponse::FunctionCallWithNoResponse => {
                 // nothing to do here
             }
         }
     }
+
+    let history = conversation.get_history();
+
+    zenoh_session
+        .put(OPENAI_DIAGNOSTICS_HISTORY, history)
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
+    Ok(())
 }
 
 async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
@@ -404,6 +420,10 @@ impl ChatGptConversation {
             response_content_buffer,
         ))
     }
+
+    pub fn get_history(&self) -> String {
+        serde_json::to_string_pretty(&self.history).expect("Failed to serialize chat history")
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -467,6 +487,34 @@ impl AsyncCallback for HopperDanceFuncCallback {
 
         let result = json!({
             "success": true
+        });
+        Ok(result)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct HopperHighFiveFuncArgs {
+    /// respond to high fives
+    pub enable_high_fives: bool,
+}
+
+struct HopperHighFiveFuncCallback;
+
+#[async_trait]
+impl AsyncCallback for HopperHighFiveFuncCallback {
+    async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
+        let high_five_args: HopperHighFiveFuncArgs = serde_json::from_str(args)?;
+
+        IocContainer::global_instance()
+            .service::<HighFiveServiceController>()?
+            .set_active(high_five_args.enable_high_fives);
+
+        IocContainer::global_instance()
+            .service::<LidarServiceController>()?
+            .set_active(high_five_args.enable_high_fives);
+
+        let result = json!({
+            "high_fives_enabled": high_five_args.enable_high_fives
         });
         Ok(result)
     }
