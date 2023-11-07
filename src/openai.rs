@@ -91,6 +91,12 @@ pub async fn start_openai_controller(
         Arc::new(HopperHighFiveFuncCallback),
     )?;
 
+    chat_gpt_conversation.add_function::<FaceDisplayFuncArgs>(
+        "set_face_animation",
+        "Control the face panel on the Hopper robot. You can set the color and animation.",
+        Arc::new(FaceDisplayFuncCallback),
+    )?;
+
     let simple_text_command_subscriber = zenoh_session
         .declare_subscriber(HOPPER_OPENAI_COMMAND_SUBSCRIBER)
         .res()
@@ -182,6 +188,10 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
         .say_azure_with_style(message, crate::speech::AzureVoiceStyle::Cheerful)
         .await?;
 
+    let last_animation = IocContainer::global_instance()
+        .service::<crate::face::FaceController>()?
+        .get_last_animation();
+
     IocContainer::global_instance()
         .service::<crate::face::FaceController>()?
         .speaking(crate::face::driver::CYAN)?;
@@ -193,9 +203,15 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
         .wait_until_sound_ends()
         .await;
 
-    IocContainer::global_instance()
-        .service::<crate::face::FaceController>()?
-        .larson_scanner(crate::face::driver::PURPLE)?;
+    if let Some(last_animation) = last_animation {
+        IocContainer::global_instance()
+            .service::<crate::face::FaceController>()?
+            .set_animation(last_animation)?;
+    } else {
+        IocContainer::global_instance()
+            .service::<crate::face::FaceController>()?
+            .larson_scanner(crate::face::driver::PURPLE)?;
+    }
 
     Ok(())
 }
@@ -516,6 +532,81 @@ impl AsyncCallback for HopperHighFiveFuncCallback {
         let result = json!({
             "high_fives_enabled": high_five_args.enable_high_fives
         });
+        Ok(result)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct FaceDisplayFuncArgs {
+    /// Animation that is currently displayed on face display
+    pub animation: FaceAnimation,
+    /// Optional color for animations
+    /// Not all animations require a color
+    /// If no color is provided, the default color for the animation will be used
+    pub color: Option<FaceColor>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum FaceColor {
+    Red,
+    Green,
+    Blue,
+    Yellow,
+    Purple,
+    Cyan,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum FaceAnimation {
+    /// Larson scanner
+    /// Similar to KITT from the show Knight Rider
+    LarsonScanner,
+    /// Speaking animation
+    /// Looks like a wave form of a human voice
+    SpeakingAnimation,
+    /// Breathing animation
+    /// Pulsating light
+    BreathingAnimation,
+    /// Solid color
+    SolidColor,
+    /// Lights off
+    /// This animation doesn't need color
+    Off,
+}
+
+struct FaceDisplayFuncCallback;
+
+#[async_trait]
+impl AsyncCallback for FaceDisplayFuncCallback {
+    async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
+        let face_display_args: FaceDisplayFuncArgs = serde_json::from_str(args)?;
+
+        let color = match face_display_args.color {
+            Some(color) => match color {
+                FaceColor::Red => crate::face::driver::RED,
+                FaceColor::Green => crate::face::driver::GREEN,
+                FaceColor::Blue => crate::face::driver::BLUE,
+                FaceColor::Yellow => crate::face::driver::YELLOW,
+                FaceColor::Purple => crate::face::driver::PURPLE,
+                FaceColor::Cyan => crate::face::driver::CYAN,
+            },
+            None => crate::face::driver::PURPLE,
+        };
+
+        let face_controller =
+            IocContainer::global_instance().service::<crate::face::FaceController>()?;
+
+        match face_display_args.animation {
+            FaceAnimation::LarsonScanner => face_controller.larson_scanner(color)?,
+            FaceAnimation::SpeakingAnimation => face_controller.speaking(color)?,
+            FaceAnimation::BreathingAnimation => face_controller.breathing(color)?,
+            FaceAnimation::SolidColor => face_controller.solid_color(color)?,
+            FaceAnimation::Off => face_controller.off()?,
+        }
+
+        let result = json!({});
         Ok(result)
     }
 }

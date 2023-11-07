@@ -5,7 +5,10 @@ use animations::Animation;
 use driver::Result;
 pub use driver::{ColorPacket, LedControllerError, LedDriver, RGB};
 use std::{
-    sync::mpsc::{self, sync_channel, SyncSender},
+    sync::{
+        mpsc::{self, sync_channel, SyncSender},
+        Mutex,
+    },
     thread::{spawn, JoinHandle},
 };
 use tracing::*;
@@ -18,6 +21,7 @@ enum ColorCommand {
 pub struct FaceController {
     sender: SyncSender<ColorCommand>,
     thread_handle: Option<JoinHandle<()>>,
+    last_animation: Mutex<Option<Animation>>,
 }
 
 impl FaceController {
@@ -56,58 +60,68 @@ impl FaceController {
         Ok(FaceController {
             sender,
             thread_handle: Some(join_handle),
+            last_animation: Mutex::new(None),
         })
     }
 
     pub fn larson_scanner(&self, color: RGB) -> Result<()> {
-        self.animation(Animation::LarsonScanner(color))
+        self.set_animation(Animation::LarsonScanner(color))
     }
 
     pub fn run_animation(&self, color: RGB) -> Result<()> {
-        self.animation(Animation::RunAnimation(color))
+        self.set_animation(Animation::RunAnimation(color))
     }
 
     pub fn cycle_all_colors(&self) -> Result<()> {
-        self.animation(Animation::CycleAllColors)
+        self.set_animation(Animation::CycleAllColors)
     }
 
     pub fn cycle_bright_colors(&self) -> Result<()> {
-        self.animation(Animation::CycleBrightColors)
+        self.set_animation(Animation::CycleBrightColors)
     }
 
     pub fn cycle_normal_colors(&self) -> Result<()> {
-        self.animation(Animation::CycleNormalColors)
+        self.set_animation(Animation::CycleNormalColors)
     }
 
     pub fn count_down_basic(&self) -> Result<()> {
-        self.animation(Animation::CountDownBasic)
+        self.set_animation(Animation::CountDownBasic)
     }
 
     pub fn count_down(&self, colors: Vec<RGB>) -> Result<()> {
-        self.animation(Animation::CountDown(colors))
+        self.set_animation(Animation::CountDown(colors))
     }
 
     pub fn breathing(&self, color: RGB) -> Result<()> {
-        self.animation(Animation::Breathing(color))
+        self.set_animation(Animation::Breathing(color))
     }
 
     pub fn solid_color(&self, color: RGB) -> Result<()> {
-        self.animation(Animation::SolidColor(color))
+        self.set_animation(Animation::SolidColor(color))
     }
 
     pub fn speaking(&self, color: RGB) -> Result<()> {
-        self.animation(Animation::Speaking(color))
+        self.set_animation(Animation::Speaking(color))
     }
 
     pub fn off(&self) -> Result<()> {
-        self.animation(Animation::Off)
+        self.set_animation(Animation::Off)
     }
 
-    fn animation(&self, animation: Animation) -> Result<()> {
+    pub fn set_animation(&self, animation: Animation) -> Result<()> {
+        {
+            let mut last_animation = self.last_animation.lock().unwrap();
+            *last_animation = Some(animation.clone());
+        }
         self.sender
             .send(ColorCommand::Animation(animation))
             .map_err(|_| LedControllerError::CommThreadError)?;
         Ok(())
+    }
+
+    pub fn get_last_animation(&self) -> Option<Animation> {
+        let last_animation = self.last_animation.lock().unwrap();
+        last_animation.clone()
     }
 }
 

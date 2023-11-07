@@ -18,7 +18,7 @@ fn map(value: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 
     result.round() as i32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Animation {
     LarsonScanner(RGB),
     RunAnimation(RGB),
