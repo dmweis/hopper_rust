@@ -11,7 +11,6 @@ use crate::error::{HopperError, HopperResult};
 
 pub fn setup_tracing(verbosity_level: u8) {
     let filter = match verbosity_level {
-        // 0 => tracing::level_filters::LevelFilter::WARN,
         0 => tracing::level_filters::LevelFilter::INFO,
         1 => tracing::level_filters::LevelFilter::INFO,
         2 => tracing::level_filters::LevelFilter::DEBUG,
