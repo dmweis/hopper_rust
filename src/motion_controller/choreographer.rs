@@ -27,6 +27,8 @@ pub enum DanceMove {
     /// Wave hello with your paw
     WaveHi,
     /// Wave hello with your paw while playing a sound bite
+    /// Ignore for schema because we don't want to expose this to the user
+    #[schemars(skip)]
     WaveHiWithSound,
     /// Lift front legs and roar threateningly
     Roar,
