@@ -23,7 +23,6 @@ use std::collections::VecDeque;
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
 use tokio::sync::mpsc::Receiver;
-use tokio::sync::Mutex;
 use tokio::time;
 use tokio::{spawn, task::JoinHandle};
 use tracing::*;
@@ -315,11 +314,9 @@ impl MotionControllerLoop {
                         HopperError::GenericIkError => {
                             warn!("Error is generic IK error. Restarting");
                             if let Ok(speech_service) =
-                                IocContainer::global_instance().service::<Mutex<SpeechService>>()
+                                IocContainer::global_instance().service::<SpeechService>()
                             {
                                 if let Err(err) = speech_service
-                                    .lock()
-                                    .await
                                     .play_sound("hopper_sounds/ik_failure.wav")
                                     .await
                                 {

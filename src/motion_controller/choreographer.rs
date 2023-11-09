@@ -3,7 +3,6 @@ use rand::{seq::SliceRandom, Rng};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use tokio::sync::Mutex;
 use tracing::info;
 
 use crate::{
@@ -149,9 +148,7 @@ impl<'a> Choreographer<'a> {
 
         if play_audio {
             IocContainer::global_instance()
-                .service::<Mutex<SpeechService>>()?
-                .lock()
-                .await
+                .service::<SpeechService>()?
                 .play_sound("Turret_turret_active_1.wav")
                 .await?;
         }

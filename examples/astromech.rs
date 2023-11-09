@@ -17,7 +17,7 @@ struct Args {
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    let mut speech_service =
+    let speech_service =
         SpeechService::new(String::from(""), String::from(""), None, Some(args.audio))
             .await
             .unwrap();

@@ -1,7 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
 use hopper_rust::{
-    audio_transcribe::start_audio_transcribe_service,
     body_controller,
     body_controller::BodyController,
     camera::start_camera,
@@ -25,7 +24,6 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-use tokio::sync::Mutex as TokioMutex;
 use tracing::*;
 use zenoh::prelude::r#async::*;
 
@@ -95,10 +93,10 @@ async fn main() -> Result<()> {
     .await
     .unwrap();
 
-    ioc_container.register(TokioMutex::new(speech_service));
+    ioc_container.register(speech_service);
 
     start_speech_controller(
-        ioc_container.service::<TokioMutex<SpeechService>>()?,
+        ioc_container.service::<SpeechService>()?,
         zenoh_session.clone(),
     )
     .await?;
@@ -164,7 +162,8 @@ async fn main() -> Result<()> {
 
     ioc_container.register(open_ai_service);
 
-    start_audio_transcribe_service(&app_config.openai.api_key, zenoh_session.clone()).await?;
+    // audio is sent to us transcribed now
+    // start_audio_transcribe_service(&app_config.openai.api_key, zenoh_session.clone()).await?;
 
     // hopper_rust::udp_remote::udp_controller_handler(&mut motion_controller)
     //     .await
@@ -172,8 +171,7 @@ async fn main() -> Result<()> {
 
     // announce that we are ready
     {
-        let speech_service = ioc_container.service::<TokioMutex<SpeechService>>()?;
-        let mut speech_service = speech_service.lock().await;
+        let speech_service = ioc_container.service::<SpeechService>()?;
 
         // speech_service
         //     .play_sound("hopper_sounds/windows_startup.wav")

@@ -8,7 +8,10 @@ use crate::{
 use anyhow::Context;
 use sha2::{Digest, Sha256};
 use std::{fs::File, io::Cursor, sync::Arc, thread};
-use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::sync::{
+    mpsc::{channel, Receiver, Sender},
+    Mutex as TokioMutex,
+};
 use tracing::*;
 use zenoh::prelude::r#async::*;
 use zenoh::Session as ZenohSession;
@@ -149,7 +152,7 @@ fn create_player() -> Sender<AudioPlayerCommand> {
 }
 
 pub struct SpeechService {
-    azure_speech_client: azure_tts::VoiceService,
+    azure_speech_client: TokioMutex<azure_tts::VoiceService>,
     eleven_labs_client: super::eleven_labs_client::ElevenLabsTtsClient,
     voice_name_to_voice_id_table: std::collections::HashMap<String, String>,
     audio_cache: Option<AudioCache>,
@@ -176,6 +179,7 @@ impl SpeechService {
     ) -> anyhow::Result<SpeechService> {
         let azure_speech_client =
             azure_tts::VoiceService::new(&azure_subscription_key, azure_tts::Region::uksouth);
+        let azure_speech_client = TokioMutex::new(azure_speech_client);
 
         let eleven_labs_client =
             super::eleven_labs_client::ElevenLabsTtsClient::new(eleven_labs_api_key);
@@ -207,7 +211,7 @@ impl SpeechService {
         })
     }
 
-    async fn play(&mut self, data: Box<dyn Playable>) {
+    async fn play(&self, data: Box<dyn Playable>) {
         self.audio_sender
             .send(AudioPlayerCommand::Play(data))
             .await
@@ -215,7 +219,7 @@ impl SpeechService {
     }
 
     async fn say_azure_with_voice(
-        &mut self,
+        &self,
         text: &str,
         voice: &azure_tts::VoiceSettings,
         style: AzureVoiceStyle,
@@ -258,6 +262,8 @@ impl SpeechService {
                 info!("Writing new file with key {}", file_key);
                 let data = self
                     .azure_speech_client
+                    .lock()
+                    .await
                     .synthesize_segments(segments, voice, self.azure_audio_format)
                     .await?;
                 audio_cache.set(&file_key, data.clone())?;
@@ -266,6 +272,8 @@ impl SpeechService {
         } else {
             let data = self
                 .azure_speech_client
+                .lock()
+                .await
                 .synthesize_segments(segments, voice, self.azure_audio_format)
                 .await?;
             Box::new(Cursor::new(data))
@@ -274,7 +282,7 @@ impl SpeechService {
         Ok(())
     }
 
-    pub async fn play_sound(&mut self, sound_name: &str) -> HopperResult<()> {
+    pub async fn play_sound(&self, sound_name: &str) -> HopperResult<()> {
         info!("Playing sound {}", sound_name);
         if let Some(ref audio_repository) = self.audio_repository {
             if let Some(data) = audio_repository.load(sound_name) {
@@ -288,7 +296,7 @@ impl SpeechService {
         Ok(())
     }
 
-    pub async fn play_random_sound(&mut self) -> HopperResult<()> {
+    pub async fn play_random_sound(&self) -> HopperResult<()> {
         if let Some(ref audio_repository) = self.audio_repository {
             if let Some((sound, path)) = audio_repository.random_file_recursive() {
                 info!("Playing random sound {:?}", path);
@@ -302,7 +310,7 @@ impl SpeechService {
         Ok(())
     }
 
-    pub async fn say_astromech(&mut self, phrase: &str) -> HopperResult<()> {
+    pub async fn say_astromech(&self, phrase: &str) -> HopperResult<()> {
         let mut sounds = vec![];
         if let Some(ref audio_repository) = self.audio_repository {
             for letter in phrase.to_ascii_lowercase().chars() {
@@ -325,7 +333,7 @@ impl SpeechService {
         Ok(())
     }
 
-    pub async fn random_astromech_noise(&mut self, length: u32) -> HopperResult<()> {
+    pub async fn random_astromech_noise(&self, length: u32) -> HopperResult<()> {
         let mut sounds = vec![];
         if let Some(ref audio_repository) = self.audio_repository {
             for _ in 0..length {
@@ -341,14 +349,14 @@ impl SpeechService {
         Ok(())
     }
 
-    pub async fn say_azure(&mut self, text: &str) -> HopperResult<()> {
+    pub async fn say_azure(&self, text: &str) -> HopperResult<()> {
         // This cloning here is lame...
         self.say_azure_with_voice(text, &self.azure_voice.clone(), AzureVoiceStyle::Plain)
             .await
     }
 
     pub async fn say_azure_with_style(
-        &mut self,
+        &self,
         text: &str,
         style: AzureVoiceStyle,
     ) -> HopperResult<()> {
@@ -357,13 +365,13 @@ impl SpeechService {
             .await
     }
 
-    pub async fn say_eleven_with_default_voice(&mut self, text: &str) -> anyhow::Result<()> {
+    pub async fn say_eleven_with_default_voice(&self, text: &str) -> anyhow::Result<()> {
         self.say_eleven(text, DEFAULT_ELEVEN_LABS_VOICE_NAME)
             .await?;
         Ok(())
     }
 
-    pub async fn say_eleven(&mut self, text: &str, voice_name: &str) -> anyhow::Result<()> {
+    pub async fn say_eleven(&self, text: &str, voice_name: &str) -> anyhow::Result<()> {
         let voice_id = self
             .voice_name_to_voice_id_table
             .get(voice_name)
@@ -374,11 +382,7 @@ impl SpeechService {
         Ok(())
     }
 
-    pub async fn say_eleven_with_voice_id(
-        &mut self,
-        text: &str,
-        voice_id: &str,
-    ) -> anyhow::Result<()> {
+    pub async fn say_eleven_with_voice_id(&self, text: &str, voice_id: &str) -> anyhow::Result<()> {
         let sound: Box<dyn Playable> = if let Some(ref audio_cache) = self.audio_cache {
             let file_key = hash_eleven_labs_tts(text, voice_id);
             if let Some(file) = audio_cache.get(&file_key) {
