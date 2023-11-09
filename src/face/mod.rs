@@ -15,6 +15,8 @@ use tracing::*;
 
 enum ColorCommand {
     Animation(Animation),
+    TemporaryAnimation(Animation),
+    ClearTemporaryAnimation,
     Exit,
 }
 
@@ -30,7 +32,8 @@ impl FaceController {
         let mut driver = LedDriver::open(port_name)?;
 
         let join_handle = spawn(move || {
-            let mut animation = Animation::Off;
+            let mut permanent_animation = Animation::Off;
+            let mut animation = permanent_animation.clone();
             let mut iterator = animation.to_iterator();
             #[allow(clippy::while_let_loop)]
             loop {
@@ -38,7 +41,16 @@ impl FaceController {
                     if let Some(message) = optional_message {
                         match message {
                             ColorCommand::Animation(new_animation) => {
+                                permanent_animation = new_animation.clone();
                                 animation = new_animation;
+                                iterator = animation.to_iterator();
+                            }
+                            ColorCommand::TemporaryAnimation(new_animation) => {
+                                animation = new_animation;
+                                iterator = animation.to_iterator();
+                            }
+                            ColorCommand::ClearTemporaryAnimation => {
+                                animation = permanent_animation.clone();
                                 iterator = animation.to_iterator();
                             }
                             ColorCommand::Exit => break,
@@ -115,6 +127,24 @@ impl FaceController {
         }
         self.sender
             .send(ColorCommand::Animation(animation))
+            .map_err(|_| LedControllerError::CommThreadError)?;
+        Ok(())
+    }
+
+    pub fn set_temporary_animation(&self, animation: Animation) -> Result<()> {
+        {
+            let mut last_animation = self.last_animation.lock().unwrap();
+            *last_animation = Some(animation.clone());
+        }
+        self.sender
+            .send(ColorCommand::TemporaryAnimation(animation))
+            .map_err(|_| LedControllerError::CommThreadError)?;
+        Ok(())
+    }
+
+    pub fn clear_temporary_animation(&self) -> Result<()> {
+        self.sender
+            .send(ColorCommand::ClearTemporaryAnimation)
             .map_err(|_| LedControllerError::CommThreadError)?;
         Ok(())
     }

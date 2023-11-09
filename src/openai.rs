@@ -19,6 +19,7 @@ use zenoh::prelude::r#async::*;
 
 use crate::{
     error::HopperError,
+    face::animations::Animation,
     high_five::HighFiveServiceController,
     ioc_container::IocContainer,
     lidar::LidarServiceController,
@@ -146,7 +147,7 @@ pub async fn start_openai_controller(
                         if wake_word_detection.wake_word.to_lowercase().contains("hopper") {
                             IocContainer::global_instance()
                                 .service::<crate::face::FaceController>()?
-                                .larson_scanner(crate::face::driver::CYAN)?;
+                                .set_temporary_animation(Animation::Speaking(crate::face::driver::RED))?;
                         }
                     }
                     wake_word_detection_end = wake_word_detection_end_subscriber.recv_async() => {
@@ -156,7 +157,7 @@ pub async fn start_openai_controller(
                         if wake_word_detection_end.wake_word.to_lowercase().contains("hopper") {
                             IocContainer::global_instance()
                                 .service::<crate::face::FaceController>()?
-                                .larson_scanner(crate::face::driver::PURPLE)?;
+                                .clear_temporary_animation()?;
                         }
                     }
                     wake_word_transcript = wake_word_transcript_subscriber.recv_async() => {
@@ -194,23 +195,17 @@ async fn process_simple_text_command(
     // get responses
 
     loop {
-        let last_animation = IocContainer::global_instance()
-            .service::<crate::face::FaceController>()?
-            .get_last_animation();
-
         IocContainer::global_instance()
             .service::<crate::face::FaceController>()?
-            .count_down_basic()?;
+            .set_temporary_animation(Animation::CountDownBasic)?;
 
         let next_response = conversation
             .next_message_stream(command.take(), &open_ai_client)
             .await?;
 
-        if let Some(last_animation) = last_animation {
-            IocContainer::global_instance()
-                .service::<crate::face::FaceController>()?
-                .set_animation(last_animation)?;
-        }
+        IocContainer::global_instance()
+            .service::<crate::face::FaceController>()?
+            .clear_temporary_animation()?;
 
         match next_response {
             OpenAiApiResponse::AssistantResponse(response) => {
@@ -247,28 +242,18 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
         .say_azure_with_style(message, crate::speech::AzureVoiceStyle::Cheerful)
         .await?;
 
-    let last_animation = IocContainer::global_instance()
-        .service::<crate::face::FaceController>()?
-        .get_last_animation();
-
     IocContainer::global_instance()
         .service::<crate::face::FaceController>()?
-        .speaking(crate::face::driver::CYAN)?;
+        .set_temporary_animation(Animation::Speaking(crate::face::driver::CYAN))?;
 
     IocContainer::global_instance()
         .service::<SpeechService>()?
         .wait_until_sound_ends()
         .await;
 
-    if let Some(last_animation) = last_animation {
-        IocContainer::global_instance()
-            .service::<crate::face::FaceController>()?
-            .set_animation(last_animation)?;
-    } else {
-        IocContainer::global_instance()
-            .service::<crate::face::FaceController>()?
-            .larson_scanner(crate::face::driver::PURPLE)?;
-    }
+    IocContainer::global_instance()
+        .service::<crate::face::FaceController>()?
+        .clear_temporary_animation()?;
 
     Ok(())
 }
