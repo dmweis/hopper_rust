@@ -13,7 +13,7 @@ use schemars::{gen::SchemaSettings, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc};
-use tokio::{select, sync::Mutex};
+use tokio::select;
 use tracing::info;
 use zenoh::prelude::r#async::*;
 
@@ -32,9 +32,9 @@ use crate::{
 // cheap but dumb
 // const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
 // expensive but no rate limit
-const MODEL_NAME: &str = "gpt-4-0613";
+// const MODEL_NAME: &str = "gpt-4-0613";
 // best and cheapest but there is a rate limit
-// const MODEL_NAME: &str = "gpt-4-1106-preview";
+const MODEL_NAME: &str = "gpt-4-1106-preview";
 
 const SYSTEM_PROMPT: &str = "You are a hexapod pet robot. Your name is Hopper. \
 You can perform physical actions such as dance, sit, stand up by calling functions. \
@@ -103,6 +103,24 @@ pub async fn start_openai_controller(
         .await
         .map_err(HopperError::ZenohError)?;
 
+    let wake_word_transcript_subscriber = zenoh_session
+        .declare_subscriber("wakeword/event/transcript")
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
+    let wake_word_detection_subscriber = zenoh_session
+        .declare_subscriber("wakeword/event/wake_word_detection")
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
+    let wake_word_detection_end_subscriber = zenoh_session
+        .declare_subscriber("wakeword/event/wake_word_detection_end")
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
     let (sender, mut receiver) = tokio::sync::mpsc::channel::<String>(10);
 
     tokio::spawn(async move {
@@ -119,6 +137,34 @@ pub async fn start_openai_controller(
                         if let Some(text_command) = text_command {
                             info!("Received new text command");
                             process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone()).await?;
+                        }
+                    }
+                    wake_word_detection = wake_word_detection_subscriber.recv_async() => {
+                        info!("Received wakeword detection");
+                        let wake_word_detection: String = wake_word_detection?.value.try_into()?;
+                        let wake_word_detection = serde_json::from_str::<WakeWordDetection>(&wake_word_detection)?;
+                        if wake_word_detection.wake_word.to_lowercase().contains("hopper") {
+                            IocContainer::global_instance()
+                                .service::<crate::face::FaceController>()?
+                                .larson_scanner(crate::face::driver::CYAN)?;
+                        }
+                    }
+                    wake_word_detection_end = wake_word_detection_end_subscriber.recv_async() => {
+                        info!("Received wakeword detection end");
+                        let wake_word_detection_end: String = wake_word_detection_end?.value.try_into()?;
+                        let wake_word_detection_end = serde_json::from_str::<WakeWordDetection>(&wake_word_detection_end)?;
+                        if wake_word_detection_end.wake_word.to_lowercase().contains("hopper") {
+                            IocContainer::global_instance()
+                                .service::<crate::face::FaceController>()?
+                                .larson_scanner(crate::face::driver::PURPLE)?;
+                        }
+                    }
+                    wake_word_transcript = wake_word_transcript_subscriber.recv_async() => {
+                        let wake_word_transcript: String = wake_word_transcript?.value.try_into()?;
+                        let wake_word_transcript: AudioTranscript = serde_json::from_str(&wake_word_transcript)?;
+                        if wake_word_transcript.wake_word.to_lowercase().contains("hopper") {
+                            info!("Received new text command");
+                            process_simple_text_command(&wake_word_transcript.transcript, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone()).await?;
                         }
                     }
                 }
@@ -148,10 +194,25 @@ async fn process_simple_text_command(
     // get responses
 
     loop {
-        match conversation
+        let last_animation = IocContainer::global_instance()
+            .service::<crate::face::FaceController>()?
+            .get_last_animation();
+
+        IocContainer::global_instance()
+            .service::<crate::face::FaceController>()?
+            .count_down_basic()?;
+
+        let next_response = conversation
             .next_message_stream(command.take(), &open_ai_client)
-            .await?
-        {
+            .await?;
+
+        if let Some(last_animation) = last_animation {
+            IocContainer::global_instance()
+                .service::<crate::face::FaceController>()?
+                .set_animation(last_animation)?;
+        }
+
+        match next_response {
             OpenAiApiResponse::AssistantResponse(response) => {
                 info!("Assistant response form ChatGPT: {:?}", response);
 
@@ -182,9 +243,7 @@ async fn process_simple_text_command(
 
 async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
     IocContainer::global_instance()
-        .service::<Mutex<SpeechService>>()?
-        .lock()
-        .await
+        .service::<SpeechService>()?
         .say_azure_with_style(message, crate::speech::AzureVoiceStyle::Cheerful)
         .await?;
 
@@ -197,9 +256,7 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
         .speaking(crate::face::driver::CYAN)?;
 
     IocContainer::global_instance()
-        .service::<Mutex<SpeechService>>()?
-        .lock()
-        .await
+        .service::<SpeechService>()?
         .wait_until_sound_ends()
         .await;
 
@@ -440,6 +497,25 @@ impl ChatGptConversation {
     pub fn get_history(&self) -> String {
         serde_json::to_string_pretty(&self.history).expect("Failed to serialize chat history")
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct WakeWordDetection {
+    wake_word: String,
+    timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct WakeWordDetectionEnd {
+    wake_word: String,
+    timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct AudioTranscript {
+    wake_word: String,
+    timestamp: chrono::DateTime<chrono::Utc>,
+    transcript: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
