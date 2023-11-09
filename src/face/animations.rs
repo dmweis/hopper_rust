@@ -4,7 +4,10 @@ use super::driver::{
     ColorPacket, ALL_COLORS, BIGGER_RING_PIXEL_COUNT, BLUE, BRIGHT_COLORS, GREEN, NORMAL_COLORS,
     OFF, PIXEL_COUNT, RED, RGB, SMALLER_RING_PIXEL_COUNT,
 };
-use std::time::Duration;
+use std::{
+    sync::{atomic::AtomicU8, Arc},
+    time::Duration,
+};
 
 const DEFAULT_ANIMATION_SLEEP: Duration = Duration::from_millis(30);
 
@@ -29,7 +32,8 @@ pub enum Animation {
     CountDown(Vec<RGB>),
     Breathing(RGB),
     SolidColor(RGB),
-    Speaking(RGB),
+    SpeakingRandom(RGB),
+    Speaking(RGB, Arc<AtomicU8>),
     Off,
 }
 
@@ -46,7 +50,10 @@ impl Animation {
             Animation::CountDown(colors) => Box::new(CountDownAnimation::new(colors.clone())),
             Animation::Breathing(color) => Box::new(Breathing::new(*color)),
             Animation::SolidColor(color) => Box::new(SolidColor::new(*color)),
-            Animation::Speaking(color) => Box::new(SpeakingAnimation::new(*color)),
+            Animation::SpeakingRandom(color) => Box::new(SpeakingAnimationRandom::new(*color)),
+            Animation::Speaking(color, intensity) => {
+                Box::new(SpeakingAnimation::new(*color, intensity.clone()))
+            }
             Animation::Off => Box::new(SolidColor::off()),
         }
     }
@@ -264,13 +271,68 @@ impl Iterator for Breathing {
     }
 }
 
-pub struct SpeakingAnimation {
+pub struct SpeakingAnimationRandom {
     color: RGB,
 }
 
-impl SpeakingAnimation {
+impl SpeakingAnimationRandom {
     pub fn new(color: RGB) -> Self {
         Self { color }
+    }
+}
+
+impl Iterator for SpeakingAnimationRandom {
+    type Item = ColorPacket;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        const BIGGER_RIGHT_SIDE: i32 = 1;
+        const BIGGER_LEFT_SIDE: i32 = 13;
+        const SMALLER_LEFT_SIDE: i32 = 31;
+        const SMALLER_RIGHT_SIDE: i32 = 39;
+
+        let mut rng = thread_rng();
+        let distance_steps: i32 = rng.gen_range(1..=3);
+
+        let mut frame = ColorPacket::off();
+
+        for pixel_index in &[
+            BIGGER_RIGHT_SIDE,
+            BIGGER_LEFT_SIDE,
+            SMALLER_LEFT_SIDE,
+            SMALLER_RIGHT_SIDE,
+        ] {
+            frame.set_pixel(*pixel_index, self.color);
+            for distance in 1..distance_steps {
+                // special handling for overflows
+                let mut index_neg = pixel_index - distance;
+                if index_neg < 0 {
+                    // handle right side bigger ring overflow
+                    index_neg = BIGGER_RING_PIXEL_COUNT as i32 + 1 - distance;
+                }
+                frame.set_pixel(index_neg, self.color.fade_out(0.5 - 0.1 * distance as f32));
+
+                let mut pos_index = pixel_index + distance;
+                if pos_index >= PIXEL_COUNT as i32 {
+                    // handle left side smaller ring overflow
+                    pos_index = BIGGER_RING_PIXEL_COUNT as i32 - 1 + distance;
+                }
+                frame.set_pixel(pos_index, self.color.fade_out(0.5 - 0.1 * distance as f32));
+            }
+        }
+
+        std::thread::sleep(Duration::from_millis(100));
+        Some(frame)
+    }
+}
+
+pub struct SpeakingAnimation {
+    color: RGB,
+    intensity: Arc<AtomicU8>,
+}
+
+impl SpeakingAnimation {
+    pub fn new(color: RGB, intensity: Arc<AtomicU8>) -> Self {
+        Self { color, intensity }
     }
 }
 
@@ -283,8 +345,9 @@ impl Iterator for SpeakingAnimation {
         const SMALLER_LEFT_SIDE: i32 = 31;
         const SMALLER_RIGHT_SIDE: i32 = 39;
 
-        let mut rng = thread_rng();
-        let distance_steps: i32 = rng.gen_range(1..=3);
+        let intensity = self.intensity.load(std::sync::atomic::Ordering::Relaxed);
+        let distance_steps: f32 = intensity as f32 / 255.0 * 4.0;
+        let distance_steps: i32 = distance_steps as i32;
 
         let mut frame = ColorPacket::off();
 

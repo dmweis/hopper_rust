@@ -12,7 +12,10 @@ use futures::StreamExt;
 use schemars::{gen::SchemaSettings, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{atomic::AtomicU8, Arc},
+};
 use tokio::select;
 use tracing::info;
 use zenoh::prelude::r#async::*;
@@ -122,6 +125,15 @@ pub async fn start_openai_controller(
         .await
         .map_err(HopperError::ZenohError)?;
 
+    let voice_probability_subscriber = zenoh_session
+        .declare_subscriber("wakeword/telemetry/voice_probability")
+        .best_effort()
+        .res()
+        .await
+        .map_err(HopperError::ZenohError)?;
+
+    let voice_probability_val = Arc::new(AtomicU8::new(0));
+
     let (sender, mut receiver) = tokio::sync::mpsc::channel::<String>(10);
 
     tokio::spawn(async move {
@@ -147,7 +159,7 @@ pub async fn start_openai_controller(
                         if wake_word_detection.wake_word.to_lowercase().contains("hopper") {
                             IocContainer::global_instance()
                                 .service::<crate::face::FaceController>()?
-                                .set_temporary_animation(Animation::Speaking(crate::face::driver::RED))?;
+                                .set_temporary_animation(Animation::Speaking(crate::face::driver::RED, voice_probability_val.clone()))?;
                         }
                     }
                     wake_word_detection_end = wake_word_detection_end_subscriber.recv_async() => {
@@ -159,6 +171,11 @@ pub async fn start_openai_controller(
                                 .service::<crate::face::FaceController>()?
                                 .clear_temporary_animation()?;
                         }
+                    }
+                    voice_probability_msg = voice_probability_subscriber.recv_async() => {
+                        let voice_probability_msg: String = voice_probability_msg?.value.try_into()?;
+                        let voice_probability = serde_json::from_str::<VoiceProbability>(&voice_probability_msg)?;
+                        voice_probability_val.store((voice_probability.probability * 255.0) as u8, std::sync::atomic::Ordering::Relaxed);
                     }
                     wake_word_transcript = wake_word_transcript_subscriber.recv_async() => {
                         let wake_word_transcript: String = wake_word_transcript?.value.try_into()?;
@@ -244,7 +261,7 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
 
     IocContainer::global_instance()
         .service::<crate::face::FaceController>()?
-        .set_temporary_animation(Animation::Speaking(crate::face::driver::CYAN))?;
+        .set_temporary_animation(Animation::SpeakingRandom(crate::face::driver::CYAN))?;
 
     IocContainer::global_instance()
         .service::<SpeechService>()?
@@ -503,6 +520,12 @@ struct AudioTranscript {
     transcript: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct VoiceProbability {
+    probability: f32,
+    timestamp: chrono::DateTime<chrono::Utc>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct HopperBodyPoseFuncArgs {
     /// body pose
@@ -635,6 +658,7 @@ pub enum FaceAnimation {
     /// Lights off
     /// This animation doesn't need color
     Off,
+    CountDownAnimation,
 }
 
 struct FaceDisplayFuncCallback;
@@ -665,6 +689,7 @@ impl AsyncCallback for FaceDisplayFuncCallback {
             FaceAnimation::BreathingAnimation => face_controller.breathing(color)?,
             FaceAnimation::SolidColor => face_controller.solid_color(color)?,
             FaceAnimation::Off => face_controller.off()?,
+            FaceAnimation::CountDownAnimation => face_controller.count_down_basic()?,
         }
 
         let result = json!({});

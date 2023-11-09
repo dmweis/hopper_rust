@@ -113,7 +113,7 @@ impl FaceController {
     }
 
     pub fn speaking(&self, color: RGB) -> Result<()> {
-        self.set_animation(Animation::Speaking(color))
+        self.set_animation(Animation::SpeakingRandom(color))
     }
 
     pub fn off(&self) -> Result<()> {
