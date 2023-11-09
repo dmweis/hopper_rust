@@ -31,11 +31,6 @@ build-deb: build
 install: build-deb
 	sudo dpkg -i $(DEB_BUILD_PATH)
 
-.PHONY: deploy
-deploy: build-deb
-	@echo "Sending $(DEB_BUILD_PATH) to $(TARGET_HOST):$(REMOTE_DIRECTORY)"
-	rsync -avz --delete $(DEB_BUILD_PATH) $(TARGET_HOST):$(REMOTE_DIRECTORY)
-
 .PHONY: install-dependencies
 install-dependencies:
 	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev libclang-dev protobuf-compiler -y
@@ -47,13 +42,13 @@ build-docker:
 	mkdir docker_out
 	DOCKER_BUILDKIT=1 docker build --tag hopper-builder --file Dockerfile --output type=local,dest=docker_out .
 
-.PHONY: push-docker-built
-push-docker-built: build-docker
+.PHONY: push-docker
+push-docker: build-docker
 	rsync -avz --delete docker_out/* $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper
 	rsync -avz --delete scripts/add_udev_rules $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper/add_udev_rules
 	rsync -avz --delete scripts/install_wait_loop $(TARGET_HOST_USER):/home/$(TARGET_USERNAME)/hopper/install_wait_loop
 
-.PHONY: install-hopper
-install-hopper: push-docker-built
+.PHONY: deploy-docker
+deploy-docker: push-docker
 	@echo "Installing hopper on $(TARGET_HOST)"
 	mosquitto_pub -h homepi -t "hopper/build" -n
