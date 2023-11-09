@@ -198,7 +198,7 @@ pub struct CountDownAnimation {
 
 impl Default for CountDownAnimation {
     fn default() -> Self {
-        Self::new(vec![BLUE, GREEN, RED])
+        Self::new(vec![RED, GREEN, BLUE])
     }
 }
 
