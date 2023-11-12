@@ -42,7 +42,7 @@ pub struct MotionController {
     command_sender: last_message_channel::Sender<MotionControllerCommand>,
     blocking_command_sender: mpsc::Sender<BlockingCommand>,
     command: MotionControllerCommand,
-    _handle: JoinHandle<HopperResult<()>>,
+    _handle: JoinHandle<anyhow::Result<()>>,
 }
 
 impl MotionController {
@@ -201,7 +201,7 @@ const MAX_TRANSLATION_STEP: f32 = 0.004;
 const MAX_ROTATION_STEP: f32 = std::f32::consts::PI / 180.0;
 const NON_WALK_STEP_HEIGHT: f32 = 0.03;
 const GROUNDED_STEP_HEIGHT: f32 = -0.0;
-const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(200);
+const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(1000);
 // const MOVE_DURATION: Duration = Duration::from_millis(400);
 // TODO(David): this results in smoother motion
 // Step time should probably be a function of time?
@@ -305,7 +305,8 @@ impl MotionControllerLoop {
         Ok(())
     }
 
-    async fn run(mut self) -> HopperResult<()> {
+    async fn run(mut self) -> anyhow::Result<()> {
+        tracing::info!("Running motion controller");
         loop {
             match self.control_loop().await {
                 Err(error) => {
@@ -313,18 +314,12 @@ impl MotionControllerLoop {
                     match error {
                         HopperError::GenericIkError => {
                             warn!("Error is generic IK error. Restarting");
-                            if let Ok(speech_service) =
-                                IocContainer::global_instance().service::<SpeechService>()
-                            {
-                                if let Err(err) = speech_service
-                                    .play_sound("hopper_sounds/ik_failure.wav")
-                                    .await
-                                {
-                                    error!("Failed to play sound {}", err);
-                                }
-                            } else {
-                                error!("Failed to get speech service");
-                            }
+
+                            IocContainer::global_instance()
+                                .service::<SpeechService>()?
+                                .play_sound("hopper_sounds/ik_failure.wav")
+                                .await?;
+
                             // Attempt recovery
                             self.command = MotionControllerCommand::default();
                             self.state = BodyState::Grounded;
@@ -335,11 +330,21 @@ impl MotionControllerLoop {
                         }
                         error if error.is_recoverable_driver_error() => {
                             info!("Error is recoverable. Restarting controller");
+                            IocContainer::global_instance()
+                                .service::<SpeechService>()?
+                                .play_sound("hopper_sounds/windows_hardware_error.wav")
+                                .await?;
                             self.attempt_motor_recovery().await?;
                         }
                         error => {
                             error!("Error is not recoverable. Stopping controller");
-                            return Err(error);
+                            IocContainer::global_instance()
+                                .service::<SpeechService>()?
+                                .say_eleven_with_default_voice(
+                                    "Motion controller loop encountered an unrecoverable error",
+                                )
+                                .await?;
+                            return Err(error.into());
                         }
                     }
                 }
@@ -570,6 +575,7 @@ impl MotionControllerLoop {
     }
 
     async fn control_loop(&mut self) -> HopperResult<()> {
+        tracing::info!("Starting control loop");
         // try to estimate current body state
         self.initialize_body_state().await?;
 
@@ -614,15 +620,25 @@ impl MotionControllerLoop {
 
             self.handle_body_state_transition().await?;
 
-            if self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD {
+            // measure voltage only if not walking
+            if !self.command.move_command.should_move()
+                && self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD
+            {
                 self.last_voltage_read = Instant::now();
-                // match self.ik_controller.read_mean_voltage().await {
-                //     Ok(voltage) => {
-                //         // TODO(David): Figure out a better way to propagate this
-                //         debug!("Voltage is {}", voltage)
-                //     }
-                //     Err(error) => error!("Failed to read voltage: {}", error),
-                // }
+                match self.ik_controller.read_mean_voltage().await {
+                    Ok(voltage) => {
+                        // TODO(David): Figure out a better way to propagate this
+                        tracing::debug!("Voltage is {}", voltage)
+                    }
+                    Err(error) => {
+                        error!("Failed to read voltage: {}", error);
+                        IocContainer::global_instance()
+                            .service::<SpeechService>()?
+                            .play_sound("hopper_sounds/windows_hardware_error.wav")
+                            .await?;
+                        self.ik_controller.flush_and_clear_motors().await?;
+                    }
+                }
             }
 
             // only walk if standing
@@ -713,7 +729,7 @@ impl MotionControllerLoop {
                     interval.tick().await;
                 }
             } else {
-                // sleep if not stanring
+                // sleep if not standing
                 self.control_loop_rate_tracker.tick();
                 interval.tick().await;
             }
