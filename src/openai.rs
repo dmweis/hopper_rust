@@ -257,6 +257,7 @@ async fn speak_with_face_animation(message: &str) -> anyhow::Result<()> {
     IocContainer::global_instance()
         .service::<SpeechService>()?
         .say_azure_with_style(message, crate::speech::AzureVoiceStyle::Cheerful)
+        // .say_eleven_with_default_voice(message)
         .await?;
 
     IocContainer::global_instance()
