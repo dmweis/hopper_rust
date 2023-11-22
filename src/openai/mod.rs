@@ -1,4 +1,5 @@
 mod conversation_handler;
+mod events;
 mod functions;
 
 use async_openai::{config::OpenAIConfig, types::ChatCompletionRequestMessage, Client};
@@ -17,7 +18,7 @@ use crate::{
     zenoh_consts::{HOPPER_OPENAI_COMMAND_SUBSCRIBER, OPENAI_DIAGNOSTICS_HISTORY},
 };
 
-use self::{conversation_handler::ChatGptConversation, functions::*};
+use self::{conversation_handler::ChatGptConversation, events::*, functions::*};
 
 // cheap but dumb
 // const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
@@ -292,30 +293,5 @@ async fn speak_with_face_animation(
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OpenAiHistory {
     history: Vec<ChatCompletionRequestMessage>,
-    timestamp: chrono::DateTime<chrono::Utc>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct WakeWordDetection {
-    wake_word: String,
-    timestamp: chrono::DateTime<chrono::Utc>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct WakeWordDetectionEnd {
-    wake_word: String,
-    timestamp: chrono::DateTime<chrono::Utc>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct AudioTranscript {
-    wake_word: String,
-    timestamp: chrono::DateTime<chrono::Utc>,
-    transcript: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct VoiceProbability {
-    probability: f32,
     timestamp: chrono::DateTime<chrono::Utc>,
 }
