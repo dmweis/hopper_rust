@@ -14,7 +14,7 @@ use crate::{
     zenoh_consts::STANCE_SUBSCRIBER,
 };
 
-use super::AsyncCallback;
+use super::conversation_handler::AsyncCallback;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct HopperBodyPoseFuncArgs {
