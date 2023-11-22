@@ -2,8 +2,7 @@ mod conversation_handler;
 mod events;
 mod functions;
 
-use async_openai::{config::OpenAIConfig, types::ChatCompletionRequestMessage, Client};
-use serde::{Deserialize, Serialize};
+use async_openai::{config::OpenAIConfig, Client};
 use std::sync::{atomic::AtomicU8, Arc, Mutex};
 use tokio::select;
 use tracing::info;
@@ -288,10 +287,4 @@ async fn speak_with_face_animation(
         .clear_temporary_animation()?;
 
     Ok(())
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct OpenAiHistory {
-    history: Vec<ChatCompletionRequestMessage>,
-    timestamp: chrono::DateTime<chrono::Utc>,
 }

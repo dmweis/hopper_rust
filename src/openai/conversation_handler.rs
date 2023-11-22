@@ -10,10 +10,15 @@ use async_openai::{
 use async_trait::async_trait;
 use futures::StreamExt;
 use schemars::{gen::SchemaSettings, JsonSchema};
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tracing::info;
 
-use super::OpenAiHistory;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct OpenAiHistory {
+    history: Vec<ChatCompletionRequestMessage>,
+    timestamp: chrono::DateTime<chrono::Utc>,
+}
 
 fn get_schema_generator() -> schemars::gen::SchemaGenerator {
     let settings = SchemaSettings::draft07().with(|s| {
