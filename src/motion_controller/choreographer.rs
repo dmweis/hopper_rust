@@ -1,4 +1,4 @@
-use nalgebra::{UnitQuaternion, Vector3};
+use nalgebra::{Point3, UnitQuaternion, Vector3};
 use rand::{seq::SliceRandom, Rng};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -33,6 +33,37 @@ pub enum DanceMove {
     /// Lift front legs and roar threateningly
     Roar,
     CombatCry,
+    /// lift one leg as a demonstration
+    LiftLeg {
+        leg: LiftedLeg,
+        /// time in seconds
+        /// Default 4 seconds
+        time: u32,
+    },
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LiftedLeg {
+    LeftFront,
+    LeftMiddle,
+    LeftRear,
+    RightFront,
+    RightMiddle,
+    RightRear,
+}
+
+impl LiftedLeg {
+    pub fn as_leg_flag(&self) -> LegFlags {
+        match self {
+            LiftedLeg::LeftFront => LegFlags::LEFT_FRONT,
+            LiftedLeg::LeftMiddle => LegFlags::LEFT_MIDDLE,
+            LiftedLeg::LeftRear => LegFlags::LEFT_REAR,
+            LiftedLeg::RightFront => LegFlags::RIGHT_FRONT,
+            LiftedLeg::RightMiddle => LegFlags::RIGHT_MIDDLE,
+            LiftedLeg::RightRear => LegFlags::RIGHT_REAR,
+        }
+    }
 }
 
 pub struct Choreographer<'a> {
@@ -61,6 +92,14 @@ impl<'a> Choreographer<'a> {
                 DanceMove::WaveHi,
                 DanceMove::Roar,
                 DanceMove::CombatCry,
+                DanceMove::LiftLeg {
+                    leg: LiftedLeg::LeftFront,
+                    time: 4,
+                },
+                DanceMove::LiftLeg {
+                    leg: LiftedLeg::RightFront,
+                    time: 4,
+                },
             ];
             let dance = *moves.choose(&mut rand::thread_rng()).unwrap();
             info!("Executing random dance move: {:?}", dance);
@@ -76,6 +115,7 @@ impl<'a> Choreographer<'a> {
             DanceMove::HappyDance => self.happy_dance().await?,
             DanceMove::Roar => self.roar().await?,
             DanceMove::CombatCry => self.combat_cry().await?,
+            DanceMove::LiftLeg { leg, time } => self.lift_leg(leg, time).await?,
         }
         Ok(())
     }
@@ -455,6 +495,69 @@ impl<'a> Choreographer<'a> {
 
         for step in poses {
             self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        Ok(())
+    }
+
+    async fn lift_leg(&mut self, lifted_leg: LiftedLeg, time: u32) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        let selected_legs = self.starting_pose.selected_legs(lifted_leg.as_leg_flag());
+
+        let target_positions: Vec<_> = selected_legs
+            .iter()
+            .map(|leg_position| {
+                Point3::new(
+                    leg_position.x * 1.3,
+                    leg_position.y * 1.3,
+                    leg_position.z + 0.05,
+                )
+            })
+            .collect();
+
+        // slightly rotate away from selected leg
+        let (x, y) = if selected_legs.len() == 1 {
+            selected_legs
+                .first()
+                .map(|point| point.coords.normalize())
+                .map(|vector| (vector.x, vector.y))
+                .unwrap_or_default()
+        } else {
+            (0.0, 0.0)
+        };
+
+        let rotation =
+            UnitQuaternion::from_euler_angles(-3_f32.to_radians() * y, 3_f32.to_radians() * x, 0.0);
+
+        let mut desired_position = self
+            .starting_pose
+            .transform(Vector3::new(0_f32, 0_f32, -0.03_f32), rotation);
+
+        desired_position.updated_from_selected_legs(&target_positions, lifted_leg.as_leg_flag())?;
+
+        const SPEED: f32 = 0.004;
+
+        for new_pose in self
+            .starting_pose
+            .to_move_towards_iter(&desired_position, SPEED)
+        {
+            self.ik_controller.move_to_positions(&new_pose).await?;
+            interval.tick().await;
+        }
+
+        // more than 20 seconds would be annoyingly long
+        let time = time.min(20);
+
+        tokio::time::sleep(Duration::from_secs(time as u64)).await;
+        // just to clear skipped?
+        // I think this is not needed
+        interval.tick().await;
+
+        for new_pose in desired_position.to_move_towards_iter(&self.starting_pose, SPEED) {
+            self.ik_controller.move_to_positions(&new_pose).await?;
             interval.tick().await;
         }
 
