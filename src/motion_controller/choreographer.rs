@@ -58,7 +58,6 @@ impl<'a> Choreographer<'a> {
         let dance = if let DanceMove::Random = dance {
             let moves = [
                 DanceMove::HappyDance,
-                DanceMove::SadEmote,
                 DanceMove::WaveHi,
                 DanceMove::Roar,
                 DanceMove::CombatCry,
