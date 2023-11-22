@@ -17,6 +17,7 @@ use tracing::info;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OpenAiHistory {
     history: Vec<ChatCompletionRequestMessage>,
+    functions: Vec<ChatCompletionFunctions>,
     timestamp: chrono::DateTime<chrono::Utc>,
 }
 
@@ -244,6 +245,7 @@ impl ChatGptConversation {
     pub fn get_history(&self) -> String {
         let history = OpenAiHistory {
             history: self.history.clone(),
+            functions: self.functions.clone(),
             timestamp: chrono::Utc::now(),
         };
         serde_json::to_string_pretty(&history).expect("Failed to serialize chat history")
