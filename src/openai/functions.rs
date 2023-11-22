@@ -18,7 +18,6 @@ use super::conversation_handler::AsyncCallback;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct HopperBodyPoseFuncArgs {
-    /// body pose
     pub body_pose: HopperBodyPose,
 }
 
@@ -129,8 +128,6 @@ pub struct FaceDisplayFuncArgs {
     /// Animation that is currently displayed on face display
     pub animation: FaceAnimation,
     /// Optional color for animations
-    /// Not all animations require a color
-    /// If no color is provided, the default color for the animation will be used
     pub color: Option<FaceColor>,
 }
 
@@ -148,18 +145,14 @@ pub enum FaceColor {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum FaceAnimation {
-    /// Larson scanner
     /// Similar to KITT from the show Knight Rider
     LarsonScanner,
-    /// Speaking animation
     /// Looks like a wave form of a human voice
     SpeakingAnimation,
-    /// Breathing animation
     /// Pulsating light
     BreathingAnimation,
     /// Solid color
     SolidColor,
-    /// Lights off
     /// This animation doesn't need color
     Off,
     CountDownAnimation,
