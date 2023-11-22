@@ -51,6 +51,9 @@ pub enum LiftedLeg {
     RightFront,
     RightMiddle,
     RightRear,
+    MiddleBothSides,
+    LrlTripod,
+    RlRTripod,
 }
 
 impl LiftedLeg {
@@ -62,6 +65,9 @@ impl LiftedLeg {
             LiftedLeg::RightFront => LegFlags::RIGHT_FRONT,
             LiftedLeg::RightMiddle => LegFlags::RIGHT_MIDDLE,
             LiftedLeg::RightRear => LegFlags::RIGHT_REAR,
+            LiftedLeg::MiddleBothSides => LegFlags::MIDDLE,
+            LiftedLeg::LrlTripod => LegFlags::LRL_TRIPOD,
+            LiftedLeg::RlRTripod => LegFlags::RLR_TRIPOD,
         }
     }
 }
