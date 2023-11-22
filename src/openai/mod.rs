@@ -138,8 +138,7 @@ pub async fn start_openai_controller(
                 select! {
                     text_command_msg = simple_text_command_subscriber.recv_async() => {
                         info!("Received new zenoh text command");
-                        let text_command_msg = text_command_msg?;
-                        let text_command: String = text_command_msg.value.try_into()?;
+                        let text_command: String = text_command_msg?.value.try_into()?;
                         let voice_provider = *voice_provider_arc.lock().unwrap();
 
                         process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone(), voice_provider).await?;
