@@ -16,12 +16,18 @@ pub enum IocContainerError {
 
 type Handle = Arc<dyn Any + Send + Sync>;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct IocContainer {
     map: Arc<Mutex<HashMap<TypeId, Handle>>>,
 }
 
 impl IocContainer {
+    fn new() -> Self {
+        Self {
+            map: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
     pub fn register<T: Any + Send + Sync>(&self, object: T) {
         let type_id = object.type_id();
         self.map.lock().unwrap().insert(type_id, Arc::new(object));
@@ -51,7 +57,7 @@ impl IocContainer {
 
     pub fn global_instance() -> &'static IocContainer {
         static INSTANCE: OnceCell<IocContainer> = OnceCell::new();
-        INSTANCE.get_or_init(IocContainer::default)
+        INSTANCE.get_or_init(IocContainer::new)
     }
 }
 
@@ -63,7 +69,7 @@ mod tests {
 
     #[test]
     fn simple_ioc() {
-        let container = IocContainer::default();
+        let container = IocContainer::new();
         container.register(A);
         let a = container.get::<A>();
         assert!(a.is_some());
@@ -71,7 +77,7 @@ mod tests {
 
     #[test]
     fn fail_on_unregistered_type() {
-        let container = IocContainer::default();
+        let container = IocContainer::new();
         let not_a = container.get::<A>();
         assert!(not_a.is_none())
     }
