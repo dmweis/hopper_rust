@@ -26,6 +26,9 @@ pub const HOPPER_MOTOR_RATE: &str = "hopper/metrics/motor/rate";
 pub const HOPPER_POSE_FRAMES: &str = "hopper/pose/frames";
 pub const HOPPER_CONTROL_LOOP_RATE: &str = "hopper/metrics/control_loop/rate";
 
+// tracing
+pub const HOPPER_TRACING_FULL: &str = "hopper/tracing/full";
+
 // openai
 pub const HOPPER_OPENAI_COMMAND_SUBSCRIBER: &str = "hopper/openai/simple/text/command";
 pub const HOPPER_OPENAI_VOICE_COMMAND_SUBSCRIBER: &str = "audio_to_mqtt/windows/simple";

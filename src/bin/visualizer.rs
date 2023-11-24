@@ -4,7 +4,7 @@ use gilrs::Gilrs;
 use hopper_rust::error::HopperError;
 use hopper_rust::utilities::RateTracker;
 use hopper_rust::zenoh_consts::HOPPER_CONTROL_LOOP_RATE;
-use hopper_rust::{hopper_body_config, motion_controller, utilities};
+use hopper_rust::{hopper_body_config, logging, motion_controller};
 use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;
 use std::path::Path;
@@ -41,7 +41,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
-    utilities::setup_tracing(args.verbose);
+    logging::setup_tracing(args.verbose);
     info!("Started main visualizer");
 
     let _config = args

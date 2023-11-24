@@ -9,21 +9,6 @@ use zenoh::publication::Publisher;
 
 use crate::error::{HopperError, HopperResult};
 
-pub fn setup_tracing(verbosity_level: u8) {
-    let filter = match verbosity_level {
-        0 => tracing::level_filters::LevelFilter::INFO,
-        1 => tracing::level_filters::LevelFilter::INFO,
-        2 => tracing::level_filters::LevelFilter::DEBUG,
-        3 => tracing::level_filters::LevelFilter::TRACE,
-        _ => tracing::level_filters::LevelFilter::TRACE,
-    };
-
-    tracing_subscriber::fmt()
-        .with_thread_names(true)
-        .with_max_level(filter)
-        .init();
-}
-
 pub trait MpscChannelHelper<T> {
     fn try_recv_optional(&self) -> std::result::Result<Option<T>, mpsc::TryRecvError>;
 }

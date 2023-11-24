@@ -12,6 +12,7 @@ pub mod hopper_body_config;
 pub mod ik_controller;
 pub mod ioc_container;
 pub mod lidar;
+pub mod logging;
 pub mod monitoring;
 pub mod motion_controller;
 pub mod openai;

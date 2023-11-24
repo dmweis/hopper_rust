@@ -10,11 +10,12 @@ use hopper_rust::{
     hopper_body_config, ik_controller,
     ioc_container::IocContainer,
     lidar::start_lidar_driver,
+    logging,
     monitoring::start_monitoring_loop,
     motion_controller,
     openai::start_openai_controller,
     speech::SpeechService,
-    utilities::{self, RateTracker},
+    utilities::RateTracker,
     zenoh_consts::{HOPPER_CONTROL_LOOP_RATE, HOPPER_MOTOR_RATE, HOPPER_POSE_FRAMES},
     zenoh_face_controller::start_face_controller,
     zenoh_remote::simple_zenoh_controller,
@@ -47,7 +48,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
-    utilities::setup_tracing(args.verbose);
+    logging::setup_tracing(args.verbose);
     info!("Started main controller");
 
     let app_config = get_configuration(&args.config)?;
