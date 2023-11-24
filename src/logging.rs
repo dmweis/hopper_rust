@@ -4,7 +4,7 @@ use zenoh::{prelude::r#async::*, Session as ZenohSession};
 
 use crate::error::HopperError;
 use crate::ioc_container::IocContainer;
-use crate::zenoh_consts::HOPPER_TRACING_FULL;
+use crate::zenoh_consts::{HOPPER_TRACING_FULL, HOPPER_TRACING_JSON};
 
 pub fn setup_tracing(verbosity_level: u8) {
     let filter = match verbosity_level {
@@ -14,18 +14,27 @@ pub fn setup_tracing(verbosity_level: u8) {
         _ => tracing::level_filters::LevelFilter::TRACE,
     };
 
-    let zenoh_log_writer = start_log_writer();
-
     let stderr_writer = fmt::Layer::default()
         .with_thread_names(true)
         .with_writer(std::io::stderr);
 
-    let zenoh_writer = fmt::Layer::default()
+    let zenoh_full_writer = start_log_writer(HOPPER_TRACING_FULL);
+    let zenoh_full_layer = fmt::Layer::default()
         .with_thread_names(true)
         .with_thread_ids(true)
         .with_file(true)
         .with_line_number(true)
-        .with_writer(move || zenoh_log_writer.clone());
+        .with_writer(move || zenoh_full_writer.clone());
+
+    let zenoh_json_writer = start_log_writer(HOPPER_TRACING_JSON);
+    let zenoh_json_layer = fmt::Layer::default()
+        .json()
+        .with_thread_names(true)
+        .with_thread_ids(true)
+        .with_file(true)
+        .with_line_number(true)
+        .with_span_list(true)
+        .with_writer(move || zenoh_json_writer.clone());
 
     let subscriber = fmt::Subscriber::builder()
         // subscriber configuration
@@ -34,7 +43,8 @@ pub fn setup_tracing(verbosity_level: u8) {
         .finish()
         // add additional writers
         .with(stderr_writer)
-        .with(zenoh_writer);
+        .with(zenoh_full_layer)
+        .with(zenoh_json_layer);
 
     tracing::subscriber::set_global_default(subscriber).expect("unable to set global subscriber");
 }
@@ -57,27 +67,33 @@ impl std::io::Write for LogWriter {
     }
 }
 
-fn start_log_writer() -> LogWriter {
+fn start_log_writer(topic: &str) -> LogWriter {
     let (sender, receiver) = tokio::sync::mpsc::channel(100);
     let log_writer = LogWriter { sender };
 
-    tokio::spawn(async move { repeat_loop(receiver).await });
+    tokio::spawn({
+        let topic = topic.to_owned();
+        async move { repeat_loop(receiver, &topic).await }
+    });
 
     log_writer
 }
 
-async fn repeat_loop(mut receiver: tokio::sync::mpsc::Receiver<Vec<u8>>) {
+async fn repeat_loop(mut receiver: tokio::sync::mpsc::Receiver<Vec<u8>>, topic: &str) {
     loop {
-        if let Err(err) = publisher_loop(&mut receiver).await {
+        if let Err(err) = publisher_loop(&mut receiver, topic).await {
             tracing::error!("Log publisher loop failed {:?}", err);
         }
     }
 }
 
-async fn publisher_loop(receiver: &mut tokio::sync::mpsc::Receiver<Vec<u8>>) -> anyhow::Result<()> {
+async fn publisher_loop(
+    receiver: &mut tokio::sync::mpsc::Receiver<Vec<u8>>,
+    topic: &str,
+) -> anyhow::Result<()> {
     if let Some(zenoh_session) = IocContainer::global_instance().get::<Arc<ZenohSession>>() {
         let publisher = zenoh_session
-            .declare_publisher(HOPPER_TRACING_FULL)
+            .declare_publisher(topic.to_owned())
             .congestion_control(CongestionControl::Drop)
             .priority(Priority::DataLow)
             .res()

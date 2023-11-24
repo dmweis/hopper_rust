@@ -28,6 +28,7 @@ pub const HOPPER_CONTROL_LOOP_RATE: &str = "hopper/metrics/control_loop/rate";
 
 // tracing
 pub const HOPPER_TRACING_FULL: &str = "hopper/tracing/full";
+pub const HOPPER_TRACING_JSON: &str = "hopper/tracing/json";
 
 // openai
 pub const HOPPER_OPENAI_COMMAND_SUBSCRIBER: &str = "hopper/openai/simple/text/command";
