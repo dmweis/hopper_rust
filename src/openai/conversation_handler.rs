@@ -1,14 +1,17 @@
+use anyhow::Context;
 use async_openai::{
     config::OpenAIConfig,
     types::{
-        ChatCompletionFunctions, ChatCompletionFunctionsArgs, ChatCompletionRequestMessage,
-        ChatCompletionRequestMessageArgs, CreateChatCompletionRequest,
-        CreateChatCompletionRequestArgs, FinishReason, FunctionCall, Role,
+        ChatCompletionFunctions, ChatCompletionFunctionsArgs,
+        ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestMessage,
+        ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestToolMessageArgs,
+        ChatCompletionRequestUserMessageArgs, ChatCompletionTool, ChatCompletionToolArgs,
+        ChatCompletionToolChoiceOption, ChatCompletionToolType, CreateChatCompletionRequest,
+        CreateChatCompletionRequestArgs,
     },
     Client,
 };
 use async_trait::async_trait;
-use futures::StreamExt;
 use schemars::{gen::SchemaSettings, JsonSchema};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
@@ -18,6 +21,7 @@ use tracing::info;
 pub struct OpenAiHistory {
     history: Vec<ChatCompletionRequestMessage>,
     functions: Vec<ChatCompletionFunctions>,
+    tools: Vec<ChatCompletionTool>,
     timestamp: chrono::DateTime<chrono::Utc>,
 }
 
@@ -27,6 +31,14 @@ fn get_schema_generator() -> schemars::gen::SchemaGenerator {
         s.meta_schema = None;
     });
     settings.into_generator()
+}
+
+fn json_schema_for_func_args<T: ?Sized + JsonSchema>() -> anyhow::Result<serde_json::Value> {
+    let mut schema = get_schema_generator().into_root_schema_for::<T>();
+    // remove title from schema
+    schema.schema.metadata().title = None;
+    let schema_json = serde_json::to_value(&schema)?;
+    Ok(schema_json)
 }
 
 pub enum OpenAiApiResponse {
@@ -42,7 +54,7 @@ pub trait AsyncCallback: Send + Sync {
 #[derive(Clone)]
 pub struct ChatGptConversation {
     history: Vec<ChatCompletionRequestMessage>,
-    functions: Vec<ChatCompletionFunctions>,
+    tools: Vec<ChatCompletionTool>,
     temperature: Option<f32>,
     top_p: Option<f32>,
     model_name: String,
@@ -51,15 +63,15 @@ pub struct ChatGptConversation {
 
 impl ChatGptConversation {
     pub fn new(system_prompt: &str, model_name: &str) -> Self {
-        let history = vec![ChatCompletionRequestMessageArgs::default()
+        let history = vec![ChatCompletionRequestSystemMessageArgs::default()
             .content(system_prompt)
-            .role(Role::System)
             .build()
             // can this fail?
-            .expect("Failed to build system prompt message")];
+            .expect("Failed to build system prompt message")
+            .into()];
         Self {
             history,
-            functions: vec![],
+            tools: vec![],
             temperature: None,
             top_p: None,
             model_name: model_name.to_string(),
@@ -73,16 +85,19 @@ impl ChatGptConversation {
         function_description: &str,
         func: Arc<dyn AsyncCallback>,
     ) -> anyhow::Result<()> {
-        let schema = get_schema_generator().into_root_schema_for::<T>();
-        let schema_json = serde_json::to_value(&schema)?;
+        let schema_json = json_schema_for_func_args::<T>()?;
         let new_function = ChatCompletionFunctionsArgs::default()
             .name(function_name)
             .description(function_description)
             .parameters(schema_json)
             .build()?;
 
-        self.functions.push(new_function);
+        let tool = ChatCompletionToolArgs::default()
+            .r#type(ChatCompletionToolType::Function)
+            .function(new_function)
+            .build()?;
 
+        self.tools.push(tool);
         self.function_table.insert(function_name.to_string(), func);
         Ok(())
     }
@@ -104,8 +119,8 @@ impl ChatGptConversation {
         request_builder
             .model(self.model_name.clone())
             .messages(self.history.clone())
-            .functions(self.functions.clone())
-            .function_call("auto");
+            .tools(self.tools.clone())
+            .tool_choice(ChatCompletionToolChoiceOption::Auto);
 
         if let Some(temperature) = self.temperature {
             request_builder.temperature(temperature);
@@ -125,127 +140,74 @@ impl ChatGptConversation {
         client: &Client<OpenAIConfig>,
     ) -> anyhow::Result<OpenAiApiResponse> {
         if let Some(message_text) = message_text {
-            let user_message = ChatCompletionRequestMessageArgs::default()
+            let user_message = ChatCompletionRequestUserMessageArgs::default()
                 .content(message_text)
-                .role(Role::User)
-                .build()?;
+                .build()?
+                .into();
 
             self.history.push(user_message);
         }
 
         let request = self.build_request_message()?;
 
-        let mut stream = client.chat().create_stream(request).await?;
+        let response_message = client
+            .chat()
+            .create(request)
+            .await?
+            .choices
+            .get(0)
+            .context("Failed to get first choice on OpenAI api response")?
+            .message
+            .clone();
 
-        let mut response_role = None;
-        let mut response_content_buffer = String::new();
-        let mut fn_name = String::new();
-        let mut fn_args = String::new();
+        // execute tools calls
 
-        // For reasons not documented in OpenAI docs / OpenAPI spec, the response of streaming call is different and doesn't include all the same fields.
-        while let Some(result) = stream.next().await {
-            let response = result?;
+        if let Some(tool_calls) = response_message.tool_calls {
+            // add tool calls to history
+            let tool_call_request = ChatCompletionRequestAssistantMessageArgs::default()
+                .tool_calls(tool_calls.clone())
+                .build()?
+                .into();
+            self.history.push(tool_call_request);
 
-            // assert that we only get one response
-            if response.choices.len() != 1 {
-                return Err(anyhow::anyhow!(
-                    "expected 1 response from OpenAI, got {}",
-                    response.choices.len()
-                ));
-            }
-            let choice = response
-                .choices
-                .first()
-                .expect("Failed to get first choice from response");
-
-            // take response role
-            if let Some(role) = choice.delta.role {
-                response_role = Some(role);
-            }
-
-            // take function call
-            if let Some(fn_call) = &choice.delta.function_call {
-                if let Some(name) = &fn_call.name {
-                    fn_name = name.clone();
+            for tool_call in tool_calls {
+                if !matches!(tool_call.r#type, ChatCompletionToolType::Function) {
+                    tracing::error!("Tool call type is not function {:?}", tool_call.r#type);
                 }
-                if let Some(args) = &fn_call.arguments {
-                    fn_args.push_str(args);
-                }
-            }
+                let name = tool_call.function.name.clone();
+                let args = tool_call.function.arguments.clone();
+                let id = tool_call.id;
+                let func_call_response = self.call_function(&name, &args).await?;
 
-            // take response content
-            if let Some(delta_content) = &choice.delta.content {
-                response_content_buffer.push_str(delta_content);
-                // process chunk (print it?)
-            }
-
-            // check if response is end
-            if let Some(finish_reason) = &choice.finish_reason {
-                // figure out why the conversation ended
-                if matches!(finish_reason, FinishReason::FunctionCall) {
-                    // function call
-
-                    // add function call to history
-                    let function_call_request = ChatCompletionRequestMessageArgs::default()
-                        .role(Role::Assistant)
-                        .function_call(FunctionCall {
-                            name: fn_name.clone(),
-                            arguments: fn_args.clone(),
-                        })
-                        .build()?;
-                    self.history.push(function_call_request);
-
-                    // call function
-                    let result = self.call_function(&fn_name, &fn_args).await?;
-
-                    // add function call result to history
-                    let function_call_result = ChatCompletionRequestMessageArgs::default()
-                        .role(Role::Function)
-                        .content(result.to_string())
-                        .name(fn_name.clone())
-                        .build()?;
-                    self.history.push(function_call_result);
-
-                    if !response_content_buffer.is_empty() {
-                        // function calls can also include a response
-
-                        let added_response = ChatCompletionRequestMessageArgs::default()
-                            .content(&response_content_buffer)
-                            .role(response_role.unwrap_or(Role::Assistant))
-                            .build()?;
-
-                        self.history.push(added_response);
-                        return Ok(OpenAiApiResponse::AssistantResponse(
-                            response_content_buffer,
-                        ));
-                    } else {
-                        return Ok(OpenAiApiResponse::FunctionCallWithNoResponse);
-                    }
-                } else {
-                    // other reasons ass message from assistant
-                    let added_response = ChatCompletionRequestMessageArgs::default()
-                        .content(&response_content_buffer)
-                        .role(response_role.unwrap_or(Role::Assistant))
-                        .build()?;
-
-                    self.history.push(added_response);
-                    return Ok(OpenAiApiResponse::AssistantResponse(
-                        response_content_buffer,
-                    ));
-                }
+                // add response to history
+                let tool_response = ChatCompletionRequestToolMessageArgs::default()
+                    .content(func_call_response.to_string())
+                    .tool_call_id(id)
+                    .build()
+                    .context("Failed to build tool response")?
+                    .into();
+                self.history.push(tool_response);
             }
         }
 
-        // return text anyway even if we don't get an end reason
-        Ok(OpenAiApiResponse::AssistantResponse(
-            response_content_buffer,
-        ))
+        if let Some(content) = response_message.content {
+            let added_response = ChatCompletionRequestAssistantMessageArgs::default()
+                .content(&content)
+                .build()?
+                .into();
+
+            self.history.push(added_response);
+            return Ok(OpenAiApiResponse::AssistantResponse(content));
+        }
+
+        Ok(OpenAiApiResponse::FunctionCallWithNoResponse)
     }
 
     pub fn get_history(&self) -> String {
         let history = OpenAiHistory {
             history: self.history.clone(),
-            functions: self.functions.clone(),
+            functions: vec![],
+            tools: self.tools.clone(),
             timestamp: chrono::Utc::now(),
         };
         serde_json::to_string_pretty(&history).expect("Failed to serialize chat history")
