@@ -59,3 +59,15 @@ ctl.!default {
 ```
 
 either in `~/.asoundrc` or `/etc/asound.conf`
+
+## Configuring walking over Zenoh
+
+```shell
+z_put -k "hopper/command/simple/walking_config" --connect tcp/hopper:7447 -v "max_step_distance_m: 0.03"
+z_put -k "hopper/command/simple/walking_config" --connect tcp/hopper:7447 -v "step_time_ms: 400"
+
+z_sub -k hopper/status/simple/walking_config --raw --connect tcp/hopper:7447
+
+z_sub -k hopper/tracing/full --raw --connect tcp/hopper:7447
+
+```
