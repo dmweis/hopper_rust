@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use hopper_rust::{
     body_controller,
@@ -185,7 +185,10 @@ async fn main() -> Result<()> {
         // speech_service.say_home_speak("Hopper ready").await.unwrap();
     }
 
-    simple_zenoh_controller(&mut motion_controller, zenoh_session.clone()).await?;
+    simple_zenoh_controller(&mut motion_controller, zenoh_session.clone())
+        .await
+        .context("Controller reader failed")?;
+    info!("Controller stopped");
 
     motion_controller.set_body_state(motion_controller::BodyState::Grounded);
     tokio::time::sleep(Duration::from_secs_f32(2.0)).await;
