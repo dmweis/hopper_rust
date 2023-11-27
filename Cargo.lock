@@ -367,8 +367,9 @@ dependencies = [
 
 [[package]]
 name = "async-openai"
-version = "0.17.0"
-source = "git+https://github.com/dmweis/async-openai?branch=main#d563ff9b4f34253c0ed010258a0c4f49d6d84fc4"
+version = "0.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3c6ce3eb96d0957f9d5af15b5b0d651e27da8b567d126ef7fefb889d21dda06"
 dependencies = [
  "async-convert",
  "backoff",
@@ -2032,7 +2033,7 @@ dependencies = [
 
 [[package]]
 name = "hopper_rust"
-version = "0.4.13"
+version = "0.4.14"
 dependencies = [
  "anyhow",
  "approx 0.5.1",
