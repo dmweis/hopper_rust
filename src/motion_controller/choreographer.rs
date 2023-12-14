@@ -98,14 +98,6 @@ impl<'a> Choreographer<'a> {
                 DanceMove::WaveHi,
                 DanceMove::Roar,
                 DanceMove::CombatCry,
-                DanceMove::LiftLeg {
-                    leg: LiftedLeg::LeftFront,
-                    time: 4,
-                },
-                DanceMove::LiftLeg {
-                    leg: LiftedLeg::RightFront,
-                    time: 4,
-                },
             ];
             let dance = *moves.choose(&mut rand::thread_rng()).unwrap();
             info!("Executing random dance move: {:?}", dance);
