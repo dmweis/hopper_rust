@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.4.14"
+version = "0.4.15"
 
 [package.metadata.deb]
 assets = [
@@ -50,22 +50,22 @@ visualizer = ["kiss3d", "gilrs"]
 # Utilities
 anyhow = "1.0"
 bitflags = "2.3.3"
+bytes = "1.4"
 chrono = {version = "0.4", features = ["serde"]}
 clap = {version = "4", features = ["derive"]}
 config = "0.13.2"
 ctrlc = "3.1"
 lazy_static = "1.4"
 rand = "0.8"
+reqwest = {version = "0.11", features = ["json"]}
 sha2 = "0.10"
+tempdir = "0.3.7"
 thiserror = "1.0"
 walkdir = "2.3.3"
-bytes = "1.4"
-reqwest = {version = "0.11", features = ["json"]}
-tempdir = "0.3.7"
 
 # async
-futures = "0.3"
 async-trait = "0.1"
+futures = "0.3"
 tokio = {version = "1.6", features = [
   "macros",
   "rt-multi-thread",
@@ -83,13 +83,13 @@ tracing-subscriber = {version = "0.3", features = [
 ]}
 
 # serialization
+base64 = "0.21.0"
+cobs-rs = "1.1.1"
+schemars = "0.8.12"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 serde_yaml = "0.9.25"
 toml = "0.7.6"
-schemars = "0.8.12"
-cobs-rs = "1.1.1"
-base64 = "0.21.0"
 
 # other projects
 azure_tts = {git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true}
@@ -101,10 +101,8 @@ rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "ma
 async-openai = {version = "0.17.1"}
 # async-openai = {git = "https://github.com/dmweis/async-openai", branch = "main"}
 
-
-
+serialport = {version = "4.0.1", default-features = false}
 v4l = "0.14.0"
-serialport = { version = "4.0.1", default-features = false }
 
 gilrs = {version = "0.10", optional = true, features = ["serde-serialize"]}
 kiss3d = {optional = true, version = "0.35"}
@@ -112,10 +110,9 @@ last-message-channel = {branch = "main", git = "https://github.com/dmweis/last-m
 mint = "0.5"
 nalgebra = {version = "0.30", features = ["serde-serialize"]}
 
-rodio = { version = "0.17",  optional = true}
+rodio = {version = "0.17", optional = true}
 # fix weird bug with mp3 not playing from start
 # rodio = {git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true}
-
 
 # zenoh
 zenoh = "0.7.2-rc"

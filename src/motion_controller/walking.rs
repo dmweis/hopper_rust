@@ -8,6 +8,7 @@ use tracing::*;
 
 pub const DEFAULT_STEP_TIME: Duration = Duration::from_millis(600);
 pub const DEFAULT_STEP_HEIGHT: f32 = 0.03;
+pub const DEFAULT_STEP_DISTANCE: f32 = 0.025;
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub struct MoveCommand {

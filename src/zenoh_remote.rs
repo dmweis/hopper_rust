@@ -4,8 +4,11 @@ use crate::hexapod::LegFlags;
 use crate::high_five::HighFiveServiceController;
 use crate::ioc_container::IocContainer;
 use crate::lidar::LidarServiceController;
-use crate::motion_controller::walking::{DEFAULT_STEP_HEIGHT, DEFAULT_STEP_TIME};
+use crate::motion_controller::walking::{
+    DEFAULT_STEP_DISTANCE, DEFAULT_STEP_HEIGHT, DEFAULT_STEP_TIME,
+};
 use crate::motion_controller::{self, SingleLegCommand};
+use crate::speech::SpeechService;
 use crate::zenoh_consts::{
     BODY_MOTOR_SPEED_SUBSCRIBER, COMPLIANCE_SLOPE_SUBSCRIBER, HOPPER_WALKING_CONFIG_PUBLISHER,
     REMOTE_CONTROL_SUBSCRIBER, STANCE_SUBSCRIBER, WALKING_CONFIG_SUBSCRIBER,
@@ -275,13 +278,23 @@ impl GamepadController {
             gamepad_message,
             last_gamepad_message,
         );
-        let lt_pressed_since_last = was_button_pressed_since_last_time(
+        let lt_pressed = was_button_pressed_since_last_time(
             Button::LeftTrigger2,
             gamepad_message,
             last_gamepad_message,
         );
+        let left_paddle_pressed = was_button_pressed_since_last_time(
+            Button::LeftPaddle,
+            gamepad_message,
+            last_gamepad_message,
+        );
+        let right_paddle_pressed = was_button_pressed_since_last_time(
+            Button::RightPaddle,
+            gamepad_message,
+            last_gamepad_message,
+        );
 
-        if lt_pressed_since_last {
+        if lt_pressed {
             self.single_leg_foot = self.feet_iterator.next().unwrap();
             info!("Switching to single leg foot {:?}", self.single_leg_foot);
         }
@@ -327,32 +340,57 @@ impl GamepadController {
         // clamp
         self.height_offset = self.height_offset.max(-0.03).min(0.05);
 
-        let lb_pressed = is_button_down(Button::LeftTrigger, gamepad_message);
-        let rb_pressed = is_button_down(Button::RightTrigger, gamepad_message);
-        let lt_pressed = is_button_down(Button::LeftTrigger2, gamepad_message);
-        let rt_pressed = is_button_down(Button::RightTrigger2, gamepad_message);
+        let lb_down = is_button_down(Button::LeftTrigger, gamepad_message);
+        let rb_down = is_button_down(Button::RightTrigger, gamepad_message);
+        let lt_down = is_button_down(Button::LeftTrigger2, gamepad_message);
+        let rt_down = is_button_down(Button::RightTrigger2, gamepad_message);
 
         if a_pressed {
             info!("Setting stance to standing");
             controller.set_body_state(motion_controller::BodyState::Standing);
-        } else if y_pressed {
+        }
+        if y_pressed {
             info!("Starting happy dance");
             controller.start_sequence(motion_controller::DanceMove::HappyDance);
-        } else if x_pressed {
+        }
+        if x_pressed {
             info!("Starting wave");
             controller.start_sequence(motion_controller::DanceMove::WaveHiWithSound);
-        } else if select_pressed {
+        }
+        if select_pressed {
             info!("Folding");
             controller.set_body_state(motion_controller::BodyState::Folded);
-        } else if start_pressed {
+        }
+        if start_pressed {
             info!("Grounding");
             controller.set_body_state(motion_controller::BodyState::Grounded);
-        } else if b_pressed {
+        }
+        if b_pressed {
             info!("Starting random dance");
             controller.start_sequence(motion_controller::DanceMove::Random);
         }
+        if left_paddle_pressed {
+            self.walking_config.max_step_distance_m = 0.03;
+            self.walking_config.step_time = Duration::from_millis(400);
+            tokio::spawn(async move {
+                _ = IocContainer::global_instance()
+                    .service::<SpeechService>()?
+                    .say_eleven_with_default_voice("Fast walking mode!")
+                    .await;
+            });
+        }
+        if right_paddle_pressed {
+            self.walking_config.max_step_distance_m = DEFAULT_STEP_DISTANCE;
+            self.walking_config.step_time = DEFAULT_STEP_TIME;
+            tokio::spawn(async move {
+                _ = IocContainer::global_instance()
+                    .service::<SpeechService>()?
+                    .say_eleven_with_default_voice("Regular walking mode!")
+                    .await;
+            });
+        }
 
-        if lb_pressed {
+        if lb_down {
             // translation mode
             let x = -get_axis(Axis::LeftStickY, gamepad_message) * 0.05;
             let y = get_axis(Axis::LeftStickX, gamepad_message) * 0.05;
@@ -362,7 +400,7 @@ impl GamepadController {
             let translation = Vector3::new(x, y, 0.0);
             let rotation = UnitQuaternion::from_euler_angles(0.0, pitch, yaw);
             controller.set_transformation(translation, rotation);
-        } else if rb_pressed {
+        } else if rb_down {
             // translation mode 2
             let x = -get_axis(Axis::LeftStickY, gamepad_message) * 0.05;
             let z = -get_axis(Axis::RightStickY, gamepad_message) * 0.05;
@@ -372,7 +410,7 @@ impl GamepadController {
             let translation = Vector3::new(x, 0.0, z);
             let rotation = UnitQuaternion::from_euler_angles(roll, 0.0, yaw);
             controller.set_transformation(translation, rotation);
-        } else if rt_pressed {
+        } else if rt_down {
             // walking mode
             let x = get_axis(Axis::LeftStickY, gamepad_message)
                 * self.walking_config.max_step_distance_m;
@@ -394,7 +432,7 @@ impl GamepadController {
                 Default::default(),
             );
             controller.set_command(move_command);
-        } else if lt_pressed {
+        } else if lt_down {
             let x = get_axis(Axis::LeftStickY, gamepad_message) * 0.07;
             let y = -get_axis(Axis::LeftStickX, gamepad_message) * 0.07;
             let z = get_axis(Axis::RightStickY, gamepad_message) * 0.07;
@@ -502,6 +540,8 @@ pub enum Button {
     DPadLeft,
     DPadRight,
     Unknown,
+    LeftPaddle,
+    RightPaddle,
 }
 
 impl Button {
@@ -598,7 +638,7 @@ pub struct WalkingConfig {
 impl Default for WalkingConfig {
     fn default() -> Self {
         WalkingConfig {
-            max_step_distance_m: 0.025,
+            max_step_distance_m: DEFAULT_STEP_DISTANCE,
             step_time: DEFAULT_STEP_TIME,
             step_height_m: DEFAULT_STEP_HEIGHT,
             max_yaw_rate_deg: 15.0,
@@ -679,11 +719,29 @@ fn controller_reader(sender: &mut Sender<InputMessage>) -> HopperResult<()> {
 
             gamepad_data.last_event_time = std::time::SystemTime::now().into();
             match gilrs_event.event {
-                gilrs::EventType::ButtonPressed(button, _) => {
+                gilrs::EventType::ButtonPressed(button, code) => {
                     *gamepad_data
                         .button_down_event_counter
                         .entry(button.into())
                         .or_default() += 1;
+
+                    // hacky hack to support paddles on the steam controller
+                    match code.into_u32() {
+                        65873_u32 => {
+                            *gamepad_data
+                                .button_down_event_counter
+                                .entry(Button::RightPaddle)
+                                .or_default() += 1;
+                        }
+                        65872_u32 => {
+                            *gamepad_data
+                                .button_down_event_counter
+                                .entry(Button::LeftPaddle)
+                                .or_default() += 1;
+                        }
+                        // ignore others
+                        _ => (),
+                    }
                 }
                 gilrs::EventType::ButtonReleased(button, _) => {
                     *gamepad_data
