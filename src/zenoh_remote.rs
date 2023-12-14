@@ -374,7 +374,8 @@ impl GamepadController {
             self.walking_config.step_time = Duration::from_millis(400);
             tokio::spawn(async move {
                 _ = IocContainer::global_instance()
-                    .service::<SpeechService>()?
+                    .service::<SpeechService>()
+                    .expect("Failed to get speech service")
                     .say_eleven_with_default_voice("Fast walking mode!")
                     .await;
             });
@@ -384,7 +385,8 @@ impl GamepadController {
             self.walking_config.step_time = DEFAULT_STEP_TIME;
             tokio::spawn(async move {
                 _ = IocContainer::global_instance()
-                    .service::<SpeechService>()?
+                    .service::<SpeechService>()
+                    .expect("Failed to get speech service")
                     .say_eleven_with_default_voice("Regular walking mode!")
                     .await;
             });
