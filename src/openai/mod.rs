@@ -61,41 +61,21 @@ pub async fn start_openai_controller(
 
     let mut chat_gpt_conversation = ChatGptConversation::new(SYSTEM_PROMPT, MODEL_NAME);
 
-    chat_gpt_conversation.add_function::<HopperBodyPoseFuncArgs>(
-        "set_body_pose",
-        "set the body pose of the hopper hexapod robot",
-        Arc::new(HopperBodyPoseFuncCallback {
-            zenoh_session: zenoh_session.clone(),
-        }),
-    )?;
+    chat_gpt_conversation.add_function(Arc::new(HopperBodyPoseFuncCallback {
+        zenoh_session: zenoh_session.clone(),
+    }))?;
 
-    chat_gpt_conversation.add_function::<HopperDanceFuncArgs>(
-        "execute_hopper_dance",
-        "perform a dance move with your body. Can be useful to express emotion or react to what user is saying",
-        Arc::new(HopperDanceFuncCallback),
-    )?;
+    chat_gpt_conversation.add_function(Arc::new(HopperDanceFuncCallback))?;
 
-    chat_gpt_conversation.add_function::<HopperHighFiveFuncArgs>(
-        "enable_high_fives",
-        "Enable automated high fives with the user. This mode will also enable the lidar sensor to detect the user.",
-        Arc::new(HopperHighFiveFuncCallback),
-    )?;
+    chat_gpt_conversation.add_function(Arc::new(HopperHighFiveFuncCallback))?;
 
-    chat_gpt_conversation.add_function::<FaceDisplayFuncArgs>(
-        "set_face_animation",
-        "Control the face panel on the Hopper robot. You can set the color and animation.",
-        Arc::new(FaceDisplayFuncCallback),
-    )?;
+    chat_gpt_conversation.add_function(Arc::new(FaceDisplayFuncCallback))?;
 
     let voice_provider_arc = Arc::new(Mutex::new(VoiceProvider::Default));
 
-    chat_gpt_conversation.add_function::<SwitchVoiceFuncArgs>(
-        "switch_voice_provider",
-        "Switch voice provider",
-        Arc::new(SwitchVoiceFuncCallback {
-            voice_provider: voice_provider_arc.clone(),
-        }),
-    )?;
+    chat_gpt_conversation.add_function(Arc::new(SwitchVoiceFuncCallback {
+        voice_provider: voice_provider_arc.clone(),
+    }))?;
 
     let simple_text_command_subscriber = zenoh_session
         .declare_subscriber(HOPPER_OPENAI_COMMAND_SUBSCRIBER)

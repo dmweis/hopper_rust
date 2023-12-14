@@ -33,12 +33,11 @@ fn get_schema_generator() -> schemars::gen::SchemaGenerator {
     settings.into_generator()
 }
 
-fn json_schema_for_func_args<T: ?Sized + JsonSchema>() -> anyhow::Result<serde_json::Value> {
+pub fn json_schema_for_func_args<T: ?Sized + JsonSchema>() -> serde_json::Value {
     let mut schema = get_schema_generator().into_root_schema_for::<T>();
     // remove title from schema
     schema.schema.metadata().title = None;
-    let schema_json = serde_json::to_value(&schema)?;
-    Ok(schema_json)
+    serde_json::to_value(&schema).expect("Failed to serialize schema to json value")
 }
 
 pub enum OpenAiApiResponse {
@@ -47,7 +46,11 @@ pub enum OpenAiApiResponse {
 }
 
 #[async_trait]
-pub trait AsyncCallback: Send + Sync {
+pub trait ChatGptFunction: Send + Sync {
+    fn name(&self) -> String;
+    fn description(&self) -> String;
+    fn parameters_schema(&self) -> serde_json::Value;
+
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value>;
 }
 
@@ -58,7 +61,7 @@ pub struct ChatGptConversation {
     temperature: Option<f32>,
     top_p: Option<f32>,
     model_name: String,
-    function_table: HashMap<String, Arc<dyn AsyncCallback>>,
+    function_table: HashMap<String, Arc<dyn ChatGptFunction>>,
 }
 
 impl ChatGptConversation {
@@ -79,17 +82,11 @@ impl ChatGptConversation {
         }
     }
 
-    pub fn add_function<T: ?Sized + JsonSchema>(
-        &mut self,
-        function_name: &str,
-        function_description: &str,
-        func: Arc<dyn AsyncCallback>,
-    ) -> anyhow::Result<()> {
-        let schema_json = json_schema_for_func_args::<T>()?;
+    pub fn add_function(&mut self, func: Arc<dyn ChatGptFunction>) -> anyhow::Result<()> {
         let new_function = ChatCompletionFunctionsArgs::default()
-            .name(function_name)
-            .description(function_description)
-            .parameters(schema_json)
+            .name(func.name())
+            .description(func.description())
+            .parameters(func.parameters_schema())
             .build()?;
 
         let tool = ChatCompletionToolArgs::default()
@@ -98,7 +95,7 @@ impl ChatGptConversation {
             .build()?;
 
         self.tools.push(tool);
-        self.function_table.insert(function_name.to_string(), func);
+        self.function_table.insert(func.name(), func);
         Ok(())
     }
 

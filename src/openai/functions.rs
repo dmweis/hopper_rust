@@ -14,7 +14,7 @@ use crate::{
     zenoh_consts::STANCE_SUBSCRIBER,
 };
 
-use super::conversation_handler::AsyncCallback;
+use super::conversation_handler::{json_schema_for_func_args, ChatGptFunction};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct HopperBodyPoseFuncArgs {
@@ -34,7 +34,19 @@ pub struct HopperBodyPoseFuncCallback {
 }
 
 #[async_trait]
-impl AsyncCallback for HopperBodyPoseFuncCallback {
+impl ChatGptFunction for HopperBodyPoseFuncCallback {
+    fn name(&self) -> String {
+        "set_body_pose".to_string()
+    }
+
+    fn description(&self) -> String {
+        "set the body pose of the hopper hexapod robot".to_string()
+    }
+
+    fn parameters_schema(&self) -> serde_json::Value {
+        json_schema_for_func_args::<HopperBodyPoseFuncArgs>()
+    }
+
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
         let hopper_body_pose_func: HopperBodyPoseFuncArgs = serde_json::from_str(args)?;
 
@@ -80,7 +92,19 @@ pub struct HopperDanceFuncArgs {
 pub struct HopperDanceFuncCallback;
 
 #[async_trait]
-impl AsyncCallback for HopperDanceFuncCallback {
+impl ChatGptFunction for HopperDanceFuncCallback {
+    fn name(&self) -> String {
+        "execute_hopper_dance".to_string()
+    }
+
+    fn description(&self) -> String {
+        "perform a dance move with your body. Can be useful to express emotion or react to what user is saying".to_string()
+    }
+
+    fn parameters_schema(&self) -> serde_json::Value {
+        json_schema_for_func_args::<HopperDanceFuncArgs>()
+    }
+
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
         let hopper_dance_move: HopperDanceFuncArgs = serde_json::from_str(args)?;
 
@@ -104,7 +128,19 @@ pub struct HopperHighFiveFuncArgs {
 pub struct HopperHighFiveFuncCallback;
 
 #[async_trait]
-impl AsyncCallback for HopperHighFiveFuncCallback {
+impl ChatGptFunction for HopperHighFiveFuncCallback {
+    fn name(&self) -> String {
+        "enable_high_fives".to_string()
+    }
+
+    fn description(&self) -> String {
+        "Enable automated high fives with the user. This mode will also enable the lidar sensor to detect the user.".to_string()
+    }
+
+    fn parameters_schema(&self) -> serde_json::Value {
+        json_schema_for_func_args::<HopperHighFiveFuncArgs>()
+    }
+
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
         let high_five_args: HopperHighFiveFuncArgs = serde_json::from_str(args)?;
 
@@ -161,7 +197,20 @@ pub enum FaceAnimation {
 pub struct FaceDisplayFuncCallback;
 
 #[async_trait]
-impl AsyncCallback for FaceDisplayFuncCallback {
+impl ChatGptFunction for FaceDisplayFuncCallback {
+    fn name(&self) -> String {
+        "set_face_animation".to_string()
+    }
+
+    fn description(&self) -> String {
+        "Control the face panel on the Hopper robot. You can set the color and animation."
+            .to_string()
+    }
+
+    fn parameters_schema(&self) -> serde_json::Value {
+        json_schema_for_func_args::<FaceDisplayFuncArgs>()
+    }
+
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
         let face_display_args: FaceDisplayFuncArgs = serde_json::from_str(args)?;
 
@@ -216,7 +265,19 @@ pub struct SwitchVoiceFuncCallback {
 }
 
 #[async_trait]
-impl AsyncCallback for SwitchVoiceFuncCallback {
+impl ChatGptFunction for SwitchVoiceFuncCallback {
+    fn name(&self) -> String {
+        "switch_voice_provider".to_string()
+    }
+
+    fn description(&self) -> String {
+        "Switch voice provider".to_string()
+    }
+
+    fn parameters_schema(&self) -> serde_json::Value {
+        json_schema_for_func_args::<SwitchVoiceFuncArgs>()
+    }
+
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
         let switch_voice: SwitchVoiceFuncArgs = serde_json::from_str(args)?;
 
