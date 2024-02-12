@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.4.15"
+version = "0.4.16"
 
 [package.metadata.deb]
 assets = [
@@ -98,7 +98,7 @@ dynamixel-driver = {branch = "main", git = "https://github.com/dmweis/dynamixel-
 rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "main"}
 
 # openai
-async-openai = {version = "0.17.1"}
+async-openai = {version = "0.18.3"}
 # async-openai = {git = "https://github.com/dmweis/async-openai", branch = "main"}
 
 serialport = {version = "4.0.1", default-features = false}

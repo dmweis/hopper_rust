@@ -2,12 +2,11 @@ use anyhow::Context;
 use async_openai::{
     config::OpenAIConfig,
     types::{
-        ChatCompletionFunctions, ChatCompletionFunctionsArgs,
         ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestMessage,
         ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestToolMessageArgs,
         ChatCompletionRequestUserMessageArgs, ChatCompletionTool, ChatCompletionToolArgs,
         ChatCompletionToolChoiceOption, ChatCompletionToolType, CreateChatCompletionRequest,
-        CreateChatCompletionRequestArgs,
+        CreateChatCompletionRequestArgs, FunctionObject, FunctionObjectArgs,
     },
     Client,
 };
@@ -20,7 +19,7 @@ use tracing::info;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OpenAiHistory {
     history: Vec<ChatCompletionRequestMessage>,
-    functions: Vec<ChatCompletionFunctions>,
+    functions: Vec<FunctionObject>,
     tools: Vec<ChatCompletionTool>,
     timestamp: chrono::DateTime<chrono::Utc>,
 }
@@ -83,7 +82,7 @@ impl ChatGptConversation {
     }
 
     pub fn add_function(&mut self, func: Arc<dyn ChatGptFunction>) -> anyhow::Result<()> {
-        let new_function = ChatCompletionFunctionsArgs::default()
+        let new_function = FunctionObjectArgs::default()
             .name(func.name())
             .description(func.description())
             .parameters(func.parameters_schema())
@@ -152,7 +151,7 @@ impl ChatGptConversation {
             .create(request)
             .await?
             .choices
-            .get(0)
+            .first()
             .context("Failed to get first choice on OpenAI api response")?
             .message
             .clone();
