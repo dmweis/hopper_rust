@@ -31,43 +31,36 @@ pub async fn start_audio_transcribe_service(
     
 
     // this is because of the transcribe future not being send
-    std::thread::spawn(move || {
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
+    tokio::spawn(async move  {
+        loop {
+            let res: anyhow::Result<()> = async {
+                    select! {
+                        audio_command_msg = audio_command_subscriber.recv_async() => {
+                            let audio_command_msg = audio_command_msg?;
+                            let audio_command_msg_json: String = audio_command_msg.value.try_into()?;
+                            let encoded_audio_command: Base64AudioMessage = serde_json::from_str(&audio_command_msg_json)?;
+                            let audio_command: DecodedAudioMessage = encoded_audio_command.try_into()?;
+                            let text = transcribe(audio_command, "Audio command for a hexapod robot called Hopper", &client).await?;
+                            
+                             IocContainer::global_instance()
+                                .service::<OpenAiService>()?
+                                .send_command(&text)
+                                .await?;
 
-        rt.block_on(async move {
-            loop {
-                let res: anyhow::Result<()> = async {
-                        select! {
-                            audio_command_msg = audio_command_subscriber.recv_async() => {
-                                let audio_command_msg = audio_command_msg?;
-                                let audio_command_msg_json: String = audio_command_msg.value.try_into()?;
-                                let encoded_audio_command: Base64AudioMessage = serde_json::from_str(&audio_command_msg_json)?;
-                                let audio_command: DecodedAudioMessage = encoded_audio_command.try_into()?;
-                                let text = transcribe(audio_command, "Audio command for a hexapod robot called Hopper", &client).await?;
-                                
-                                 IocContainer::global_instance()
-                                    .service::<OpenAiService>()?
-                                    .send_command(&text)
-                                    .await?;
+                                zenoh_session.put(
+                                    OPENAI_DIAGNOSTICS_TRANSCRIPT,
+                                    text,
+                                ).res().await.map_err(HopperError::ZenohError)?;
 
-                                    zenoh_session.put(
-                                        OPENAI_DIAGNOSTICS_TRANSCRIPT,
-                                        text,
-                                    ).res().await.map_err(HopperError::ZenohError)?;
-
-                            }
                         }
-                        Ok(())
                     }
-                    .await;
-                if let Err(e) = res {
-                    tracing::error!("Error in speech controller: {}", e);
+                    Ok(())
                 }
+                .await;
+            if let Err(e) = res {
+                tracing::error!("Error in speech controller: {}", e);
             }
-        });
+        }
     });
 
     Ok(())
