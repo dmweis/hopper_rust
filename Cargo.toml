@@ -94,6 +94,7 @@ toml = "0.7.6"
 # other projects
 azure_tts = {git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true}
 dynamixel-driver = {branch = "main", git = "https://github.com/dmweis/dynamixel-driver"}
+# dynamixel-driver = {path = "../dynamixel-driver"}
 # hopper_face = {branch = "main", git = "https://github.com/dmweis/hopper_face"}
 rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "main"}
 

@@ -202,6 +202,7 @@ const MAX_ROTATION_STEP: f32 = std::f32::consts::PI / 180.0;
 const NON_WALK_STEP_HEIGHT: f32 = 0.03;
 const GROUNDED_STEP_HEIGHT: f32 = -0.0;
 const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(1000);
+const HARDWARE_ERROR_SOUND_TIMEOUT: Duration = Duration::from_secs(30);
 // const MOVE_DURATION: Duration = Duration::from_millis(400);
 // TODO(David): this results in smoother motion
 // Step time should probably be a function of time?
@@ -225,6 +226,7 @@ struct MotionControllerLoop {
     control_loop_rate_tracker: RateTracker,
     was_single_leg_mode: bool,
     high_five_receiver: Receiver<HighFiveCommand>,
+    last_hardware_error_sound_player: Instant,
 }
 
 impl MotionControllerLoop {
@@ -254,6 +256,7 @@ impl MotionControllerLoop {
             control_loop_rate_tracker,
             was_single_leg_mode: false,
             high_five_receiver,
+            last_hardware_error_sound_player: Instant::now(),
         })
     }
 
@@ -330,10 +333,7 @@ impl MotionControllerLoop {
                         }
                         error if error.is_recoverable_driver_error() => {
                             info!("Error is recoverable. Restarting controller");
-                            IocContainer::global_instance()
-                                .service::<SpeechService>()?
-                                .play_sound("hopper_sounds/windows_hardware_error.wav")
-                                .await?;
+                            self.play_hardware_error_sound().await?;
                             self.attempt_motor_recovery().await?;
                         }
                         error => {
@@ -370,7 +370,8 @@ impl MotionControllerLoop {
     }
 
     async fn attempt_motor_recovery_internal(&mut self) -> HopperResult<()> {
-        self.flush_and_clear_motors().await?;
+        warn!("Attempting motor recovery");
+        self.clear_serial_io_buffers().await?;
         self.scan_motors().await?;
         self.read_current_pose().await?;
         Ok(())
@@ -493,8 +494,8 @@ impl MotionControllerLoop {
         Ok(())
     }
 
-    async fn flush_and_clear_motors(&mut self) -> HopperResult<()> {
-        self.ik_controller.flush_and_clear_motors().await?;
+    async fn clear_serial_io_buffers(&mut self) -> HopperResult<()> {
+        self.ik_controller.clear_serial_io_buffers().await?;
         Ok(())
     }
 
@@ -631,12 +632,10 @@ impl MotionControllerLoop {
                         tracing::debug!("Voltage is {}", voltage)
                     }
                     Err(error) => {
-                        error!("Failed to read voltage: {}", error);
-                        IocContainer::global_instance()
-                            .service::<SpeechService>()?
-                            .play_sound("hopper_sounds/windows_hardware_error.wav")
-                            .await?;
-                        self.ik_controller.flush_and_clear_motors().await?;
+                        error!(?error, "Failed to read voltage: {:?}", error);
+                        self.play_hardware_error_sound().await?;
+                        warn!("Flushing motors");
+                        self.ik_controller.clear_serial_io_buffers().await?;
                     }
                 }
             }
@@ -736,6 +735,19 @@ impl MotionControllerLoop {
             if let Some(report) = self.control_loop_rate_tracker.report().await? {
                 debug!(?report, "motor move rate");
             }
+        }
+        Ok(())
+    }
+
+    async fn play_hardware_error_sound(&mut self) -> HopperResult<()> {
+        if self.last_hardware_error_sound_player.elapsed() > HARDWARE_ERROR_SOUND_TIMEOUT {
+            self.last_hardware_error_sound_player = Instant::now();
+            IocContainer::global_instance()
+                .service::<SpeechService>()?
+                .play_sound(
+                    "premium_beat_sounds/sounds/PremiumBeat_0046_sci_fi_beep_electric_4.wav",
+                )
+                .await?;
         }
         Ok(())
     }

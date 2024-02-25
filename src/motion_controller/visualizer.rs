@@ -119,7 +119,7 @@ impl BodyController for HopperVisualizer {
         unimplemented!("shouldn't be called on a mock");
     }
 
-    async fn flush_and_clear_motors(&mut self) -> HopperResult<()> {
+    async fn clear_serial_io_buffers(&mut self) -> HopperResult<()> {
         unimplemented!("shouldn't be called on a mock");
     }
 }

@@ -1420,8 +1420,8 @@ checksum = "545b22097d44f8a9581187cdf93de7a71e4722bf51200cfaba810865b49a495d"
 
 [[package]]
 name = "dynamixel-driver"
-version = "0.2.4"
-source = "git+https://github.com/dmweis/dynamixel-driver?branch=main#ef74bd2952f2c10f49ba573fa3250c6eeda36628"
+version = "0.3.1"
+source = "git+https://github.com/dmweis/dynamixel-driver?branch=main#cc94be638b10d12e60b143815c3ff2b48e753a83"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1430,6 +1430,7 @@ dependencies = [
  "tokio",
  "tokio-serial",
  "tokio-util",
+ "tracing",
 ]
 
 [[package]]
@@ -5392,7 +5393,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "static_assertions",
 ]
 

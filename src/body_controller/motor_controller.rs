@@ -30,7 +30,7 @@ pub trait BodyController: Send + Sync {
     async fn read_motor_positions(&mut self) -> HopperResult<BodyMotorPositions>;
     async fn read_mean_voltage(&mut self) -> HopperResult<f32>;
     async fn scan_motors(&mut self) -> HopperResult<()>;
-    async fn flush_and_clear_motors(&mut self) -> HopperResult<()>;
+    async fn clear_serial_io_buffers(&mut self) -> HopperResult<()>;
 }
 
 pub type HexapodCompliance = HexapodTypes<TripodLegType<u8>>;
@@ -177,11 +177,11 @@ impl BodyController for AsyncBodyController {
             }
             self.last_read_voltage = ids.len() - 1;
         }
-        self.last_read_voltage += 1;
-        if self.last_read_voltage >= ids.len() {
-            self.last_read_voltage = 0;
+        let mut current_read_voltage_id = self.last_read_voltage + 1;
+        if current_read_voltage_id >= ids.len() {
+            current_read_voltage_id = 0;
         }
-        let id = ids[self.last_read_voltage];
+        let id = ids[current_read_voltage_id];
         let voltage = self
             .driver
             .read_voltage(id)
@@ -191,6 +191,8 @@ impl BodyController for AsyncBodyController {
         self.last_voltages.pop_back();
         let sum: f32 = self.last_voltages.iter().sum();
         let mean = sum / ids.len() as f32;
+        // only bump read voltage index if we were successful
+        self.last_read_voltage = current_read_voltage_id;
         Ok(mean)
     }
 
@@ -245,9 +247,9 @@ impl BodyController for AsyncBodyController {
         Ok(())
     }
 
-    async fn flush_and_clear_motors(&mut self) -> HopperResult<()> {
+    async fn clear_serial_io_buffers(&mut self) -> HopperResult<()> {
         self.driver
-            .flush_and_clear()
+            .clear_io_buffers()
             .await
             .map_err(HopperError::DynamixelSyncWriteError)?;
         Ok(())
