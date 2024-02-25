@@ -248,6 +248,7 @@ impl BodyController for AsyncBodyController {
     }
 
     async fn clear_serial_io_buffers(&mut self) -> HopperResult<()> {
+        tokio::time::sleep(Duration::from_millis(100)).await;
         self.driver
             .clear_io_buffers()
             .await
