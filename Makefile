@@ -52,3 +52,7 @@ push-docker: build-docker
 deploy-docker: push-docker
 	@echo "Installing hopper on $(TARGET_HOST)"
 	mosquitto_pub -h homepi -t "hopper/build" -n
+
+.PHONY: deploy-with-ez-cd
+deploy-with-ez-cd: build-docker
+	ez-cd-cli -f docker_out/hopper-rust.deb -d hopper
