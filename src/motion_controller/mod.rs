@@ -19,6 +19,8 @@ use crate::speech::SpeechService;
 use crate::utilities::{MpscChannelHelper, RateTracker};
 pub use choreographer::DanceMove;
 use nalgebra::{Point3, UnitQuaternion, Vector3};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
@@ -31,9 +33,11 @@ use walking::*;
 use self::choreographer::Choreographer;
 use self::folding::FoldingManager;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum BodyState {
     Standing,
+    /// Sitting on the floor
     Grounded,
     Folded,
 }
@@ -97,8 +101,9 @@ impl MotionController {
     }
 
     pub fn set_body_state(&mut self, state: BodyState) {
-        self.command.body_state = Some(state);
-        self.command_sender.send(self.command.clone()).unwrap();
+        self.blocking_command_sender
+            .send(BlockingCommand::SetBodyState(state))
+            .unwrap();
     }
 
     pub fn set_body_compliance_slpe(&mut self, compliance: HexapodCompliance) {
@@ -136,8 +141,8 @@ impl MotionController {
         self.command_sender.send(self.command.clone()).unwrap();
     }
 
-    pub fn create_dance_service(&self) -> DanceService {
-        DanceService {
+    pub fn create_dance_service(&self) -> MotionControllerService {
+        MotionControllerService {
             blocking_command_sender: self.blocking_command_sender.clone(),
         }
     }
@@ -151,14 +156,20 @@ impl Drop for MotionController {
     }
 }
 
-pub struct DanceService {
+pub struct MotionControllerService {
     blocking_command_sender: mpsc::Sender<BlockingCommand>,
 }
 
-impl DanceService {
-    pub fn start_sequence(&self, dance_move: DanceMove) {
+impl MotionControllerService {
+    pub fn start_dance_sequence(&self, dance_move: DanceMove) {
         self.blocking_command_sender
             .send(BlockingCommand::Choreography(dance_move))
+            .unwrap();
+    }
+
+    pub fn set_body_state(&self, state: BodyState) {
+        self.blocking_command_sender
+            .send(BlockingCommand::SetBodyState(state))
             .unwrap();
     }
 }
@@ -166,7 +177,6 @@ impl DanceService {
 #[derive(Debug, Clone, Default)]
 struct MotionControllerCommand {
     move_command: MoveCommand,
-    body_state: Option<BodyState>,
     linear_translation: Vector3<f32>,
     body_rotation: UnitQuaternion<f32>,
     single_leg_mode_command: Option<SingleLegCommand>,
@@ -191,6 +201,7 @@ enum BlockingCommand {
     Choreography(DanceMove),
     SetCompliance(HexapodCompliance),
     SetMotorSpeed(HexapodMotorSpeed),
+    SetBodyState(BodyState),
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
@@ -213,7 +224,7 @@ struct MotionControllerLoop {
     command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
     blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
     command: MotionControllerCommand,
-    state: BodyState,
+    current_body_state: BodyState,
     last_tripod: Tripod,
     last_written_pose: LegPositions,
     current_rotation: UnitQuaternion<f32>,
@@ -243,7 +254,7 @@ impl MotionControllerLoop {
             command_receiver,
             blocking_command_receiver,
             command: MotionControllerCommand::default(),
-            state: BodyState::Grounded,
+            current_body_state: BodyState::Grounded,
             last_tripod: Tripod::LRL,
             last_written_pose,
             current_rotation: UnitQuaternion::identity(),
@@ -298,8 +309,7 @@ impl MotionControllerLoop {
     async fn initialize_body_state(&mut self) -> HopperResult<()> {
         let estimate = self.estimate_current_body_state().await?;
         info!("Estimated body state to be {:?}", estimate);
-        self.state = estimate;
-        self.command.body_state = Some(estimate);
+        self.current_body_state = estimate;
         Ok(())
     }
 
@@ -325,7 +335,7 @@ impl MotionControllerLoop {
 
                             // Attempt recovery
                             self.command = MotionControllerCommand::default();
-                            self.state = BodyState::Grounded;
+                            self.current_body_state = BodyState::Grounded;
                             self.ik_controller.disable_motors().await?;
                             tokio::time::sleep(Duration::from_millis(500)).await;
                             self.dance_moves.clear();
@@ -499,19 +509,17 @@ impl MotionControllerLoop {
         Ok(())
     }
 
-    async fn handle_body_state_transition(&mut self) -> HopperResult<()> {
-        let desired_state = if let Some(desired_state) = self.command.body_state {
-            desired_state
-        } else {
-            return Ok(());
-        };
-        if self.state != desired_state {
+    async fn handle_body_state_transition(
+        &mut self,
+        desired_body_state: BodyState,
+    ) -> HopperResult<()> {
+        if self.current_body_state != desired_body_state {
             info!(
                 "Transitioning body state from {:?} to {:?}",
-                self.state, desired_state
+                self.current_body_state, desired_body_state
             );
         }
-        match (self.state, desired_state) {
+        match (self.current_body_state, desired_body_state) {
             (BodyState::Folded, BodyState::Grounded) => {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
@@ -520,7 +528,7 @@ impl MotionControllerLoop {
                     .await?
                     .unfold_on_ground()
                     .await?;
-                self.state = BodyState::Grounded;
+                self.current_body_state = BodyState::Grounded;
             }
             (BodyState::Folded, BodyState::Standing) => {
                 IocContainer::global_instance()
@@ -531,15 +539,15 @@ impl MotionControllerLoop {
                     .unfold_on_ground()
                     .await?;
                 self.stand_up().await?;
-                self.state = BodyState::Standing;
+                self.current_body_state = BodyState::Standing;
             }
             (BodyState::Grounded, BodyState::Standing) => {
                 self.stand_up().await?;
-                self.state = BodyState::Standing;
+                self.current_body_state = BodyState::Standing;
             }
             (BodyState::Standing, BodyState::Grounded) => {
                 self.sit_down().await?;
-                self.state = BodyState::Grounded;
+                self.current_body_state = BodyState::Grounded;
             }
             (BodyState::Standing, BodyState::Folded) => {
                 self.sit_down().await?;
@@ -550,7 +558,7 @@ impl MotionControllerLoop {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
                     .off()?;
-                self.state = BodyState::Folded;
+                self.current_body_state = BodyState::Folded;
             }
             (BodyState::Grounded, BodyState::Folded) => {
                 FoldingManager::new(&mut self.ik_controller)
@@ -560,7 +568,7 @@ impl MotionControllerLoop {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
                     .off()?;
-                self.state = BodyState::Folded;
+                self.current_body_state = BodyState::Folded;
             }
             (BodyState::Grounded, BodyState::Grounded) => {
                 // do nothing
@@ -616,10 +624,12 @@ impl MotionControllerLoop {
                         self.ik_controller.set_body_motor_speed(speed).await?;
                         continue;
                     }
+                    BlockingCommand::SetBodyState(new_body_state) => {
+                        self.handle_body_state_transition(new_body_state).await?;
+                        // no need to continue here
+                    }
                 }
             }
-
-            self.handle_body_state_transition().await?;
 
             // measure voltage only if not walking
             if !self.command.move_command.should_move()
@@ -634,14 +644,14 @@ impl MotionControllerLoop {
                     Err(error) => {
                         error!(?error, "Failed to read voltage: {:?}", error);
                         self.play_hardware_error_sound().await?;
-                        warn!("Flushing motors");
+                        warn!("Clearing driver io buffers");
                         self.ik_controller.clear_serial_io_buffers().await?;
                     }
                 }
             }
 
             // only walk if standing
-            if self.state == BodyState::Standing {
+            if self.current_body_state == BodyState::Standing {
                 // only do high fives if standing
                 let high_five_command = self.high_five_receiver.try_recv();
                 if let Ok(high_five_command) = high_five_command {

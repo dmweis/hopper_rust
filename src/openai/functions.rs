@@ -3,30 +3,19 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::{Arc, Mutex};
-use zenoh::prelude::r#async::*;
 
 use crate::{
-    error::HopperError,
     high_five::HighFiveServiceController,
     ioc_container::IocContainer,
     lidar::LidarServiceController,
-    motion_controller::{DanceMove, DanceService},
-    zenoh_consts::STANCE_SUBSCRIBER,
+    motion_controller::{BodyState, DanceMove, MotionControllerService},
 };
 
 use super::conversation_handler::{json_schema_for_func_args, ChatGptFunction};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct HopperBodyPoseFuncArgs {
-    pub body_pose: HopperBodyPose,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum HopperBodyPose {
-    Folded,
-    Standing,
-    Sitting,
+    pub body_pose: BodyState,
 }
 
 pub struct HopperBodyPoseFuncCallback {
@@ -50,15 +39,9 @@ impl ChatGptFunction for HopperBodyPoseFuncCallback {
     async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
         let hopper_body_pose_func: HopperBodyPoseFuncArgs = serde_json::from_str(args)?;
 
-        let message = match hopper_body_pose_func.body_pose {
-            HopperBodyPose::Folded => "folded",
-            HopperBodyPose::Standing => "stand",
-            HopperBodyPose::Sitting => "ground",
-        };
-
         // stop high fives in case we are sitting down or folding
         match hopper_body_pose_func.body_pose {
-            HopperBodyPose::Folded | HopperBodyPose::Sitting => {
+            BodyState::Folded | BodyState::Grounded => {
                 IocContainer::global_instance()
                     .service::<HighFiveServiceController>()?
                     .set_active(false);
@@ -70,11 +53,9 @@ impl ChatGptFunction for HopperBodyPoseFuncCallback {
             _ => (),
         }
 
-        self.zenoh_session
-            .put(STANCE_SUBSCRIBER, message)
-            .res()
-            .await
-            .map_err(HopperError::ZenohError)?;
+        IocContainer::global_instance()
+            .service::<MotionControllerService>()?
+            .set_body_state(hopper_body_pose_func.body_pose);
 
         let result = json!({
             "success": true
@@ -109,8 +90,8 @@ impl ChatGptFunction for HopperDanceFuncCallback {
         let hopper_dance_move: HopperDanceFuncArgs = serde_json::from_str(args)?;
 
         IocContainer::global_instance()
-            .service::<DanceService>()?
-            .start_sequence(hopper_dance_move.dance_move);
+            .service::<MotionControllerService>()?
+            .start_dance_sequence(hopper_dance_move.dance_move);
 
         let result = json!({
             "success": true
