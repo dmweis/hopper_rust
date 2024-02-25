@@ -2034,7 +2034,7 @@ dependencies = [
 
 [[package]]
 name = "hopper_rust"
-version = "0.4.16"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "approx 0.5.1",
