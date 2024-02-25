@@ -22,6 +22,8 @@ use nalgebra::{Point3, UnitQuaternion, Vector3};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
+use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 use std::{sync::mpsc, time::Instant};
 use tokio::sync::mpsc::Receiver;
@@ -36,16 +38,47 @@ use self::folding::FoldingManager;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum BodyState {
-    Standing,
+    Standing = 0,
     /// Sitting on the floor
-    Grounded,
-    Folded,
+    Grounded = 1,
+    Folded = 2,
+}
+
+#[derive(Debug, Clone)]
+pub struct AtomicBodyState {
+    state: Arc<AtomicU8>,
+}
+
+impl AtomicBodyState {
+    pub fn new(state: BodyState) -> Self {
+        let num = state as u8;
+        Self {
+            state: Arc::new(AtomicU8::new(num)),
+        }
+    }
+
+    pub fn set(&self, state: BodyState) {
+        let num = state as u8;
+        self.state.store(num, Ordering::SeqCst);
+    }
+
+    pub fn get(&self) -> BodyState {
+        let num = self.state.load(Ordering::SeqCst);
+        // TODO(David): This isn't great.
+        match num {
+            0 => BodyState::Standing,
+            1 => BodyState::Grounded,
+            2 => BodyState::Folded,
+            _ => panic!("Unknown body state"),
+        }
+    }
 }
 
 pub struct MotionController {
     command_sender: last_message_channel::Sender<MotionControllerCommand>,
     blocking_command_sender: mpsc::Sender<BlockingCommand>,
     command: MotionControllerCommand,
+    body_state: AtomicBodyState,
     _handle: JoinHandle<anyhow::Result<()>>,
 }
 
@@ -69,11 +102,14 @@ impl MotionController {
         )
         .await?;
 
+        let body_state = motion_controller_loop.current_body_state.clone();
+
         let handle = spawn(motion_controller_loop.run());
         Ok(MotionController {
             command_sender,
             blocking_command_sender,
             command,
+            body_state,
             _handle: handle,
         })
     }
@@ -145,6 +181,10 @@ impl MotionController {
         MotionControllerService {
             blocking_command_sender: self.blocking_command_sender.clone(),
         }
+    }
+
+    pub fn get_body_state_handle(&self) -> AtomicBodyState {
+        self.body_state.clone()
     }
 }
 
@@ -224,7 +264,7 @@ struct MotionControllerLoop {
     command_receiver: last_message_channel::Receiver<MotionControllerCommand>,
     blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
     command: MotionControllerCommand,
-    current_body_state: BodyState,
+    current_body_state: AtomicBodyState,
     last_tripod: Tripod,
     last_written_pose: LegPositions,
     current_rotation: UnitQuaternion<f32>,
@@ -254,7 +294,7 @@ impl MotionControllerLoop {
             command_receiver,
             blocking_command_receiver,
             command: MotionControllerCommand::default(),
-            current_body_state: BodyState::Grounded,
+            current_body_state: AtomicBodyState::new(BodyState::Grounded),
             last_tripod: Tripod::LRL,
             last_written_pose,
             current_rotation: UnitQuaternion::identity(),
@@ -309,7 +349,7 @@ impl MotionControllerLoop {
     async fn initialize_body_state(&mut self) -> HopperResult<()> {
         let estimate = self.estimate_current_body_state().await?;
         info!("Estimated body state to be {:?}", estimate);
-        self.current_body_state = estimate;
+        self.current_body_state.set(estimate);
         Ok(())
     }
 
@@ -335,7 +375,7 @@ impl MotionControllerLoop {
 
                             // Attempt recovery
                             self.command = MotionControllerCommand::default();
-                            self.current_body_state = BodyState::Grounded;
+                            self.current_body_state = AtomicBodyState::new(BodyState::Grounded);
                             self.ik_controller.disable_motors().await?;
                             tokio::time::sleep(Duration::from_millis(500)).await;
                             self.dance_moves.clear();
@@ -513,13 +553,14 @@ impl MotionControllerLoop {
         &mut self,
         desired_body_state: BodyState,
     ) -> HopperResult<()> {
-        if self.current_body_state != desired_body_state {
+        if self.current_body_state.get() != desired_body_state {
             info!(
                 "Transitioning body state from {:?} to {:?}",
-                self.current_body_state, desired_body_state
+                self.current_body_state.get(),
+                desired_body_state
             );
         }
-        match (self.current_body_state, desired_body_state) {
+        match (self.current_body_state.get(), desired_body_state) {
             (BodyState::Folded, BodyState::Grounded) => {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
@@ -528,7 +569,6 @@ impl MotionControllerLoop {
                     .await?
                     .unfold_on_ground()
                     .await?;
-                self.current_body_state = BodyState::Grounded;
             }
             (BodyState::Folded, BodyState::Standing) => {
                 IocContainer::global_instance()
@@ -539,15 +579,12 @@ impl MotionControllerLoop {
                     .unfold_on_ground()
                     .await?;
                 self.stand_up().await?;
-                self.current_body_state = BodyState::Standing;
             }
             (BodyState::Grounded, BodyState::Standing) => {
                 self.stand_up().await?;
-                self.current_body_state = BodyState::Standing;
             }
             (BodyState::Standing, BodyState::Grounded) => {
                 self.sit_down().await?;
-                self.current_body_state = BodyState::Grounded;
             }
             (BodyState::Standing, BodyState::Folded) => {
                 self.sit_down().await?;
@@ -558,7 +595,6 @@ impl MotionControllerLoop {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
                     .off()?;
-                self.current_body_state = BodyState::Folded;
             }
             (BodyState::Grounded, BodyState::Folded) => {
                 FoldingManager::new(&mut self.ik_controller)
@@ -568,7 +604,6 @@ impl MotionControllerLoop {
                 IocContainer::global_instance()
                     .service::<FaceController>()?
                     .off()?;
-                self.current_body_state = BodyState::Folded;
             }
             (BodyState::Grounded, BodyState::Grounded) => {
                 // do nothing
@@ -580,6 +615,8 @@ impl MotionControllerLoop {
                 // do nothing
             }
         }
+        self.current_body_state.set(desired_body_state);
+
         Ok(())
     }
 
@@ -651,7 +688,7 @@ impl MotionControllerLoop {
             }
 
             // only walk if standing
-            if self.current_body_state == BodyState::Standing {
+            if self.current_body_state.get() == BodyState::Standing {
                 // only do high fives if standing
                 let high_five_command = self.high_five_receiver.try_recv();
                 if let Ok(high_five_command) = high_five_command {

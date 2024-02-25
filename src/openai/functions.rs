@@ -79,7 +79,7 @@ impl ChatGptFunction for HopperDanceFuncCallback {
     }
 
     fn description(&self) -> String {
-        "perform a dance move with your body. Can be useful to express emotion or react to what user is saying".to_string()
+        "perform a dance move with your body. Can be useful to express emotion or react to what user is saying.".to_string()
     }
 
     fn parameters_schema(&self) -> serde_json::Value {
