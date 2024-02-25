@@ -91,8 +91,7 @@ async fn main() -> Result<()> {
         app_config.tts_service_config.cache_dir_path,
         app_config.tts_service_config.audio_repository_path,
     )
-    .await
-    .unwrap();
+    .await?;
 
     ioc_container.register(speech_service);
 
@@ -117,8 +116,7 @@ async fn main() -> Result<()> {
         &app_config.base.dynamixel_port,
         hopper_body_config.legs.clone(),
         motor_rate_publisher,
-    )
-    .unwrap();
+    )?;
 
     let pose_publisher = zenoh_session
         .declare_publisher(HOPPER_POSE_FRAMES)
@@ -180,8 +178,7 @@ async fn main() -> Result<()> {
         //     .unwrap();
         speech_service
             .say_eleven_with_default_voice("Hopper ready")
-            .await
-            .unwrap();
+            .await?;
         // speech_service.say_home_speak("Hopper ready").await.unwrap();
     }
 
