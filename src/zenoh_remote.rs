@@ -25,7 +25,7 @@ use tracing::*;
 use zenoh::prelude::r#async::*;
 
 pub async fn simple_zenoh_controller(
-    controller: &mut motion_controller::MotionController,
+    motion_controller: &mut motion_controller::MotionController,
     zenoh_session: Arc<zenoh::Session>,
 ) -> anyhow::Result<()> {
     info!("Starting simple zenoh controller");
@@ -73,15 +73,15 @@ pub async fn simple_zenoh_controller(
             sample = stance_subscriber.recv_async() => {
                 trace!("got new message");
                 let sample = sample?;
-                handle_stance_command(sample, controller).await?;
+                handle_stance_command(sample, motion_controller).await?;
             }
             sample = compliance_slope_subscriber.recv_async() => {
                 let sample = sample?;
-                handle_compliance_slope_command(sample, controller).await?;
+                handle_compliance_slope_command(sample, motion_controller).await?;
             }
             sample = body_motor_speed_subscriber.recv_async() => {
                 let sample = sample?;
-                handle_body_motor_speed_command(sample, controller).await?;
+                handle_body_motor_speed_command(sample, motion_controller).await?;
             }
             sample = walking_config_subscriber.recv_async() => {
                 let sample = sample?;
@@ -91,12 +91,12 @@ pub async fn simple_zenoh_controller(
             gamepad_message = gamepad_subscriber.recv_async() => {
                 trace!("got new gamepad message");
                 let gamepad_message = gamepad_message?;
-                gamepad_controller.handle_gamepad_command_zenoh(gamepad_message, controller, &mut last_gamepad_message).await?;
+                gamepad_controller.handle_gamepad_command_zenoh(gamepad_message, motion_controller, &mut last_gamepad_message).await?;
             }
             controller_message = controller_reader.recv() => {
                 trace!("got new controller message");
                 if let Some(controller_message) = controller_message {
-                    gamepad_controller.handle_gamepad_command(controller_message, controller, &mut last_gamepad_message).await?;
+                    gamepad_controller.handle_gamepad_command(controller_message, motion_controller, &mut last_gamepad_message).await?;
                 }
             }
             _ = tokio::signal::ctrl_c() => {
