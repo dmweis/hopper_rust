@@ -17,7 +17,7 @@ use crate::ik_controller::{
 use crate::ioc_container::IocContainer;
 use crate::speech::SpeechService;
 use crate::utilities::{MpscChannelHelper, RateTracker};
-pub use choreographer::DanceMove;
+
 use nalgebra::{Point3, UnitQuaternion, Vector3};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -28,10 +28,12 @@ use std::{
 };
 use tokio::{spawn, sync::mpsc::Receiver, task::JoinHandle, time};
 use tracing::*;
+
+use choreographer::Choreographer;
+use folding::FoldingManager;
 use walking::*;
 
-use self::choreographer::Choreographer;
-use self::folding::FoldingManager;
+pub use choreographer::DanceMove;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
