@@ -12,7 +12,6 @@ use crate::{
     error::HopperError,
     face::animations::Animation,
     ioc_container::IocContainer,
-    motion_controller::AtomicBodyState,
     openai::conversation_handler::OpenAiApiResponse,
     speech::SpeechService,
     zenoh_consts::{HOPPER_OPENAI_COMMAND_SUBSCRIBER, OPENAI_DIAGNOSTICS_HISTORY},
@@ -189,15 +188,7 @@ async fn process_simple_text_command(
 ) -> anyhow::Result<()> {
     info!("Received hopper command {:?}", text_command);
 
-    let body_state = IocContainer::global_instance()
-        .service::<AtomicBodyState>()?
-        .get();
-
-    // TODO(David): Figure out a better way to provide state to Hopper
-    let text_command_with_state =
-        format!("CURRENT_BODY_STATE: {:?}\n\n{}", body_state, text_command);
-
-    let mut command = Some(text_command_with_state.as_str());
+    let mut command = Some(text_command);
     // get responses
 
     loop {

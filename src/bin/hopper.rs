@@ -154,9 +154,6 @@ async fn main() -> Result<()> {
     let dance_service = motion_controller.create_dance_service();
     ioc_container.register(dance_service);
 
-    let body_state = motion_controller.get_body_state_handle();
-    ioc_container.register(body_state);
-
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
     let open_ai_service =
