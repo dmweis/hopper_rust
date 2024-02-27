@@ -120,15 +120,14 @@ pub async fn start_openai_controller(
                     text_command_msg = simple_text_command_subscriber.recv_async() => {
                         info!("Received new zenoh text command");
                         let text_command: String = text_command_msg?.value.try_into()?;
-                        let voice_provider = *voice_provider_arc.lock().unwrap();
+                        
 
-                        process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone(), voice_provider).await?;
+                        process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone(), voice_provider_arc.clone()).await?;
                         }
                     text_command = receiver.recv() => {
                         if let Some(text_command) = text_command {
                             info!("Received new text command");
-                            let voice_provider = *voice_provider_arc.lock().unwrap();
-                            process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone(), voice_provider).await?;
+                            process_simple_text_command(&text_command, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone(), voice_provider_arc.clone()).await?;
                         }
                     }
                     wake_word_detection = wake_word_detection_subscriber.recv_async() => {
@@ -139,6 +138,12 @@ pub async fn start_openai_controller(
                             IocContainer::global_instance()
                                 .service::<crate::face::FaceController>()?
                                 .set_temporary_animation(Animation::Speaking(crate::face::driver::RED, voice_probability_val.clone()))?;
+                            IocContainer::global_instance()
+                                .service::<SpeechService>()?
+                                .play_sound(
+                                    "premium_beat_sounds/sounds/PremiumBeat_0013_cursor_selection_11.wav",
+                                )
+                                .await?;
                         }
                     }
                     wake_word_detection_end = wake_word_detection_end_subscriber.recv_async() => {
@@ -161,8 +166,7 @@ pub async fn start_openai_controller(
                         let wake_word_transcript: AudioTranscript = serde_json::from_str(&wake_word_transcript)?;
                         if wake_word_transcript.wake_word.to_lowercase().contains("hopper") {
                             info!("Received new text command");
-                            let voice_provider = *voice_provider_arc.lock().unwrap();
-                            process_simple_text_command(&wake_word_transcript.transcript, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone(), voice_provider).await?;
+                            process_simple_text_command(&wake_word_transcript.transcript, chat_gpt_conversation.clone(), client.clone(), zenoh_session.clone(), voice_provider_arc.clone()).await?;
                         }
                     }
                 }
@@ -185,7 +189,7 @@ async fn process_simple_text_command(
     mut conversation: ChatGptConversation,
     open_ai_client: Client<OpenAIConfig>,
     zenoh_session: Arc<zenoh::Session>,
-    voice_provider: VoiceProvider,
+    voice_provider_arc: Arc<Mutex<VoiceProvider>>,
 ) -> anyhow::Result<()> {
     info!("Received hopper command {:?}", text_command);
 
@@ -210,6 +214,7 @@ async fn process_simple_text_command(
                 info!("Assistant response form ChatGPT: {:?}", response);
 
                 tokio::spawn(async move {
+                    let voice_provider = *voice_provider_arc.lock().unwrap();
                     if let Err(err) = speak_with_face_animation(&response, voice_provider).await {
                         tracing::error!("Failed to speak with face animation: {}", err);
                     }
@@ -249,6 +254,12 @@ async fn speak_with_face_animation(
             IocContainer::global_instance()
                 .service::<SpeechService>()?
                 .say_eleven_with_default_voice(message)
+                .await?;
+        }
+        VoiceProvider::AstromechVoice => {
+            IocContainer::global_instance()
+                .service::<SpeechService>()?
+                .say_astromech(message)
                 .await?;
         }
     }

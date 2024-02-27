@@ -239,6 +239,8 @@ pub enum VoiceProvider {
     /// expensive voice provider form Eleven Labs
     /// Should be used carefully
     Expensive,
+    /// Beeping voice like R2-D2
+    AstromechRobot,
 }
 
 pub struct SwitchVoiceFuncCallback {
