@@ -111,7 +111,21 @@ impl<'a> FoldingManager<'a> {
     pub async fn new(
         ik_controller: &'a mut Box<dyn IkControllable>,
     ) -> HopperResult<FoldingManager> {
-        let last_written_pose = ik_controller.read_motor_positions().await?;
+        let mut error_count = 0;
+        let last_written_pose = loop {
+            match ik_controller.read_motor_positions().await {
+                Ok(pose) => break pose,
+                Err(err) => {
+                    tracing::error!("Failed to read body pose {:?} count {:?}", err, error_count);
+                    ik_controller.clear_serial_io_buffers().await?;
+                    error_count += 1;
+                    if error_count > 3 {
+                        tracing::error!("Failed to read pose in folding manager");
+                        return Err(err);
+                    }
+                }
+            }
+        };
         Ok(Self {
             ik_controller,
             last_written_pose,
