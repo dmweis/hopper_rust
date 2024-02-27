@@ -256,7 +256,7 @@ async fn speak_with_face_animation(
                 .say_eleven_with_default_voice(message)
                 .await?;
         }
-        VoiceProvider::AstromechVoice => {
+        VoiceProvider::AstromechRobot => {
             IocContainer::global_instance()
                 .service::<SpeechService>()?
                 .say_astromech(message)
