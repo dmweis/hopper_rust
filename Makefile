@@ -55,4 +55,4 @@ deploy-docker: push-docker
 
 .PHONY: deploy-with-ez-cd
 deploy-with-ez-cd: build-docker
-	ez-cd-cli -f docker_out/hopper-rust.deb -d hopper
+	ez-cd-cli -f docker_out/hopper-rust.deb -d $(TARGET_HOST)
