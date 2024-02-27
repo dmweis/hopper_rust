@@ -156,8 +156,12 @@ async fn main() -> Result<()> {
 
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
-    let open_ai_service =
-        start_openai_controller(&app_config.openai.api_key, zenoh_session.clone()).await?;
+    let open_ai_service = start_openai_controller(
+        &app_config.openai.api_key,
+        &app_config.openai.wakeword_topic_prefix,
+        zenoh_session.clone(),
+    )
+    .await?;
 
     ioc_container.register(open_ai_service);
 

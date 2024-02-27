@@ -54,10 +54,16 @@ pub struct TtsServiceConfig {
     pub audio_repository_path: Option<String>,
 }
 
+fn default_wakeword_topic_prefix() -> String {
+    "wakeword".to_string()
+}
+
 /// Named like this because OpenAiConfig is already a type in the openai crate
 #[derive(Deserialize, Debug, Clone)]
 pub struct HopperOpenAiConfig {
     pub api_key: String,
+    #[serde(default = "default_wakeword_topic_prefix")]
+    pub wakeword_topic_prefix: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

@@ -54,6 +54,7 @@ impl OpenAiService {
 
 pub async fn start_openai_controller(
     openai_api_key: &str,
+    topic_prefix: &str,
     zenoh_session: Arc<zenoh::Session>,
 ) -> anyhow::Result<OpenAiService> {
     let config = OpenAIConfig::new().with_api_key(openai_api_key);
@@ -84,25 +85,25 @@ pub async fn start_openai_controller(
         .map_err(HopperError::ZenohError)?;
 
     let wake_word_transcript_subscriber = zenoh_session
-        .declare_subscriber("wakeword/event/transcript")
+        .declare_subscriber(format!("{topic_prefix}/event/transcript"))
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let wake_word_detection_subscriber = zenoh_session
-        .declare_subscriber("wakeword/event/wake_word_detection")
+        .declare_subscriber(format!("{topic_prefix}/event/wake_word_detection"))
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let wake_word_detection_end_subscriber = zenoh_session
-        .declare_subscriber("wakeword/event/wake_word_detection_end")
+        .declare_subscriber(format!("{topic_prefix}/event/wake_word_detection_end"))
         .res()
         .await
         .map_err(HopperError::ZenohError)?;
 
     let voice_probability_subscriber = zenoh_session
-        .declare_subscriber("wakeword/telemetry/voice_probability")
+        .declare_subscriber(format!("{topic_prefix}/telemetry/voice_probability"))
         .best_effort()
         .res()
         .await

@@ -26,3 +26,4 @@ camera:
   image_height: 240
 openai:
   api_key: "API_KEY"
+  wakeword_topic_prefix: "hopper_wakeword"
