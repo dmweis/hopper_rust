@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::{net::TcpStream, sync::mpsc::Receiver};
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
+use tracing::info;
 
 const VOICE_MODEL: &str = "eleven_multilingual_v1";
 
@@ -243,6 +244,7 @@ impl ElevenLabsTtsClient {
 
         tokio::spawn(async move {
             while let Some(message) = read.next().await {
+                //TODO(David): these unwraps are not great
                 let message = message.unwrap();
                 match message {
                     Message::Text(text) => {
@@ -255,7 +257,13 @@ impl ElevenLabsTtsClient {
                                 .context("Failed to parse base64")
                                 .unwrap();
 
-                            sender.send(decoded).await.unwrap();
+                            if !decoded.is_empty() {
+                                sender.send(decoded).await.unwrap();
+                                if let Some(alignment) = parsed.alignment {
+                                    let contents: String = alignment.chars.iter().collect();
+                                    info!("Playing audio chunk with contents: {:?}", contents);
+                                }
+                            }
                         }
                         if let Some(is_final) = parsed.is_final {
                             if is_final {
@@ -263,7 +271,8 @@ impl ElevenLabsTtsClient {
                             }
                         }
                     }
-                    _ => {
+                    other => {
+                        tracing::warn!("Received other message from eleven labs {:?}", other);
                         // ignore other messages
                     }
                 }
@@ -282,6 +291,10 @@ pub struct StreamingSession {
 
 impl StreamingSession {
     pub async fn send_chunk(&mut self, text: &str) -> anyhow::Result<()> {
+        if text.is_empty() {
+            // do not send empty chunks because that will terminate the connection
+            return Ok(());
+        }
         let input = StreamingInputText {
             text: text.to_owned(),
             voice_settings: self.voice_settings.take(),

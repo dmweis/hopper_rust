@@ -11,7 +11,7 @@ mod speech_service;
 mod eleven_labs_client;
 
 #[cfg(feature = "audio")]
-pub use speech_service::SpeechService;
+pub use speech_service::{SpeechService, DEFAULT_ELEVEN_LABS_VOICE_NAME};
 
 #[cfg(feature = "audio")]
 pub use eleven_labs_client::ElevenLabsTtsClient;

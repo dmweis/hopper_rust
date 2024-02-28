@@ -233,9 +233,11 @@ pub struct SwitchVoiceFuncArgs {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum VoiceProvider {
-    /// default voice provider Microsoft Azure
+    /// Fast stream based voice
     #[default]
-    Default,
+    Fast,
+    /// Microsoft Azure voice
+    Basic,
     /// expensive voice provider form Eleven Labs
     /// Should be used carefully
     Expensive,

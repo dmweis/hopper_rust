@@ -72,7 +72,7 @@ pub async fn start_openai_controller(
 
     chat_gpt_conversation.add_function(Arc::new(FaceDisplayFuncCallback))?;
 
-    let voice_provider_arc = Arc::new(Mutex::new(VoiceProvider::Default));
+    let voice_provider_arc = Arc::new(Mutex::new(VoiceProvider::default()));
 
     chat_gpt_conversation.add_function(Arc::new(SwitchVoiceFuncCallback {
         voice_provider: voice_provider_arc.clone(),
@@ -197,28 +197,25 @@ async fn process_simple_text_command(
     // get responses
 
     loop {
-        IocContainer::global_instance()
-            .service::<crate::face::FaceController>()?
-            .set_temporary_animation(Animation::CountDownBasic)?;
+        let voice_provider = *voice_provider_arc.lock().unwrap();
+        let stream_audio = matches!(voice_provider, VoiceProvider::Fast);
 
         let next_response = conversation
-            .next_message_stream(command.take(), &open_ai_client)
+            .next_message_stream(command.take(), &open_ai_client, stream_audio)
             .await?;
-
-        IocContainer::global_instance()
-            .service::<crate::face::FaceController>()?
-            .clear_temporary_animation()?;
 
         match next_response {
             OpenAiApiResponse::AssistantResponse(response) => {
                 info!("Assistant response form ChatGPT: {:?}", response);
 
-                tokio::spawn(async move {
-                    let voice_provider = *voice_provider_arc.lock().unwrap();
-                    if let Err(err) = speak_with_face_animation(&response, voice_provider).await {
-                        tracing::error!("Failed to speak with face animation: {}", err);
-                    }
-                });
+                if !stream_audio {
+                    tokio::spawn(async move {
+                        let voice_provider = *voice_provider_arc.lock().unwrap();
+                        if let Err(err) = speak_with_face_animation(&response, voice_provider).await {
+                            tracing::error!("Failed to speak with face animation: {}", err);
+                        }
+                    });
+                }
 
                 break;
             }
@@ -244,13 +241,13 @@ async fn speak_with_face_animation(
     voice_provider: VoiceProvider,
 ) -> anyhow::Result<()> {
     match voice_provider {
-        VoiceProvider::Default => {
+        VoiceProvider::Basic => {
             IocContainer::global_instance()
                 .service::<SpeechService>()?
                 .say_azure_with_style(message, crate::speech::AzureVoiceStyle::Cheerful)
                 .await?;
         }
-        VoiceProvider::Expensive => {
+        VoiceProvider::Expensive | VoiceProvider::Fast => {
             IocContainer::global_instance()
                 .service::<SpeechService>()?
                 .say_eleven_with_default_voice(message)

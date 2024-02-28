@@ -1,6 +1,7 @@
-use super::audio_cache::AudioCache;
 use super::audio_repository::AudioRepository;
 use super::AzureVoiceStyle;
+use super::{audio_cache::AudioCache, eleven_labs_client::StreamingSession};
+use crate::face::animations::Animation;
 use crate::{
     error::{HopperError, HopperResult},
     ioc_container::IocContainer,
@@ -126,7 +127,9 @@ fn audio_player_loop(receiver: &mut Receiver<AudioPlayerCommand>) -> HopperResul
             }
             AudioPlayerCommand::WaitUntilSoundEnds(sender) => {
                 debug!("Waiting until sound ends");
-                sink.sleep_until_end();
+                while !sink.empty() {
+                    sink.sleep_until_end();
+                }
                 debug!("Sound ended");
                 _ = sender.send(());
             }
@@ -167,8 +170,8 @@ pub trait Playable: std::io::Read + std::io::Seek + Send + Sync {}
 impl Playable for Cursor<Vec<u8>> {}
 impl Playable for File {}
 
-/// voice Freya
-const DEFAULT_ELEVEN_LABS_VOICE_NAME: &str = "Natasha";
+/// voice Natasha
+pub const DEFAULT_ELEVEN_LABS_VOICE_NAME: &str = "Natasha";
 
 impl SpeechService {
     pub async fn new(
@@ -386,6 +389,50 @@ impl SpeechService {
         info!("Using voice id {} for voice {}", voice_id, voice_name);
         self.say_eleven_with_voice_id(text, &voice_id).await?;
         Ok(())
+    }
+
+    pub async fn start_eleven_labs_voice_stream(
+        &self,
+        voice_name: &str,
+    ) -> anyhow::Result<StreamingSession> {
+        let voice_id = self
+            .voice_name_to_voice_id_table
+            .get(voice_name)
+            .context("Unknown voice")?
+            .clone();
+        let (session, mut audio_sample_receiver) = self
+            .eleven_labs_client
+            .start_streaming_session(&voice_id)
+            .await?;
+
+        tokio::spawn(async move {
+            while let Some(audio_file_contents) = audio_sample_receiver.recv().await {
+                // these unwraps are not great
+                IocContainer::global_instance()
+                    .service::<crate::face::FaceController>()
+                    .unwrap()
+                    .set_temporary_animation(Animation::SpeakingRandom(crate::face::driver::CYAN))
+                    .unwrap();
+                IocContainer::global_instance()
+                    .service::<SpeechService>()
+                    .unwrap()
+                    .play_mp3(audio_file_contents)
+                    .await
+                    .unwrap();
+            }
+            IocContainer::global_instance()
+                .service::<SpeechService>()
+                .unwrap()
+                .wait_until_sound_ends()
+                .await;
+            IocContainer::global_instance()
+                .service::<crate::face::FaceController>()
+                .unwrap()
+                .clear_temporary_animation()
+                .unwrap();
+        });
+
+        Ok(session)
     }
 
     pub async fn say_eleven_with_voice_id(&self, text: &str, voice_id: &str) -> anyhow::Result<()> {

@@ -18,6 +18,11 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tracing::{info, instrument};
 
+use crate::{
+    ioc_container::IocContainer,
+    speech::{SpeechService, DEFAULT_ELEVEN_LABS_VOICE_NAME},
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OpenAiHistory {
     history: Vec<ChatCompletionRequestMessage>,
@@ -137,6 +142,7 @@ impl ChatGptConversation {
         &mut self,
         message_text: Option<&str>,
         client: &Client<OpenAIConfig>,
+        stream_content_response: bool,
     ) -> anyhow::Result<OpenAiApiResponse> {
         if let Some(message_text) = message_text {
             let user_message = ChatCompletionRequestUserMessageArgs::default()
@@ -149,7 +155,7 @@ impl ChatGptConversation {
 
         let request = self.build_request_message()?;
 
-        info!("starting stream");
+        info!("Starting chat completion stream");
         let mut stream = client.chat().create_stream(request).await?;
 
         // use this table to collect function call info
@@ -157,6 +163,16 @@ impl ChatGptConversation {
             HashMap::new();
         let mut response_content_buffer = String::new();
 
+        let mut streamer = if stream_content_response {
+            Some(
+                IocContainer::global_instance()
+                    .service::<SpeechService>()?
+                    .start_eleven_labs_voice_stream(DEFAULT_ELEVEN_LABS_VOICE_NAME)
+                    .await?,
+            )
+        } else {
+            None
+        };
         // handle stream collection
         while let Some(chunk) = stream.next().await {
             let chunk = chunk?;
@@ -168,6 +184,9 @@ impl ChatGptConversation {
             if let Some(content) = &choice.delta.content {
                 // TODO(David): Stream content here
                 response_content_buffer.push_str(content);
+                if let Some(streamer) = &mut streamer {
+                    streamer.send_chunk(content).await?;
+                }
             }
 
             // The openAI tool call streams are pretty messy. This code basically collects all of the tool calls into "buffers"
@@ -199,7 +218,11 @@ impl ChatGptConversation {
                 }
             }
         }
-        info!(?tool_call_map, "Finished collecting stream");
+        if let Some(streamer) = &mut streamer {
+            streamer.finish().await?;
+        }
+
+        info!(?tool_call_map, "Finished collecting chat completion stream");
 
         // execute tools calls
         // Make sure calls are sorted by index
