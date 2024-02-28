@@ -1,11 +1,12 @@
 use anyhow::{Context, Result};
 use base64::prelude::*;
 use bytes::Bytes;
-use futures::SinkExt;
+use futures::{stream::SplitSink, SinkExt};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tokio_tungstenite::{connect_async, tungstenite::Message};
+use tokio::{net::TcpStream, sync::mpsc::Receiver};
+use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 const VOICE_MODEL: &str = "eleven_multilingual_v1";
 
@@ -216,7 +217,10 @@ impl ElevenLabsTtsClient {
         Ok(data)
     }
 
-    pub async fn stream_tts(&self, text: &str, voice_id: &str) -> Result<Vec<Vec<u8>>> {
+    pub async fn start_streaming_session(
+        &self,
+        voice_id: &str,
+    ) -> Result<(StreamingSession, Receiver<Vec<u8>>)> {
         let url = format!(
             "wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id={VOICE_MODEL}"
         );
@@ -227,59 +231,85 @@ impl ElevenLabsTtsClient {
             anyhow::bail!("Request failed {:?}", response.status());
         }
 
-        let (mut write, mut read) = ws_stream.split();
+        let (writer, mut read) = ws_stream.split();
 
-        let input = StreamingInputText {
-            text: text.to_owned(),
+        let streaming_session = StreamingSession {
+            api_key: Some(self.api_key.clone()),
             voice_settings: Some(VoiceSettings::default()),
-            generation_config: None,
-            xi_api_key: Some(self.api_key.clone()),
-            authorization: None,
+            writer,
         };
 
-        let json = serde_json::to_string(&input)?;
-        let message = Message::text(json);
-        write.send(message).await?;
+        let (sender, receiver) = tokio::sync::mpsc::channel(10);
 
-        let input = StreamingInputText {
-            text: String::from(""),
-            voice_settings: None,
-            generation_config: None,
-            xi_api_key: None,
-            authorization: None,
-        };
+        tokio::spawn(async move {
+            while let Some(message) = read.next().await {
+                let message = message.unwrap();
+                match message {
+                    Message::Text(text) => {
+                        let parsed: StreamingOutputAudio = serde_json::from_str(&text)
+                            .context("Failed to parse json")
+                            .unwrap();
+                        if let Some(audio) = &parsed.audio {
+                            let decoded = BASE64_STANDARD
+                                .decode(audio)
+                                .context("Failed to parse base64")
+                                .unwrap();
 
-        let json = serde_json::to_string(&input)?;
-        let message = Message::text(json);
-        write.send(message).await?;
-
-        let mut files = vec![];
-
-        while let Some(message) = read.next().await {
-            let message = message?;
-
-            match message {
-                Message::Text(text) => {
-                    let parsed: StreamingOutputAudio =
-                        serde_json::from_str(&text).context("Failed to parse json")?;
-                    if let Some(audio) = &parsed.audio {
-                        let decoded = BASE64_STANDARD
-                            .decode(audio)
-                            .context("Failed to parse base64")?;
-                        files.push(decoded);
-                    }
-                    if let Some(is_final) = parsed.is_final {
-                        if is_final {
-                            break;
+                            sender.send(decoded).await.unwrap();
+                        }
+                        if let Some(is_final) = parsed.is_final {
+                            if is_final {
+                                break;
+                            }
                         }
                     }
-                }
-                _ => {
-                    // whatever
+                    _ => {
+                        // ignore other messages
+                    }
                 }
             }
-        }
+        });
 
-        Ok(files)
+        Ok((streaming_session, receiver))
+    }
+}
+
+pub struct StreamingSession {
+    api_key: Option<String>,
+    voice_settings: Option<VoiceSettings>,
+    writer: SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>,
+}
+
+impl StreamingSession {
+    pub async fn send_chunk(&mut self, text: &str) -> anyhow::Result<()> {
+        let input = StreamingInputText {
+            text: text.to_owned(),
+            voice_settings: self.voice_settings.take(),
+            generation_config: None,
+            xi_api_key: self.api_key.take(),
+            authorization: None,
+        };
+
+        let json = serde_json::to_string(&input)?;
+        let message = Message::text(json);
+        self.writer.send(message).await?;
+
+        Ok(())
+    }
+
+    pub async fn finish(&mut self) -> anyhow::Result<()> {
+        let input = StreamingInputText {
+            text: String::from(""),
+            voice_settings: self.voice_settings.take(),
+            generation_config: None,
+            xi_api_key: self.api_key.take(),
+            authorization: None,
+        };
+
+        let json = serde_json::to_string(&input)?;
+        let message = Message::text(json);
+        self.writer.send(message).await?;
+
+        Ok(())
     }
 }

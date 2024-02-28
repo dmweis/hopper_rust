@@ -25,13 +25,23 @@ async fn main() -> Result<()> {
     file.write_all(&data).await?;
     println!("Wrote file");
 
-    let files = client.stream_tts(&args.text, &voice_id).await?;
-    for (i, audio_file_contents) in files.into_iter().enumerate() {
-        let path = format!("tmp/audio_chunk_{i}.mp3");
-        let mut file = File::create(&path).await?;
-        file.write_all(&audio_file_contents).await?;
-        println!("Wrote {path}");
-    }
+    let (mut streamer, mut receiver) = client.start_streaming_session(&voice_id).await?;
+
+    let writer_task = tokio::spawn(async move {
+        let mut counter = 0;
+        while let Some(audio_file_contents) = receiver.recv().await {
+            let path = format!("tmp/audio_chunk_{counter}.mp3");
+            let mut file = File::create(&path).await.unwrap();
+            file.write_all(&audio_file_contents).await.unwrap();
+            println!("Wrote {path}");
+            counter += 1;
+        }
+    });
+
+    streamer.send_chunk(&args.text).await?;
+    streamer.finish().await?;
+
+    writer_task.await?;
 
     Ok(())
 }
