@@ -2,19 +2,21 @@ use anyhow::Context;
 use async_openai::{
     config::OpenAIConfig,
     types::{
-        ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestMessage,
-        ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestToolMessageArgs,
-        ChatCompletionRequestUserMessageArgs, ChatCompletionTool, ChatCompletionToolArgs,
-        ChatCompletionToolChoiceOption, ChatCompletionToolType, CreateChatCompletionRequest,
-        CreateChatCompletionRequestArgs, FunctionObject, FunctionObjectArgs,
+        ChatCompletionMessageToolCall, ChatCompletionRequestAssistantMessageArgs,
+        ChatCompletionRequestMessage, ChatCompletionRequestSystemMessageArgs,
+        ChatCompletionRequestToolMessageArgs, ChatCompletionRequestUserMessageArgs,
+        ChatCompletionTool, ChatCompletionToolArgs, ChatCompletionToolChoiceOption,
+        ChatCompletionToolType, CreateChatCompletionRequest, CreateChatCompletionRequestArgs,
+        FunctionCall, FunctionObject, FunctionObjectArgs,
     },
     Client,
 };
 use async_trait::async_trait;
+use futures::StreamExt;
 use schemars::{gen::SchemaSettings, JsonSchema};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
-use tracing::info;
+use tracing::{info, instrument};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OpenAiHistory {
@@ -130,6 +132,7 @@ impl ChatGptConversation {
     }
 
     /// stream next message
+    #[instrument(skip(self, client))]
     pub async fn next_message_stream(
         &mut self,
         message_text: Option<&str>,
@@ -146,54 +149,105 @@ impl ChatGptConversation {
 
         let request = self.build_request_message()?;
 
-        let response_message = client
-            .chat()
-            .create(request)
-            .await?
-            .choices
-            .first()
-            .context("Failed to get first choice on OpenAI api response")?
-            .message
-            .clone();
+        info!("starting stream");
+        let mut stream = client.chat().create_stream(request).await?;
+
+        // use this table to collect function call info
+        let mut tool_call_map: HashMap<i32, async_openai::types::ChatCompletionMessageToolCall> =
+            HashMap::new();
+        let mut response_content_buffer = String::new();
+
+        // handle stream collection
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk?;
+            let choice = chunk
+                .choices
+                .first()
+                .context("Failed to get first choice")?;
+
+            if let Some(content) = &choice.delta.content {
+                // TODO(David): Stream content here
+                response_content_buffer.push_str(content);
+            }
+
+            // The openAI tool call streams are pretty messy. This code basically collects all of the tool calls into "buffers"
+            // and executes them afterwards
+            if let Some(tool_calls) = &choice.delta.tool_calls {
+                for tool_call in tool_calls {
+                    let index = tool_call.index;
+                    if let Some(call) = &tool_call.function {
+                        // some of these might be empty but that's fine because we are appending them
+                        let id = tool_call.id.clone().unwrap_or_default();
+                        let name = call.name.clone().unwrap_or_default();
+                        let arguments = call.arguments.clone().unwrap_or_default();
+
+                        let tool_call_ref = tool_call_map.entry(index).or_insert_with(|| {
+                            // default empty
+                            ChatCompletionMessageToolCall {
+                                id: String::new(),
+                                r#type: ChatCompletionToolType::Function,
+                                function: FunctionCall {
+                                    name: String::new(),
+                                    arguments: String::new(),
+                                },
+                            }
+                        });
+                        tool_call_ref.id.push_str(&id);
+                        tool_call_ref.function.name.push_str(&name);
+                        tool_call_ref.function.arguments.push_str(&arguments);
+                    }
+                }
+            }
+        }
+        info!(?tool_call_map, "Finished collecting stream");
 
         // execute tools calls
+        // Make sure calls are sorted by index
+        let mut tool_calls: Vec<_> = tool_call_map.into_iter().collect();
+        tool_calls.sort_by_key(|a| a.0);
+        let tool_calls: Vec<_> = tool_calls.into_iter().map(|(_key, call)| call).collect();
 
-        if let Some(tool_calls) = response_message.tool_calls {
-            // add tool calls to history
+        // add tool calls to history
+        if !tool_calls.is_empty() {
             let tool_call_request = ChatCompletionRequestAssistantMessageArgs::default()
                 .tool_calls(tool_calls.clone())
                 .build()?
                 .into();
             self.history.push(tool_call_request);
-
-            for tool_call in tool_calls {
-                if !matches!(tool_call.r#type, ChatCompletionToolType::Function) {
-                    tracing::error!("Tool call type is not function {:?}", tool_call.r#type);
-                }
-                let name = tool_call.function.name.clone();
-                let args = tool_call.function.arguments.clone();
-                let id = tool_call.id;
-                let func_call_response = self.call_function(&name, &args).await?;
-
-                // add response to history
-                let tool_response = ChatCompletionRequestToolMessageArgs::default()
-                    .content(func_call_response.to_string())
-                    .tool_call_id(id)
-                    .build()
-                    .context("Failed to build tool response")?
-                    .into();
-                self.history.push(tool_response);
-            }
         }
 
-        if let Some(content) = response_message.content {
+        for tool_call in tool_calls {
+            if !matches!(tool_call.r#type, ChatCompletionToolType::Function) {
+                tracing::error!("Tool call type is not function {:?}", tool_call.r#type);
+            }
+            let name = tool_call.function.name.clone();
+            let args = tool_call.function.arguments.clone();
+            let id = tool_call.id;
+            let func_call_response = self
+                .call_function(&name, &args)
+                .await
+                .context("Error in ChatGPT invoked function")?;
+
+            // add response to history
+            let tool_response = ChatCompletionRequestToolMessageArgs::default()
+                .content(func_call_response.to_string())
+                .tool_call_id(id)
+                .build()
+                .context("Failed to build tool response")?
+                .into();
+            self.history.push(tool_response);
+        }
+
+        if !response_content_buffer.is_empty() {
             let added_response = ChatCompletionRequestAssistantMessageArgs::default()
-                .content(&content)
+                .content(&response_content_buffer)
                 .build()?
                 .into();
 
             self.history.push(added_response);
-            return Ok(OpenAiApiResponse::AssistantResponse(content));
+            return Ok(OpenAiApiResponse::AssistantResponse(
+                response_content_buffer,
+            ));
         }
 
         Ok(OpenAiApiResponse::FunctionCallWithNoResponse)

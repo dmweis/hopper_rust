@@ -174,7 +174,7 @@ pub async fn start_openai_controller(
             }
             .await;
             if let Err(e) = res {
-                tracing::error!("Error in speech controller: {}", e);
+                tracing::error!("Error in speech controller: {:?}", e);
             }
         }
     });
