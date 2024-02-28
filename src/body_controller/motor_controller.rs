@@ -12,6 +12,30 @@ use std::{collections::VecDeque, time::Duration};
 use tracing::*;
 use zenoh::publication::Publisher;
 
+#[macro_export]
+macro_rules! retry_async {
+    ( $retries: expr, $call: expr, $clear: expr) => {{
+        let mut error_count = 0;
+        loop {
+            match $call.await {
+                Ok(pose) => break Ok(pose),
+                Err(err) => {
+                    tracing::error!("Failed dynamixel call {:?} count {:?}", err, error_count);
+                    // ik_controller.clear_serial_io_buffers().await?;
+                    if let Err(err) = $clear.await {
+                        break Err(err);
+                    }
+                    error_count += 1;
+                    if error_count > 3 {
+                        tracing::error!("Failed dynamixel call");
+                        break Err(err);
+                    }
+                }
+            }
+        }
+    }};
+}
+
 #[async_trait]
 pub trait BodyController: Send + Sync {
     async fn move_motors_to(&mut self, positions: &BodyMotorPositions) -> HopperResult<()>;
@@ -201,18 +225,24 @@ impl BodyController for AsyncBodyController {
             driver: &mut DynamixelDriver,
             leg_config: &LegConfig,
         ) -> HopperResult<LegMotorPositions> {
-            let coxa = driver
-                .read_position_rad(leg_config.coxa_id)
-                .await
-                .map_err(|err| HopperError::DynamixelDriverError(leg_config.coxa_id, err))?;
-            let femur = driver
-                .read_position_rad(leg_config.femur_id)
-                .await
-                .map_err(|err| HopperError::DynamixelDriverError(leg_config.femur_id, err))?;
-            let tibia = driver
-                .read_position_rad(leg_config.tibia_id)
-                .await
-                .map_err(|err| HopperError::DynamixelDriverError(leg_config.tibia_id, err))?;
+            let coxa = retry_async!(
+                3,
+                driver.read_position_rad(leg_config.coxa_id),
+                driver.clear_io_buffers()
+            )
+            .map_err(|err| HopperError::DynamixelDriverError(leg_config.coxa_id, err))?;
+            let femur = retry_async!(
+                3,
+                driver.read_position_rad(leg_config.femur_id),
+                driver.clear_io_buffers()
+            )
+            .map_err(|err| HopperError::DynamixelDriverError(leg_config.femur_id, err))?;
+            let tibia = retry_async!(
+                3,
+                driver.read_position_rad(leg_config.tibia_id),
+                driver.clear_io_buffers()
+            )
+            .map_err(|err| HopperError::DynamixelDriverError(leg_config.tibia_id, err))?;
             Ok(LegMotorPositions::new(coxa, femur, tibia))
         }
         let left_front =
