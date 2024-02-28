@@ -1,8 +1,13 @@
-use anyhow::Context;
-use anyhow::Result;
+use anyhow::{Context, Result};
+use base64::prelude::*;
 use bytes::Bytes;
+use futures::SinkExt;
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tokio_tungstenite::{connect_async, tungstenite::Message};
+
+const VOICE_MODEL: &str = "eleven_multilingual_v1";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TtsRequest {
@@ -27,6 +32,17 @@ pub struct VoiceSettings {
     pub style: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub use_speaker_boost: Option<bool>,
+}
+
+impl Default for VoiceSettings {
+    fn default() -> Self {
+        Self {
+            similarity_boost: 0.5,
+            stability: 0.5,
+            style: None,
+            use_speaker_boost: None,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -96,6 +112,39 @@ pub struct Invoice {
     next_payment_attempt_unix: i64,
 }
 
+#[derive(Default, Debug, Clone, Serialize)]
+pub struct StreamingInputText {
+    pub text: String,
+    pub voice_settings: Option<VoiceSettings>,
+    pub generation_config: Option<GenerationConfig>,
+    pub xi_api_key: Option<String>,
+    pub authorization: Option<String>,
+}
+
+#[derive(Default, Debug, Clone, Serialize)]
+pub struct GenerationConfig {
+    pub chunk_length_schedule: Vec<i64>,
+}
+
+#[derive(Default, Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamingOutputAudio {
+    pub audio: Option<String>,
+    pub is_final: Option<bool>,
+    pub normalized_alignment: Option<Alignment>,
+    pub alignment: Option<Alignment>,
+}
+
+#[derive(Default, Debug, Clone, Deserialize)]
+pub struct Alignment {
+    #[serde(default)]
+    pub char_start_times_ms: Vec<u32>,
+    #[serde(default)]
+    pub chars_durations_ms: Vec<u32>,
+    #[serde(default)]
+    pub chars: Vec<char>,
+}
+
 #[derive(Debug, Clone)]
 pub struct ElevenLabsTtsClient {
     client: reqwest::Client,
@@ -117,13 +166,8 @@ impl ElevenLabsTtsClient {
             text: text.to_owned(),
             // switch to better model that is slower
             // model_id: Some(String::from("eleven_multilingual_v2")),
-            model_id: Some(String::from("eleven_multilingual_v1")),
-            voice_settings: Some(VoiceSettings {
-                similarity_boost: 0.5,
-                stability: 0.5,
-                style: None,
-                use_speaker_boost: None,
-            }),
+            model_id: Some(VOICE_MODEL.to_owned()),
+            voice_settings: Some(VoiceSettings::default()),
         };
 
         let resp = self
@@ -170,5 +214,72 @@ impl ElevenLabsTtsClient {
         let data = resp.json::<Subscription>().await?;
 
         Ok(data)
+    }
+
+    pub async fn stream_tts(&self, text: &str, voice_id: &str) -> Result<Vec<Vec<u8>>> {
+        let url = format!(
+            "wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id={VOICE_MODEL}"
+        );
+
+        let (ws_stream, response) = connect_async(url).await.context("Failed to connect")?;
+
+        if response.status().is_client_error() || response.status().is_server_error() {
+            anyhow::bail!("Request failed {:?}", response.status());
+        }
+
+        let (mut write, mut read) = ws_stream.split();
+
+        let input = StreamingInputText {
+            text: text.to_owned(),
+            voice_settings: Some(VoiceSettings::default()),
+            generation_config: None,
+            xi_api_key: Some(self.api_key.clone()),
+            authorization: None,
+        };
+
+        let json = serde_json::to_string(&input)?;
+        let message = Message::text(json);
+        write.send(message).await?;
+
+        let input = StreamingInputText {
+            text: String::from(""),
+            voice_settings: None,
+            generation_config: None,
+            xi_api_key: None,
+            authorization: None,
+        };
+
+        let json = serde_json::to_string(&input)?;
+        let message = Message::text(json);
+        write.send(message).await?;
+
+        let mut files = vec![];
+
+        while let Some(message) = read.next().await {
+            let message = message?;
+
+            match message {
+                Message::Text(text) => {
+                    let parsed: StreamingOutputAudio =
+                        serde_json::from_str(&text).context("Failed to parse json")?;
+                    if let Some(audio) = &parsed.audio {
+                        let decoded = BASE64_STANDARD
+                            .decode(audio)
+                            .context("Failed to parse base64")?;
+                        files.push(decoded);
+                    }
+                    if let Some(is_final) = parsed.is_final {
+                        if is_final {
+                            break;
+                        }
+                    }
+                }
+                _ => {
+                    // whatever
+                }
+            }
+        }
+
+        Ok(files)
     }
 }

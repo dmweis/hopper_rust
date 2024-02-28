@@ -13,6 +13,9 @@ mod eleven_labs_client;
 #[cfg(feature = "audio")]
 pub use speech_service::SpeechService;
 
+#[cfg(feature = "audio")]
+pub use eleven_labs_client::ElevenLabsTtsClient;
+
 #[cfg(not(feature = "audio"))]
 mod fake_speech_service;
 

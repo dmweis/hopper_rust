@@ -6,6 +6,7 @@ target/
 Dockerfile
 dev_settings.yaml
 docker_out/
+tmp/*
 *.mcap
 Makefile
 scripts/

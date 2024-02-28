@@ -126,6 +126,9 @@ prost = "0.11.9"
 prost-reflect = {version = "0.11.4", features = ["derive", "serde"]}
 prost-types = "0.11.9"
 
+tokio-tungstenite = { version = "0.21", features = ["native-tls"]}
+futures-util = "^0.3.30"
+
 [build-dependencies]
 prost-build = "0.11.9"
 prost-reflect-build = "0.11.0"

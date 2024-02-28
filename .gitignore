@@ -2,6 +2,7 @@
 
 # Local dev sample cache
 audio_cache/*
+tmp/*
 dev_settings.yaml
 
 .vscode

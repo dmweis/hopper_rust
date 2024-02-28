@@ -296,6 +296,12 @@ impl SpeechService {
         Ok(())
     }
 
+    pub async fn play_mp3(&self, data: Vec<u8>) -> HopperResult<()> {
+        let boxed = Box::new(Cursor::new(data));
+        self.play(boxed).await;
+        Ok(())
+    }
+
     pub async fn play_random_sound(&self) -> HopperResult<()> {
         if let Some(ref audio_repository) = self.audio_repository {
             if let Some((sound, path)) = audio_repository.random_file_recursive() {
