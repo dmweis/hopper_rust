@@ -12,6 +12,8 @@ use std::{collections::VecDeque, time::Duration};
 use tracing::*;
 use zenoh::publication::Publisher;
 
+const RETRY_COUNT: u32 = 3;
+
 #[macro_export]
 macro_rules! retry_async {
     ( $retries: expr, $call: expr, $clear: expr) => {{
@@ -26,7 +28,7 @@ macro_rules! retry_async {
                         break Err(err);
                     }
                     error_count += 1;
-                    if error_count > 3 {
+                    if error_count > $retries {
                         tracing::error!("Failed dynamixel call");
                         break Err(err);
                     }
@@ -206,11 +208,12 @@ impl BodyController for AsyncBodyController {
             current_read_voltage_id = 0;
         }
         let id = ids[current_read_voltage_id];
-        let voltage = self
-            .driver
-            .read_voltage(id)
-            .await
-            .map_err(|err| HopperError::DynamixelDriverError(id, err))?;
+        let voltage = retry_async!(
+            RETRY_COUNT,
+            self.driver.read_voltage(id),
+            self.driver.clear_io_buffers()
+        )
+        .map_err(|err| HopperError::DynamixelDriverError(id, err))?;
         self.last_voltages.push_front(voltage);
         self.last_voltages.pop_back();
         let sum: f32 = self.last_voltages.iter().sum();
@@ -226,19 +229,19 @@ impl BodyController for AsyncBodyController {
             leg_config: &LegConfig,
         ) -> HopperResult<LegMotorPositions> {
             let coxa = retry_async!(
-                3,
+                RETRY_COUNT,
                 driver.read_position_rad(leg_config.coxa_id),
                 driver.clear_io_buffers()
             )
             .map_err(|err| HopperError::DynamixelDriverError(leg_config.coxa_id, err))?;
             let femur = retry_async!(
-                3,
+                RETRY_COUNT,
                 driver.read_position_rad(leg_config.femur_id),
                 driver.clear_io_buffers()
             )
             .map_err(|err| HopperError::DynamixelDriverError(leg_config.femur_id, err))?;
             let tibia = retry_async!(
-                3,
+                RETRY_COUNT,
                 driver.read_position_rad(leg_config.tibia_id),
                 driver.clear_io_buffers()
             )
