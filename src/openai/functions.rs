@@ -157,6 +157,7 @@ pub enum FaceColor {
     Yellow,
     Purple,
     Cyan,
+    White,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -203,6 +204,7 @@ impl ChatGptFunction for FaceDisplayFuncCallback {
                 FaceColor::Yellow => crate::face::driver::YELLOW,
                 FaceColor::Purple => crate::face::driver::PURPLE,
                 FaceColor::Cyan => crate::face::driver::CYAN,
+                FaceColor::White => crate::face::driver::WHITE,
             },
             None => crate::face::driver::PURPLE,
         };

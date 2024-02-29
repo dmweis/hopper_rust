@@ -35,37 +35,42 @@ pub const GREEN: RGB = RGB::new(0, 10, 0);
 pub const YELLOW: RGB = RGB::new(10, 10, 0);
 pub const PURPLE: RGB = RGB::new(10, 0, 10);
 pub const CYAN: RGB = RGB::new(0, 10, 10);
+pub const WHITE: RGB = RGB::new(10, 10, 10);
 pub const BRIGHT_RED: RGB = RGB::new(180, 0, 0);
 pub const BRIGHT_BLUE: RGB = RGB::new(0, 0, 180);
 pub const BRIGHT_GREEN: RGB = RGB::new(0, 180, 0);
 pub const BRIGHT_YELLOW: RGB = RGB::new(100, 100, 0);
 pub const BRIGHT_PURPLE: RGB = RGB::new(100, 0, 100);
 pub const BRIGHT_CYAN: RGB = RGB::new(0, 100, 100);
+pub const BRIGHT_WHITE: RGB = RGB::new(100, 100, 100);
 
-pub const ALL_COLORS: [RGB; 12] = [
+pub const ALL_COLORS: [RGB; 14] = [
     RED,
     BLUE,
     GREEN,
     YELLOW,
     PURPLE,
     CYAN,
+    WHITE,
     BRIGHT_RED,
     BRIGHT_BLUE,
     BRIGHT_GREEN,
     BRIGHT_YELLOW,
     BRIGHT_PURPLE,
     BRIGHT_CYAN,
+    BRIGHT_WHITE,
 ];
 
-pub const NORMAL_COLORS: [RGB; 6] = [RED, BLUE, GREEN, YELLOW, PURPLE, CYAN];
+pub const NORMAL_COLORS: [RGB; 7] = [RED, BLUE, GREEN, YELLOW, PURPLE, CYAN, WHITE];
 
-pub const BRIGHT_COLORS: [RGB; 6] = [
+pub const BRIGHT_COLORS: [RGB; 7] = [
     BRIGHT_RED,
     BRIGHT_BLUE,
     BRIGHT_GREEN,
     BRIGHT_YELLOW,
     BRIGHT_PURPLE,
     BRIGHT_CYAN,
+    BRIGHT_WHITE,
 ];
 
 fn corrected_pixel_index(index: i32) -> usize {
