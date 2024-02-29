@@ -10,7 +10,7 @@ use zenoh::publication::Publisher;
 use zenoh::Session;
 
 use crate::error::HopperError;
-use crate::zenoh_consts::{DIAGNOSTIC_METRICS, DIAGNOSTIC_METRICS_JSON};
+use crate::zenoh_remotes::topic_consts::{DIAGNOSTIC_METRICS, DIAGNOSTIC_METRICS_JSON};
 
 pub async fn start_monitoring_loop(zenoh_session: Arc<Session>) -> anyhow::Result<()> {
     let publisher = zenoh_session

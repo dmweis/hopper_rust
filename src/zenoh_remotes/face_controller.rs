@@ -1,6 +1,6 @@
 use crate::error::{HopperError, HopperResult};
 use crate::face::FaceController;
-use crate::zenoh_consts::{
+use crate::zenoh_remotes::topic_consts::{
     FACE_ANIMATION_SUBSCRIBER, FACE_COLOR_SUBSCRIBER, FACE_RANDOM_SUBSCRIBER,
 };
 use rand::seq::SliceRandom;

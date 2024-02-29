@@ -9,7 +9,7 @@ use zenoh::prelude::r#async::*;
 
 use crate::{
     error::HopperError,
-    zenoh_consts::{HOPPER_OPENAI_VOICE_COMMAND_SUBSCRIBER, OPENAI_DIAGNOSTICS_TRANSCRIPT}, openai::OpenAiService, ioc_container::IocContainer,
+    zenoh_remotes::topic_consts::{HOPPER_OPENAI_VOICE_COMMAND_SUBSCRIBER, OPENAI_DIAGNOSTICS_TRANSCRIPT}, openai::OpenAiService, ioc_container::IocContainer,
 };
 
 const VOICE_TO_TEXT_TRANSCRIBE_MODEL: &str = "whisper-1";

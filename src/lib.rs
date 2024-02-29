@@ -19,11 +19,7 @@ pub mod openai;
 pub mod speech;
 pub mod udp_remote;
 pub mod utilities;
-pub mod zenoh_consts;
-pub mod zenoh_face_controller;
-mod zenoh_pose_publisher;
-pub mod zenoh_remote;
-pub mod zenoh_speech_controller;
+pub mod zenoh_remotes;
 
 use once_cell::sync::Lazy;
 use prost_reflect::DescriptorPool;

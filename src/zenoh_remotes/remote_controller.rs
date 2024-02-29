@@ -9,7 +9,7 @@ use crate::motion_controller::walking::{
 };
 use crate::motion_controller::{self, SingleLegCommand};
 use crate::speech::SpeechService;
-use crate::zenoh_consts::{
+use crate::zenoh_remotes::topic_consts::{
     BODY_MOTOR_SPEED_SUBSCRIBER, COMPLIANCE_SLOPE_SUBSCRIBER, HOPPER_WALKING_CONFIG_PUBLISHER,
     REMOTE_CONTROL_SUBSCRIBER, STANCE_SUBSCRIBER, WALKING_CONFIG_SUBSCRIBER,
 };

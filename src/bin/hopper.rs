@@ -16,10 +16,12 @@ use hopper_rust::{
     openai::start_openai_controller,
     speech::SpeechService,
     utilities::RateTracker,
-    zenoh_consts::{HOPPER_CONTROL_LOOP_RATE, HOPPER_MOTOR_RATE, HOPPER_POSE_FRAMES},
-    zenoh_face_controller::start_face_controller,
-    zenoh_remote::simple_zenoh_controller,
-    zenoh_speech_controller::start_speech_controller,
+    zenoh_remotes::{
+        face_controller::start_face_controller,
+        remote_controller::simple_zenoh_controller,
+        speech_controller::start_speech_controller,
+        topic_consts::{HOPPER_CONTROL_LOOP_RATE, HOPPER_MOTOR_RATE, HOPPER_POSE_FRAMES},
+    },
 };
 use std::{
     path::{Path, PathBuf},

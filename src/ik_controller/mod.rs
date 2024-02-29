@@ -7,7 +7,7 @@ use crate::{
         BodyController,
     },
     error::HopperError,
-    zenoh_pose_publisher::ZenohPosePublisher,
+    zenoh_remotes::pose_publisher::ZenohPosePublisher,
 };
 use crate::{
     error::HopperResult,

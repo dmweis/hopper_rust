@@ -4,7 +4,7 @@ use zenoh::{prelude::r#async::*, Session as ZenohSession};
 
 use crate::error::HopperError;
 use crate::ioc_container::IocContainer;
-use crate::zenoh_consts::{HOPPER_TRACING_FULL, HOPPER_TRACING_JSON};
+use crate::zenoh_remotes::topic_consts::{HOPPER_TRACING_FULL, HOPPER_TRACING_JSON};
 
 pub fn setup_tracing(verbosity_level: u8) {
     let filter = match verbosity_level {

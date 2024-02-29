@@ -3,7 +3,7 @@ use clap::Parser;
 use gilrs::Gilrs;
 use hopper_rust::error::HopperError;
 use hopper_rust::utilities::RateTracker;
-use hopper_rust::zenoh_consts::HOPPER_CONTROL_LOOP_RATE;
+use hopper_rust::zenoh_remotes::topic_consts::HOPPER_CONTROL_LOOP_RATE;
 use hopper_rust::{hopper_body_config, logging, motion_controller};
 use motion_controller::{visualizer::GroundType, walking::MoveCommand};
 use nalgebra::Vector2;

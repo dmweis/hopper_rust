@@ -1,6 +1,6 @@
 use crate::error::HopperError;
 use crate::speech::SpeechService;
-use crate::zenoh_consts::{
+use crate::zenoh_remotes::topic_consts::{
     SPEECH_PLAY_SOUND_RANDOM_SUBSCRIBER, SPEECH_PLAY_SOUND_SUBSCRIBER,
     SPEECH_SAY_ASTROMECH_RANDOM_SUBSCRIBER, SPEECH_SAY_ASTROMECH_SUBSCRIBER, SPEECH_SAY_SUBSCRIBER,
 };

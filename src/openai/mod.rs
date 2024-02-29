@@ -14,7 +14,7 @@ use crate::{
     ioc_container::IocContainer,
     openai::conversation_handler::OpenAiApiResponse,
     speech::SpeechService,
-    zenoh_consts::{HOPPER_OPENAI_COMMAND_SUBSCRIBER, OPENAI_DIAGNOSTICS_HISTORY},
+    zenoh_remotes::topic_consts::{HOPPER_OPENAI_COMMAND_SUBSCRIBER, OPENAI_DIAGNOSTICS_HISTORY},
 };
 
 use self::{conversation_handler::ChatGptConversation, events::*, functions::*};
