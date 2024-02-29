@@ -195,11 +195,6 @@ impl ChatGptConversation {
                 for tool_call in tool_calls {
                     let index = tool_call.index;
                     if let Some(call) = &tool_call.function {
-                        // some of these might be empty but that's fine because we are appending them
-                        let id = tool_call.id.clone().unwrap_or_default();
-                        let name = call.name.clone().unwrap_or_default();
-                        let arguments = call.arguments.clone().unwrap_or_default();
-
                         let tool_call_ref = tool_call_map.entry(index).or_insert_with(|| {
                             // default empty
                             ChatCompletionMessageToolCall {
@@ -211,9 +206,17 @@ impl ChatGptConversation {
                                 },
                             }
                         });
-                        tool_call_ref.id.push_str(&id);
-                        tool_call_ref.function.name.push_str(&name);
-                        tool_call_ref.function.arguments.push_str(&arguments);
+                        if let Some(id) = &tool_call.id {
+                            tool_call_ref.id.push_str(id);
+                        }
+
+                        if let Some(name) = &call.name {
+                            tool_call_ref.function.name.push_str(name);
+                        }
+
+                        if let Some(arguments) = &call.arguments {
+                            tool_call_ref.function.arguments.push_str(arguments);
+                        }
                     }
                 }
             }
