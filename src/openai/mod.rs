@@ -71,6 +71,8 @@ pub async fn start_openai_controller(
     chat_gpt_conversation.add_function(Arc::new(HopperHighFiveFuncCallback))?;
 
     chat_gpt_conversation.add_function(Arc::new(FaceDisplayFuncCallback))?;
+    
+    chat_gpt_conversation.add_function(Arc::new(MoveCommandFunction))?;
 
     let voice_provider_arc = Arc::new(Mutex::new(VoiceProvider::default()));
 

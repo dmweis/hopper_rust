@@ -1,8 +1,7 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use hopper_rust::{
-    body_controller,
-    body_controller::BodyController,
+    body_controller::{self, BodyController},
     camera::start_camera,
     configuration::get_configuration,
     error::HopperError,
@@ -18,7 +17,7 @@ use hopper_rust::{
     utilities::RateTracker,
     zenoh_remotes::{
         face_controller::start_face_controller,
-        remote_controller::simple_zenoh_controller,
+        remote_controller::{simple_zenoh_controller, MoveService},
         speech_controller::start_speech_controller,
         topic_consts::{HOPPER_CONTROL_LOOP_RATE, HOPPER_MOTOR_RATE, HOPPER_POSE_FRAMES},
     },
@@ -188,7 +187,10 @@ async fn main() -> Result<()> {
         // speech_service.say_home_speak("Hopper ready").await.unwrap();
     }
 
-    simple_zenoh_controller(&mut motion_controller, zenoh_session.clone())
+    let (move_service, receiver) = MoveService::new();
+    ioc_container.register(move_service);
+
+    simple_zenoh_controller(&mut motion_controller, zenoh_session.clone(), receiver)
         .await
         .context("Controller reader failed")?;
     info!("Controller stopped");

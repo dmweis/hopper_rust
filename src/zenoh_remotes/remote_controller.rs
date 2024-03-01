@@ -24,9 +24,26 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::*;
 use zenoh::prelude::r#async::*;
 
+pub struct MoveService {
+    sender: tokio::sync::mpsc::Sender<MoveCommand>,
+}
+
+impl MoveService {
+    pub fn new() -> (Self, tokio::sync::mpsc::Receiver<MoveCommand>) {
+        let (sender, receiver) = tokio::sync::mpsc::channel(10);
+        (Self { sender }, receiver)
+    }
+
+    pub async fn send_move(&self, command: MoveCommand) -> anyhow::Result<()> {
+        self.sender.send(command).await?;
+        Ok(())
+    }
+}
+
 pub async fn simple_zenoh_controller(
     motion_controller: &mut motion_controller::MotionController,
     zenoh_session: Arc<zenoh::Session>,
+    mut move_command_receiver: tokio::sync::mpsc::Receiver<MoveCommand>,
 ) -> anyhow::Result<()> {
     info!("Starting simple zenoh controller");
     let stance_subscriber = zenoh_session
@@ -97,6 +114,11 @@ pub async fn simple_zenoh_controller(
                 trace!("got new controller message");
                 if let Some(controller_message) = controller_message {
                     gamepad_controller.handle_gamepad_command(controller_message, motion_controller, &mut last_gamepad_message).await?;
+                }
+            }
+            move_command = move_command_receiver.recv() => {
+                if let Some(move_command) = move_command {
+                    motion_controller.set_command(move_command);
                 }
             }
             _ = tokio::signal::ctrl_c() => {

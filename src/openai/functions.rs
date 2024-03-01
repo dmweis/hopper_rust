@@ -1,14 +1,23 @@
 use async_trait::async_trait;
+use nalgebra::Vector2;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+use tracing::info;
 
 use crate::{
     high_five::HighFiveServiceController,
     ioc_container::IocContainer,
     lidar::LidarServiceController,
-    motion_controller::{BodyState, DanceMove, MotionControllerService},
+    motion_controller::{
+        walking::{MoveCommand, DEFAULT_STEP_HEIGHT},
+        BodyState, DanceMove, MotionControllerService,
+    },
+    zenoh_remotes::remote_controller::MoveService,
 };
 
 use super::conversation_handler::{json_schema_for_func_args, ChatGptFunction};
@@ -271,6 +280,87 @@ impl ChatGptFunction for SwitchVoiceFuncCallback {
         let mut voice_provider = self.voice_provider.lock().unwrap();
 
         *voice_provider = switch_voice.voice_provider;
+
+        let result = json!({});
+        Ok(result)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, Default)]
+#[serde(rename_all = "snake_case")]
+pub struct MoveCommandArgs {
+    /// Between -1.0 and 1.0
+    /// forward/backwards movement, forward is 1.0, backwards is -1.0
+    pub x: f32,
+    /// Between -1.0 and 1.0
+    /// lateral move, left is 1.0, right is -1.0
+    pub y: f32,
+    /// Between -1.0 and 1.0
+    /// rotation, left is 1.0, right is -1.0
+    pub rotation: f32,
+    /// time to move in seconds
+    pub time_seconds: f32,
+}
+
+pub struct MoveCommandFunction;
+
+#[async_trait]
+impl ChatGptFunction for MoveCommandFunction {
+    fn name(&self) -> String {
+        "walk_command".to_string()
+    }
+
+    fn description(&self) -> String {
+        "Walk in a specific direction for specific time".to_string()
+    }
+
+    fn parameters_schema(&self) -> serde_json::Value {
+        json_schema_for_func_args::<MoveCommandArgs>()
+    }
+
+    async fn call(&self, args: &str) -> anyhow::Result<serde_json::Value> {
+        let mut move_command: MoveCommandArgs = serde_json::from_str(args)?;
+        info!(?move_command, "processing move command");
+
+        move_command.x = move_command.x.clamp(-1.0, 1.0);
+        move_command.y = move_command.y.clamp(-1.0, 1.0);
+        move_command.rotation = move_command.rotation.clamp(-1.0, 1.0);
+        move_command.time_seconds = move_command.time_seconds.clamp(0.0, 4.0);
+
+        const STEP_DISTANCE_MULTIPLIER: f32 = 0.03;
+        const STEP_TIME: Duration = Duration::from_millis(400);
+        let rotation_multiplier_rad = 15_f32.to_radians();
+
+        let direction = Vector2::new(
+            move_command.x * STEP_DISTANCE_MULTIPLIER,
+            move_command.y * STEP_DISTANCE_MULTIPLIER,
+        );
+        let rotation = move_command.rotation * rotation_multiplier_rad;
+
+        let sleep_time = Duration::from_secs_f32(move_command.time_seconds);
+
+        let move_command = MoveCommand::with_optional_fields(
+            direction,
+            rotation,
+            STEP_TIME,
+            DEFAULT_STEP_HEIGHT,
+            false,
+        );
+
+        IocContainer::global_instance()
+            .service::<MoveService>()?
+            .send_move(move_command)
+            .await?;
+
+        tokio::spawn(async move {
+            tokio::time::sleep(sleep_time).await;
+            IocContainer::global_instance()
+                .service::<MoveService>()
+                .unwrap()
+                .send_move(MoveCommand::default())
+                .await
+                .unwrap();
+        });
 
         let result = json!({});
         Ok(result)
