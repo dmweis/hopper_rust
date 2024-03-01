@@ -17,7 +17,7 @@ use crate::{
         walking::{MoveCommand, DEFAULT_STEP_HEIGHT},
         BodyState, DanceMove, MotionControllerService,
     },
-    zenoh_remotes::remote_controller::MoveService,
+    zenoh_remotes::remote_controller::{MoveService, ScheduledCommand},
 };
 
 use super::conversation_handler::{json_schema_for_func_args, ChatGptFunction};
@@ -347,20 +347,17 @@ impl ChatGptFunction for MoveCommandFunction {
             false,
         );
 
-        IocContainer::global_instance()
-            .service::<MoveService>()?
-            .send_move(move_command)
-            .await?;
+        let move_service = IocContainer::global_instance().service::<MoveService>()?;
 
-        tokio::spawn(async move {
-            tokio::time::sleep(sleep_time).await;
-            IocContainer::global_instance()
-                .service::<MoveService>()
-                .unwrap()
-                .send_move(MoveCommand::default())
-                .await
-                .unwrap();
-        });
+        move_service
+            .schedule_move(ScheduledCommand::MoveCommand(move_command))
+            .await?;
+        move_service
+            .schedule_move(ScheduledCommand::WaitCommand(sleep_time))
+            .await?;
+        move_service
+            .schedule_move(ScheduledCommand::MoveCommand(MoveCommand::default()))
+            .await?;
 
         let result = json!({});
         Ok(result)

@@ -24,18 +24,55 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tracing::*;
 use zenoh::prelude::r#async::*;
 
+pub enum ScheduledCommand {
+    MoveCommand(MoveCommand),
+    WaitCommand(Duration),
+}
+
 pub struct MoveService {
     sender: tokio::sync::mpsc::Sender<MoveCommand>,
+    scheduled_sender: tokio::sync::mpsc::Sender<ScheduledCommand>,
 }
 
 impl MoveService {
     pub fn new() -> (Self, tokio::sync::mpsc::Receiver<MoveCommand>) {
         let (sender, receiver) = tokio::sync::mpsc::channel(10);
-        (Self { sender }, receiver)
+        let (scheduled_sender, mut scheduled_receiver) = tokio::sync::mpsc::channel(10);
+
+        tokio::spawn({
+            let command_sender = sender.clone();
+            async move {
+                while let Some(command) = scheduled_receiver.recv().await {
+                    match command {
+                        ScheduledCommand::MoveCommand(move_command) => {
+                            info!("Executing scheduled move command {:?}", move_command);
+                            command_sender.send(move_command).await.unwrap();
+                        }
+                        ScheduledCommand::WaitCommand(time) => {
+                            info!("Executing scheduled sleep {:?}", time);
+                            tokio::time::sleep(time).await
+                        }
+                    }
+                }
+            }
+        });
+
+        (
+            Self {
+                sender,
+                scheduled_sender,
+            },
+            receiver,
+        )
     }
 
     pub async fn send_move(&self, command: MoveCommand) -> anyhow::Result<()> {
         self.sender.send(command).await?;
+        Ok(())
+    }
+
+    pub async fn schedule_move(&self, command: ScheduledCommand) -> anyhow::Result<()> {
+        self.scheduled_sender.send(command).await?;
         Ok(())
     }
 }
