@@ -19,12 +19,8 @@ use crate::{
 
 use self::{conversation_handler::ChatGptConversation, events::*, functions::*};
 
-// cheap but dumb
-// const MODEL_NAME: &str = "gpt-3.5-turbo-0613";
-// expensive but no rate limit
-// const MODEL_NAME: &str = "gpt-4-0613";
-// best and cheapest but there is a rate limit
-const MODEL_NAME: &str = "gpt-4-0125-preview";
+
+const MODEL_NAME: &str = "gpt-4o-2024-05-13";
 
 const SYSTEM_PROMPT: &str = "You are a hexapod pet robot. Your name is Hopper. \
 You can perform physical actions such as dance, sit, stand up by calling functions. \
