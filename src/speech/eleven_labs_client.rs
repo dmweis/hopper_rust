@@ -9,7 +9,7 @@ use tokio::{net::TcpStream, sync::mpsc::Receiver};
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::info;
 
-const VOICE_MODEL: &str = "eleven_multilingual_v1";
+const VOICE_MODEL: &str = "eleven_multilingual_v2";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TtsRequest {
