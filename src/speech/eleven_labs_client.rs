@@ -19,7 +19,7 @@ pub struct TtsRequest {
     pub model_id: Option<String>,
     /// The text that will get converted into speech.
     pub text: String,
-    /// Voice settings overriding stored setttings for the given voice.
+    /// Voice settings overriding stored settings for the given voice.
     /// They are applied only on the given TTS request.
     /// Defaults to None
     #[serde(skip_serializing_if = "Option::is_none")]
