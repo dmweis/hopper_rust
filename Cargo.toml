@@ -8,7 +8,7 @@ name = "hopper_rust"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/hopper_rust"
-version = "0.6.1"
+version = "0.7.0"
 
 [package.metadata.deb]
 assets = [
@@ -117,8 +117,8 @@ rodio = {version = "0.17", optional = true}
 # rodio = {git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true}
 
 # zenoh
-zenoh = "0.7.2-rc"
-zenoh-config = "0.7.2-rc"
+zenoh = "0.11.0"
+zenoh-config = "0.11.0"
 
 # protobuf
 once_cell = "1.17.0"
@@ -126,8 +126,8 @@ prost = "0.11.9"
 prost-reflect = {version = "0.11.4", features = ["derive", "serde"]}
 prost-types = "0.11.9"
 
-tokio-tungstenite = { version = "0.21", features = ["native-tls"]}
 futures-util = "^0.3.30"
+tokio-tungstenite = {version = "0.21", features = ["native-tls"]}
 
 [build-dependencies]
 prost-build = "0.11.9"
