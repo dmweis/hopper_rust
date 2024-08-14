@@ -1,4 +1,4 @@
-FROM balenalib/raspberrypi3-64-debian as chef
+FROM balenalib/raspberrypi3-64-debian AS chef
 
 WORKDIR /app
 
@@ -30,12 +30,12 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN cargo install cargo-chef
 
 # rust layer caching
-FROM chef as planner
+FROM chef AS planner
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
 # rebuild dependencies if changed
-FROM chef as builder
+FROM chef AS builder
 # install deb because it doesn't chage often
 RUN cargo install cargo-deb
 
