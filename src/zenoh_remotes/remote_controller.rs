@@ -397,7 +397,7 @@ impl GamepadController {
         }
 
         // clamp
-        self.height_offset = self.height_offset.max(-0.03).min(0.05);
+        self.height_offset = self.height_offset.clamp(-0.03, 0.05);
 
         let lb_down = is_button_down(Button::LeftTrigger, gamepad_message);
         let rb_down = is_button_down(Button::RightTrigger, gamepad_message);

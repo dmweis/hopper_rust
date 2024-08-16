@@ -133,6 +133,7 @@ pub struct GenerationConfig {
 pub struct StreamingOutputAudio {
     pub audio: Option<String>,
     pub is_final: Option<bool>,
+    #[allow(unused)]
     pub normalized_alignment: Option<Alignment>,
     pub alignment: Option<Alignment>,
 }
@@ -140,8 +141,10 @@ pub struct StreamingOutputAudio {
 #[derive(Default, Debug, Clone, Deserialize)]
 pub struct Alignment {
     #[serde(default)]
+    #[allow(unused)]
     pub char_start_times_ms: Vec<u32>,
     #[serde(default)]
+    #[allow(unused)]
     pub chars_durations_ms: Vec<u32>,
     #[serde(default)]
     pub chars: Vec<char>,

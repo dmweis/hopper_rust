@@ -40,7 +40,7 @@ impl LegPositions {
             .iter()
             .zip(other_legs.iter())
             .map(|(my, other)| distance(my, other))
-            .fold(std::f32::NAN, f32::max)
+            .fold(f32::NAN, f32::max)
     }
 
     pub fn to_foxglove_frame_transport(self) -> crate::foxglove::FrameTransforms {

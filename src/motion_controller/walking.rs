@@ -77,9 +77,9 @@ impl MoveCommand {
     }
 
     pub fn should_move(&self) -> bool {
-        let is_zero = self.rotation.abs() < std::f32::EPSILON
-            && self.direction.x.abs() < std::f32::EPSILON
-            && self.direction.y.abs() < std::f32::EPSILON;
+        let is_zero = self.rotation.abs() < f32::EPSILON
+            && self.direction.x.abs() < f32::EPSILON
+            && self.direction.y.abs() < f32::EPSILON;
         !is_zero
     }
 }

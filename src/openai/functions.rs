@@ -28,6 +28,7 @@ pub struct HopperBodyPoseFuncArgs {
 }
 
 pub struct HopperBodyPoseFuncCallback {
+    #[allow(unused)]
     pub zenoh_session: Arc<zenoh::Session>,
 }
 
