@@ -147,7 +147,7 @@ pub async fn start_openai_controller(
                     wake_word_detection_end = wake_word_detection_end_subscriber.recv_async() => {
                         info!("Received wakeword detection end");
                         let wake_word_detection_end: String = wake_word_detection_end?.value.try_into()?;
-                        let wake_word_detection_end = serde_json::from_str::<WakeWordDetection>(&wake_word_detection_end)?;
+                        let wake_word_detection_end = serde_json::from_str::<WakeWordDetectionEnd>(&wake_word_detection_end)?;
                         if wake_word_detection_end.wake_word.to_lowercase().contains("hopper") {
                             IocContainer::global_instance()
                                 .service::<crate::face::FaceController>()?

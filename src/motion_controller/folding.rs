@@ -110,7 +110,7 @@ pub struct FoldingManager<'a> {
 impl<'a> FoldingManager<'a> {
     pub async fn new(
         ik_controller: &'a mut Box<dyn IkControllable>,
-    ) -> HopperResult<FoldingManager> {
+    ) -> HopperResult<FoldingManager<'a>> {
         let mut error_count = 0;
         let last_written_pose = loop {
             match ik_controller.read_motor_positions().await {

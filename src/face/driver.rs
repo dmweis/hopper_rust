@@ -277,7 +277,7 @@ mod tests {
         let color = RGB::new(255, 0, 0);
         let packet = ColorPacket::with_color(color);
         let encoded = packet.to_data();
-        assert!(encoded.iter().any(|element| *element == 0));
+        assert!(encoded.contains(&0));
     }
 
     #[test]
