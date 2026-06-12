@@ -2,6 +2,7 @@
 
 pub mod audio_transcribe;
 pub mod body_controller;
+#[cfg(target_os = "linux")]
 pub mod camera;
 pub mod configuration;
 pub mod error;

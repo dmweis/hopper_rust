@@ -104,7 +104,6 @@ async-openai = {version = "0.18.3"}
 # async-openai = {git = "https://github.com/dmweis/async-openai", branch = "main"}
 
 serialport = {version = "4.0.1", default-features = false}
-v4l = "0.14.0"
 
 gilrs = {version = "0.10", optional = true, features = ["serde-serialize"]}
 kiss3d = {optional = true, version = "0.35"}
@@ -128,6 +127,11 @@ prost-types = "0.11.9"
 
 futures-util = "^0.3.30"
 tokio-tungstenite = {version = "0.21", features = ["native-tls"]}
+
+# Video4Linux is Linux-only (the target device is a Raspberry Pi).
+# Gated by target so the rest of the project still builds on macOS/dev machines.
+[target.'cfg(target_os = "linux")'.dependencies]
+v4l = "0.14.0"
 
 [build-dependencies]
 prost-build = "0.11.9"

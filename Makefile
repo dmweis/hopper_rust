@@ -36,6 +36,12 @@ install-dependencies:
 	sudo apt update && sudo apt install libasound2-dev libudev-dev liblzma-dev libclang-dev protobuf-compiler -y
 	cargo install cargo-deb
 
+# Build dependencies for local development on macOS.
+# The camera (v4l) is Linux-only and is compiled out on macOS, so only protobuf is required.
+.PHONY: install-dependencies-macos
+install-dependencies-macos:
+	brew install protobuf
+
 .PHONY: build-docker
 build-docker:
 	rm -rf docker_out

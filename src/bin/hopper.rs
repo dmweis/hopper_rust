@@ -2,7 +2,6 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use hopper_rust::{
     body_controller::{self, BodyController},
-    camera::start_camera,
     configuration::get_configuration,
     error::HopperError,
     high_five::HighFiveDetector,
@@ -26,6 +25,8 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+#[cfg(target_os = "linux")]
+use hopper_rust::camera::start_camera;
 use tracing::*;
 use zenoh::prelude::r#async::*;
 
@@ -155,6 +156,7 @@ async fn main() -> Result<()> {
     let dance_service = motion_controller.create_dance_service();
     ioc_container.register(dance_service);
 
+    #[cfg(target_os = "linux")]
     start_camera(zenoh_session.clone(), &app_config.camera).await?;
 
     let open_ai_service = start_openai_controller(
