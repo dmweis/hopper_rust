@@ -1,6 +1,6 @@
 use super::speech_service::Playable;
 use crate::error::{HopperError, HopperResult};
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 
@@ -46,7 +46,7 @@ impl AudioRepository {
                 })
                 .map(|file_entry| file_entry.path())
                 .collect();
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
 
             files
                 .choose(&mut rng)
@@ -71,7 +71,7 @@ impl AudioRepository {
             .filter(|path| !path.to_string_lossy().contains("astromech"))
             .collect::<Vec<_>>();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         files.choose(&mut rng).and_then(|path| {
             if let Ok(file) = File::open(path) {

@@ -3,8 +3,8 @@ use crate::face::FaceController;
 use crate::zenoh_remotes::topic_consts::{
     FACE_ANIMATION_SUBSCRIBER, FACE_COLOR_SUBSCRIBER, FACE_RANDOM_SUBSCRIBER,
 };
-use rand::seq::SliceRandom;
-use rand::Rng;
+use rand::seq::IndexedRandom;
+use rand::RngExt;
 use std::sync::Arc;
 use tokio::select;
 use tracing::*;
@@ -101,10 +101,10 @@ fn set_animation(
 }
 
 fn random_face(face_controller: &Arc<FaceController>) -> HopperResult<()> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let random_color = crate::face::driver::ALL_COLORS.choose(&mut rng).unwrap();
 
-    let choice: u8 = rng.gen_range(0..8);
+    let choice: u8 = rng.random_range(0..8);
 
     match choice {
         0 => face_controller.larson_scanner(*random_color)?,

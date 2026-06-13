@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::{rng, RngExt};
 
 use super::driver::{
     ColorPacket, ALL_COLORS, BIGGER_RING_PIXEL_COUNT, BLUE, BRIGHT_COLORS, GREEN, NORMAL_COLORS,
@@ -290,8 +290,8 @@ impl Iterator for SpeakingAnimationRandom {
         const SMALLER_LEFT_SIDE: i32 = 31;
         const SMALLER_RIGHT_SIDE: i32 = 39;
 
-        let mut rng = thread_rng();
-        let distance_steps: i32 = rng.gen_range(1..=3);
+        let mut rng = rng();
+        let distance_steps: i32 = rng.random_range(1..=3);
 
         let mut frame = ColorPacket::off();
 

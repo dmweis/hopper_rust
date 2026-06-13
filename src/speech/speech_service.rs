@@ -39,7 +39,8 @@ fn hash_azure_tts(
     // TODO: hash the type not the json
     hasher.update(serde_json::to_string(&voice.gender).unwrap());
     let hashed = hasher.finalize();
-    format!("{}-{:x}", voice.name, hashed)
+    let hashed = hashed.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+    format!("{}-{}", voice.name, hashed)
 }
 
 fn hash_eleven_labs_tts(text: &str, voice_id: &str) -> String {
@@ -48,7 +49,8 @@ fn hash_eleven_labs_tts(text: &str, voice_id: &str) -> String {
     hasher.update(voice_id);
     hasher.update(AZURE_FORMAT_VERSION.to_be_bytes());
     let hashed = hasher.finalize();
-    format!("eleven-{:x}", hashed)
+    let hashed = hashed.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+    format!("eleven-{}", hashed)
 }
 
 enum AudioPlayerCommand {
@@ -63,7 +65,11 @@ enum AudioPlayerCommand {
 /// Select the first audio output device that contains "CARD=Device" in its name
 /// This is a hack to select the USB audio device on the raspberry pi
 /// Based on https://github.com/RustAudio/rodio/blob/4973f330e07be8480c35f145c9da84dc60e2184c/src/stream.rs#L57
-fn select_output_device() -> anyhow::Result<(rodio::OutputStream, rodio::OutputStreamHandle)> {
+// `DeviceTrait::name` is deprecated in favour of `description()`, but the USB-audio
+// selection on the Pi matches against the exact ALSA device name ("CARD=Device"),
+// so we keep using `name()` to preserve that behaviour.
+#[allow(deprecated)]
+fn select_output_device() -> anyhow::Result<rodio::MixerDeviceSink> {
     let host_ids = rodio::cpal::available_hosts();
     for host_id in host_ids {
         let host = rodio::cpal::host_from_id(host_id).unwrap();
@@ -72,19 +78,13 @@ fn select_output_device() -> anyhow::Result<(rodio::OutputStream, rodio::OutputS
         for device in output_devices {
             let device_name = device.name().unwrap_or_default();
             if device_name.contains("CARD=Device") {
-                let default_stream = rodio::OutputStream::try_from_device(&device);
-
-                return Ok(default_stream.or_else(|original_err| {
-                    // default device didn't work, try other ones
-                    let mut devices = match rodio::cpal::default_host().output_devices() {
-                        Ok(d) => d,
-                        Err(_) => return Err(original_err),
-                    };
-
-                    devices
-                        .find_map(|d| rodio::OutputStream::try_from_device(&d).ok())
-                        .ok_or(original_err)
-                })?);
+                if let Ok(sink) =
+                    rodio::DeviceSinkBuilder::from_device(device).and_then(|b| b.open_stream())
+                {
+                    return Ok(sink);
+                }
+                // matched device failed to open, fall back to the default device
+                return Ok(rodio::DeviceSinkBuilder::open_default_sink()?);
             }
         }
     }
@@ -96,11 +96,10 @@ fn audio_player_loop(receiver: &mut Receiver<AudioPlayerCommand>) -> HopperResul
     // let (_output_stream, output_stream_handle) = rodio::OutputStream::try_default()
     //     .map_err(|_| HopperError::FailedToCreateAudioOutputStream)?;
 
-    let (_output_stream, output_stream_handle) =
+    let device_sink =
         select_output_device().map_err(|_| HopperError::FailedToCreateAudioOutputStream)?;
 
-    let sink = rodio::Sink::try_new(&output_stream_handle)
-        .map_err(|_| HopperError::FailedToCreateAudioSink)?;
+    let sink = rodio::Player::connect_new(device_sink.mixer());
     while let Some(command) = receiver.blocking_recv() {
         match command {
             AudioPlayerCommand::Play(sound) => {

@@ -49,19 +49,19 @@ visualizer = ["kiss3d", "gilrs"]
 
 # Utilities
 anyhow = "1.0"
-bitflags = "2.3.3"
-bytes = "1.4"
+bitflags = "2.13"
+bytes = "1.11"
 chrono = {version = "0.4", features = ["serde"]}
 clap = {version = "4", features = ["derive"]}
-config = "0.13.2"
-ctrlc = "3.1"
-lazy_static = "1.4"
-rand = "0.8"
-reqwest = {version = "0.11", features = ["json"]}
-sha2 = "0.10"
+config = "0.15"
+ctrlc = "3.5"
+lazy_static = "1.5"
+rand = "0.10"
+reqwest = {version = "0.13", features = ["json"]}
+sha2 = "0.11"
 tempdir = "0.3.7"
-thiserror = "1.0"
-walkdir = "2.3.3"
+thiserror = "2.0"
+walkdir = "2.5"
 
 # async
 async-trait = "0.1"
@@ -83,13 +83,13 @@ tracing-subscriber = {version = "0.3", features = [
 ]}
 
 # serialization
-base64 = "0.21.0"
-cobs-rs = "1.1.1"
-schemars = "0.8.12"
+base64 = "0.22"
+cobs-rs = "1.1.2"
+schemars = "1.2"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 serde_yaml = "0.9.25"
-toml = "0.7.6"
+toml = "1.1"
 
 # other projects
 azure_tts = {git = "https://github.com/dmweis/azure_tts", branch = "main", optional = true}
@@ -103,15 +103,16 @@ rplidar_driver = {git = "https://github.com/dmweis/rplidar_driver", branch = "ma
 async-openai = {version = "0.18.3"}
 # async-openai = {git = "https://github.com/dmweis/async-openai", branch = "main"}
 
-serialport = {version = "4.0.1", default-features = false}
+serialport = {version = "4.9", default-features = false}
 
-gilrs = {version = "0.10", optional = true, features = ["serde-serialize"]}
+gilrs = {version = "0.11", optional = true, features = ["serde-serialize"]}
+# kiss3d 0.35 pins nalgebra 0.30 and shares its types; both held back together.
 kiss3d = {optional = true, version = "0.35"}
 last-message-channel = {branch = "main", git = "https://github.com/dmweis/last-message-channel"}
 mint = "0.5"
 nalgebra = {version = "0.30", features = ["serde-serialize"]}
 
-rodio = {version = "0.17", optional = true}
+rodio = {version = "0.22", optional = true}
 # fix weird bug with mp3 not playing from start
 # rodio = {git = "https://github.com/RustAudio/rodio", rev = "55d957f8b40c59fccea4162c4b03f6dd87a7a4d9", optional = true}
 
@@ -120,13 +121,13 @@ zenoh = "0.11.0"
 zenoh-config = "0.11.0"
 
 # protobuf
-once_cell = "1.17.0"
+once_cell = "1.21"
 prost = "0.11.9"
 prost-reflect = {version = "0.11.4", features = ["derive", "serde"]}
 prost-types = "0.11.9"
 
 futures-util = "^0.3.30"
-tokio-tungstenite = {version = "0.21", features = ["native-tls"]}
+tokio-tungstenite = {version = "0.29", features = ["native-tls"]}
 
 # Video4Linux is Linux-only (the target device is a Raspberry Pi).
 # Gated by target so the rest of the project still builds on macOS/dev machines.

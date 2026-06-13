@@ -1,5 +1,8 @@
 use nalgebra::{Point3, UnitQuaternion, Vector3};
-use rand::{seq::SliceRandom, Rng};
+use rand::{
+    seq::{IndexedRandom, SliceRandom},
+    RngExt,
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -87,7 +90,7 @@ const SQUIRM_SPEED: f32 = 0.008;
 ///
 /// Each leg gets a small random transformation
 fn random_squirm_pose(base: &LegPositions) -> LegPositions {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut legs = [
         LegFlags::LEFT_FRONT,
         LegFlags::LEFT_MIDDLE,
@@ -100,24 +103,24 @@ fn random_squirm_pose(base: &LegPositions) -> LegPositions {
     base.transform_selected_legs(
         Vector3::zeros(),
         UnitQuaternion::from_euler_angles(
-            rng.gen_range(-5.0_f32..5.0).to_radians(),
+            rng.random_range(-5.0_f32..5.0).to_radians(),
             0.0,
-            rng.gen_range(-10.0_f32..5.0).to_radians(),
+            rng.random_range(-10.0_f32..5.0).to_radians(),
         ),
         legs[0],
     )
     .transform_selected_legs(
-        Vector3::new(0.0, rng.gen_range(-0.02..0.02), 0.0),
+        Vector3::new(0.0, rng.random_range(-0.02..0.02), 0.0),
         UnitQuaternion::identity(),
         legs[1],
     )
     .transform_selected_legs(
-        Vector3::new(0.0, 0.0, rng.gen_range(-0.03..0.02)),
+        Vector3::new(0.0, 0.0, rng.random_range(-0.03..0.02)),
         UnitQuaternion::identity(),
         legs[2],
     )
     .transform_selected_legs(
-        Vector3::new(rng.gen_range(-0.02..0.02), 0.0, 0.0),
+        Vector3::new(rng.random_range(-0.02..0.02), 0.0, 0.0),
         UnitQuaternion::identity(),
         legs[3],
     )
@@ -125,13 +128,13 @@ fn random_squirm_pose(base: &LegPositions) -> LegPositions {
         Vector3::zeros(),
         UnitQuaternion::from_euler_angles(
             0.0,
-            rng.gen_range(-10.0_f32..10.0).to_radians(),
-            rng.gen_range(-10.0_f32..5.0).to_radians(),
+            rng.random_range(-10.0_f32..10.0).to_radians(),
+            rng.random_range(-10.0_f32..5.0).to_radians(),
         ),
         legs[4],
     )
     .transform_selected_legs(
-        Vector3::new(0.0, 0.0, rng.gen_range(-0.03..0.02)),
+        Vector3::new(0.0, 0.0, rng.random_range(-0.03..0.02)),
         UnitQuaternion::identity(),
         legs[5],
     )
@@ -157,7 +160,7 @@ impl<'a> Choreographer<'a> {
                 DanceMove::Roar,
                 DanceMove::CombatCry,
             ];
-            let dance = *moves.choose(&mut rand::thread_rng()).unwrap();
+            let dance = *moves.choose(&mut rand::rng()).unwrap();
             info!("Executing random dance move: {:?}", dance);
             dance
         } else {
@@ -229,8 +232,8 @@ impl<'a> Choreographer<'a> {
         const WAVE_SPEED: f32 = 0.005;
 
         let count = {
-            let mut rng = rand::thread_rng();
-            rng.gen_range(3..6)
+            let mut rng = rand::rng();
+            rng.random_range(3..6)
         };
 
         for _ in 0..2 {
@@ -301,8 +304,8 @@ impl<'a> Choreographer<'a> {
 
         // wait
         let count = {
-            let mut rng = rand::thread_rng();
-            rng.gen_range(5..8) * 10
+            let mut rng = rand::rng();
+            rng.random_range(5..8) * 10
         };
 
         tokio::time::sleep(Duration::from_millis(
@@ -338,8 +341,8 @@ impl<'a> Choreographer<'a> {
             UnitQuaternion::from_euler_angles(0.02, 0.0, 0.0),
         );
         let count = {
-            let mut rng = rand::thread_rng();
-            rng.gen_range(3..6)
+            let mut rng = rand::rng();
+            rng.random_range(3..6)
         };
         for step in self
             .starting_pose
@@ -474,8 +477,8 @@ impl<'a> Choreographer<'a> {
         }
 
         let count = {
-            let mut rng = rand::thread_rng();
-            rng.gen_range(4..7)
+            let mut rng = rand::rng();
+            rng.random_range(4..7)
         };
 
         for step in lifted_front.to_move_towards_iter(&lifted_left, FAST_SPEED) {
@@ -539,8 +542,8 @@ impl<'a> Choreographer<'a> {
         poses.extend(self.starting_pose.to_move_towards_iter(&lifted, SPEED));
 
         let count = {
-            let mut rng = rand::thread_rng();
-            rng.gen_range(3..5)
+            let mut rng = rand::rng();
+            rng.random_range(3..5)
         };
         for _ in 0..count {
             poses.extend(lifted.to_move_towards_iter(&paw_lifted, SPEED));
@@ -564,8 +567,8 @@ impl<'a> Choreographer<'a> {
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
         let count = {
-            let mut rng = rand::thread_rng();
-            rng.gen_range(4..7)
+            let mut rng = rand::rng();
+            rng.random_range(4..7)
         };
 
         let mut current_pose = self.starting_pose;

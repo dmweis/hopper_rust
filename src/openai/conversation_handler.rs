@@ -13,7 +13,7 @@ use async_openai::{
 };
 use async_trait::async_trait;
 use futures::StreamExt;
-use schemars::{gen::SchemaSettings, JsonSchema};
+use schemars::{generate::SchemaSettings, JsonSchema};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tracing::{info, instrument};
@@ -31,7 +31,7 @@ pub struct OpenAiHistory {
     timestamp: chrono::DateTime<chrono::Utc>,
 }
 
-fn get_schema_generator() -> schemars::gen::SchemaGenerator {
+fn get_schema_generator() -> schemars::SchemaGenerator {
     let settings = SchemaSettings::draft07().with(|s| {
         s.inline_subschemas = true;
         s.meta_schema = None;
@@ -40,10 +40,14 @@ fn get_schema_generator() -> schemars::gen::SchemaGenerator {
 }
 
 pub fn json_schema_for_func_args<T: ?Sized + JsonSchema>() -> serde_json::Value {
-    let mut schema = get_schema_generator().into_root_schema_for::<T>();
+    let schema = get_schema_generator().root_schema_for::<T>();
+    let mut value =
+        serde_json::to_value(&schema).expect("Failed to serialize schema to json value");
     // remove title from schema
-    schema.schema.metadata().title = None;
-    serde_json::to_value(&schema).expect("Failed to serialize schema to json value")
+    if let Some(object) = value.as_object_mut() {
+        object.remove("title");
+    }
+    value
 }
 
 pub enum OpenAiApiResponse {
