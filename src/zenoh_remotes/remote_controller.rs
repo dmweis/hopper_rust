@@ -191,6 +191,8 @@ async fn handle_stance_command(
         controller.start_sequence(motion_controller::DanceMove::SadEmote);
     } else if &command.to_lowercase() == "combat_cry" {
         controller.start_sequence(motion_controller::DanceMove::CombatCry);
+    } else if &command.to_lowercase() == "panic" {
+        controller.start_sequence(motion_controller::DanceMove::PanicSquirm);
     } else {
         error!("Unknown command {}", command);
     }

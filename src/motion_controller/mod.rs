@@ -14,6 +14,7 @@ use crate::ik_controller::{
     leg_positions::{LegPositions, MoveTowards},
     IkControllable,
 };
+use crate::imu::OrientationStatus;
 use crate::ioc_container::IocContainer;
 use crate::speech::SpeechService;
 use crate::utilities::{MpscChannelHelper, RateTracker};
@@ -56,6 +57,7 @@ impl MotionController {
         ik_controller: Box<dyn IkControllable>,
         control_loop_rate_tracker: RateTracker,
         high_five_receiver: Receiver<HighFiveCommand>,
+        orientation_status: OrientationStatus,
     ) -> HopperResult<Self> {
         let (command_sender, receiver) = last_message_channel::latest_message_channel();
         let command = MotionControllerCommand::default();
@@ -68,6 +70,7 @@ impl MotionController {
             blocking_command_receiver,
             control_loop_rate_tracker,
             high_five_receiver,
+            orientation_status,
         )
         .await?;
 
@@ -216,6 +219,8 @@ const NON_WALK_STEP_HEIGHT: f32 = 0.03;
 const GROUNDED_STEP_HEIGHT: f32 = -0.0;
 const VOLTAGE_READ_PERIOD: Duration = Duration::from_millis(1000);
 const HARDWARE_ERROR_SOUND_TIMEOUT: Duration = Duration::from_secs(30);
+const ABDUCTION_SPEECH_TIMEOUT: Duration = Duration::from_secs(25);
+const ABDUCTION_SOUND: &str = "hopper_sounds/take_your_paws.wav";
 // const MOVE_DURATION: Duration = Duration::from_millis(400);
 // TODO(David): this results in smoother motion
 // Step time should probably be a function of time?
@@ -240,6 +245,8 @@ struct MotionControllerLoop {
     was_single_leg_mode: bool,
     high_five_receiver: Receiver<HighFiveCommand>,
     last_hardware_error_sound_player: Instant,
+    orientation_status: OrientationStatus,
+    last_abduction_speech: Option<Instant>,
 }
 
 impl MotionControllerLoop {
@@ -249,6 +256,7 @@ impl MotionControllerLoop {
         blocking_command_receiver: mpsc::Receiver<BlockingCommand>,
         control_loop_rate_tracker: RateTracker,
         high_five_receiver: Receiver<HighFiveCommand>,
+        orientation_status: OrientationStatus,
     ) -> HopperResult<Self> {
         let last_written_pose = ik_controller.read_leg_positions().await?;
         Ok(Self {
@@ -270,6 +278,8 @@ impl MotionControllerLoop {
             was_single_leg_mode: false,
             high_five_receiver,
             last_hardware_error_sound_player: Instant::now(),
+            orientation_status,
+            last_abduction_speech: None,
         })
     }
 
@@ -629,6 +639,15 @@ impl MotionControllerLoop {
                 }
             }
 
+            // panic if we are held upside down
+            // folded is excluded so that hopper can be carried while folded
+            if self.orientation_status.is_upside_down()
+                && self.current_body_state != BodyState::Folded
+            {
+                self.handle_abduction_panic().await?;
+                continue;
+            }
+
             // measure voltage only if not walking
             if !self.command.move_command.should_move()
                 && self.last_voltage_read.elapsed() > VOLTAGE_READ_PERIOD
@@ -743,6 +762,43 @@ impl MotionControllerLoop {
             if let Some(report) = self.control_loop_rate_tracker.report().await? {
                 debug!(?report, "motor move rate");
             }
+        }
+        Ok(())
+    }
+
+    /// Squirm in panic until righted again
+    ///
+    /// Triggered when the IMU reports that the robot is held upside down
+    async fn handle_abduction_panic(&mut self) -> HopperResult<()> {
+        warn!("Hopper held upside down. Panicking");
+        self.play_abduction_sound().await?;
+        self.read_current_pose().await?;
+        let relaxed = *stance::relaxed_stance();
+        self.transition_direct(&[&self.last_written_pose.clone(), &relaxed], 0.005)
+            .await?;
+        let orientation_status = self.orientation_status.clone();
+        Choreographer::new(&mut self.ik_controller, relaxed)?
+            .panic_squirm_while_upside_down(&orientation_status)
+            .await?;
+        self.last_written_pose = relaxed;
+        // legs end up at standing height so the robot will be
+        // standing when it's put back down
+        self.current_body_state = BodyState::Standing;
+        info!("Hopper righted again. Calming down");
+        Ok(())
+    }
+
+    async fn play_abduction_sound(&mut self) -> HopperResult<()> {
+        let should_play = self
+            .last_abduction_speech
+            .map(|last| last.elapsed() > ABDUCTION_SPEECH_TIMEOUT)
+            .unwrap_or(true);
+        if should_play {
+            self.last_abduction_speech = Some(Instant::now());
+            IocContainer::global_instance()
+                .service::<SpeechService>()?
+                .play_sound(ABDUCTION_SOUND)
+                .await?;
         }
         Ok(())
     }

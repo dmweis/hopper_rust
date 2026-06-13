@@ -6,6 +6,7 @@ use hopper_rust::{
     error::HopperError,
     high_five::HighFiveDetector,
     hopper_body_config, ik_controller,
+    imu::{start_imu_driver, OrientationStatus},
     ioc_container::IocContainer,
     lidar::start_lidar_driver,
     logging,
@@ -87,6 +88,13 @@ async fn main() -> Result<()> {
 
     start_monitoring_loop(zenoh_session.clone()).await?;
 
+    let orientation_status = if let Some(imu_config) = &app_config.imu {
+        start_imu_driver(imu_config, zenoh_session.clone()).await?
+    } else {
+        info!("No IMU configured");
+        OrientationStatus::default()
+    };
+
     let speech_service = SpeechService::new(
         app_config.tts_service_config.azure_api_key,
         app_config.tts_service_config.eleven_labs_api_key,
@@ -150,6 +158,7 @@ async fn main() -> Result<()> {
         ik_controller,
         motion_controller_rate_reporter,
         high_five_receiver,
+        orientation_status,
     )
     .await?;
 

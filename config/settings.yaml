@@ -6,6 +6,12 @@ tts_service_config:
   eleven_labs_api_key: ""
   cache_dir_path: "/var/cache/hopper/audio_cache"
   audio_repository_path: "/etc/hopper/audio/"
+imu:
+  serial_port: "/dev/hopper_imu"
+  up_axis: [0.0, 0.0, 1.0]
+  upside_down_angle_degrees: 125.0
+  righted_angle_degrees: 100.0
+  status_topic: "hopper/status/imu"
 lidar:
   serial_port: "/dev/rplidar"
   state_topic: "hopper/lidar/state"

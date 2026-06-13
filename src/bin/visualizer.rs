@@ -81,6 +81,7 @@ async fn main() -> Result<()> {
         Box::new(visualizer),
         motion_controller_rate_reporter,
         rx,
+        hopper_rust::imu::OrientationStatus::default(),
     )
     .await?;
 

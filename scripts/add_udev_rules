@@ -17,6 +17,11 @@ KERNEL=="ttyACM*", ATTRS{idVendor}=="16d0", ATTRS{idProduct}=="06a7", MODE:="077
 # sensors
 KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", KERNELS=="1-1.2", MODE:="0777", SYMLINK+="hopper_face"
 KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", KERNELS=="1-1.3.4", MODE:="0777", SYMLINK+="hopper_feet"
+# imu arduino
+# if the imu uses the same CH340 serial chip as the face and feet
+# disambiguate by USB port path with KERNELS like above
+# find values with: udevadm info --name=/dev/ttyUSB0 --attribute-walk
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", KERNELS=="1-1.3.3", MODE:="0777", SYMLINK+="hopper_imu"
 
 # other devices
 KERNEL=="ttyUSB[0-9]*",MODE="0666"

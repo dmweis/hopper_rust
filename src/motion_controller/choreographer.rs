@@ -12,6 +12,7 @@ use crate::{
         leg_positions::{LegPositions, MoveTowards},
         IkControllable,
     },
+    imu::OrientationStatus,
     ioc_container::IocContainer,
     speech::SpeechService,
 };
@@ -33,6 +34,8 @@ pub enum DanceMove {
     /// Lift front legs and roar threateningly
     Roar,
     CombatCry,
+    /// Squirm legs around in panic like when picked up
+    PanicSquirm,
     /// lift one leg as a demonstration
     LiftLeg {
         leg: LiftedLeg,
@@ -78,6 +81,61 @@ pub struct Choreographer<'a> {
 }
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 50);
+const SQUIRM_SPEED: f32 = 0.008;
+
+/// Generate a random squirming pose based on the given pose
+///
+/// Each leg gets a small random transformation
+fn random_squirm_pose(base: &LegPositions) -> LegPositions {
+    let mut rng = rand::thread_rng();
+    let mut legs = [
+        LegFlags::LEFT_FRONT,
+        LegFlags::LEFT_MIDDLE,
+        LegFlags::LEFT_REAR,
+        LegFlags::RIGHT_FRONT,
+        LegFlags::RIGHT_MIDDLE,
+        LegFlags::RIGHT_REAR,
+    ];
+    legs.shuffle(&mut rng);
+    base.transform_selected_legs(
+        Vector3::zeros(),
+        UnitQuaternion::from_euler_angles(
+            rng.gen_range(-5.0_f32..5.0).to_radians(),
+            0.0,
+            rng.gen_range(-10.0_f32..5.0).to_radians(),
+        ),
+        legs[0],
+    )
+    .transform_selected_legs(
+        Vector3::new(0.0, rng.gen_range(-0.02..0.02), 0.0),
+        UnitQuaternion::identity(),
+        legs[1],
+    )
+    .transform_selected_legs(
+        Vector3::new(0.0, 0.0, rng.gen_range(-0.03..0.02)),
+        UnitQuaternion::identity(),
+        legs[2],
+    )
+    .transform_selected_legs(
+        Vector3::new(rng.gen_range(-0.02..0.02), 0.0, 0.0),
+        UnitQuaternion::identity(),
+        legs[3],
+    )
+    .transform_selected_legs(
+        Vector3::zeros(),
+        UnitQuaternion::from_euler_angles(
+            0.0,
+            rng.gen_range(-10.0_f32..10.0).to_radians(),
+            rng.gen_range(-10.0_f32..5.0).to_radians(),
+        ),
+        legs[4],
+    )
+    .transform_selected_legs(
+        Vector3::new(0.0, 0.0, rng.gen_range(-0.03..0.02)),
+        UnitQuaternion::identity(),
+        legs[5],
+    )
+}
 
 impl<'a> Choreographer<'a> {
     pub fn new(
@@ -113,6 +171,7 @@ impl<'a> Choreographer<'a> {
             DanceMove::HappyDance => self.happy_dance().await?,
             DanceMove::Roar => self.roar().await?,
             DanceMove::CombatCry => self.combat_cry().await?,
+            DanceMove::PanicSquirm => self.panic_squirm().await?,
             DanceMove::LiftLeg { leg, time } => self.lift_leg(leg, time).await?,
         }
         Ok(())
@@ -492,6 +551,62 @@ impl<'a> Choreographer<'a> {
         poses.extend(lifted.to_move_towards_iter(&self.starting_pose, SPEED));
 
         for step in poses {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        Ok(())
+    }
+
+    /// Squirm legs randomly for a fixed number of poses
+    async fn panic_squirm(&mut self) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        let count = {
+            let mut rng = rand::thread_rng();
+            rng.gen_range(4..7)
+        };
+
+        let mut current_pose = self.starting_pose;
+        for _ in 0..count {
+            let target_pose = random_squirm_pose(&self.starting_pose);
+            for step in current_pose.to_move_towards_iter(&target_pose, SQUIRM_SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+            current_pose = target_pose;
+        }
+
+        for step in current_pose.to_move_towards_iter(&self.starting_pose, SQUIRM_SPEED) {
+            self.ik_controller.move_to_positions(&step).await?;
+            interval.tick().await;
+        }
+
+        Ok(())
+    }
+
+    /// Squirm legs randomly for as long as the robot is held upside down
+    ///
+    /// Settles back to the starting pose once righted
+    pub async fn panic_squirm_while_upside_down(
+        &mut self,
+        orientation: &OrientationStatus,
+    ) -> HopperResult<()> {
+        let mut interval = tokio::time::interval(TICK_DURATION);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        let mut current_pose = self.starting_pose;
+        while orientation.is_upside_down() {
+            let target_pose = random_squirm_pose(&self.starting_pose);
+            for step in current_pose.to_move_towards_iter(&target_pose, SQUIRM_SPEED) {
+                self.ik_controller.move_to_positions(&step).await?;
+                interval.tick().await;
+            }
+            current_pose = target_pose;
+        }
+
+        for step in current_pose.to_move_towards_iter(&self.starting_pose, SQUIRM_SPEED) {
             self.ik_controller.move_to_positions(&step).await?;
             interval.tick().await;
         }

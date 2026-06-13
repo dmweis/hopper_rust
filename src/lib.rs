@@ -11,6 +11,7 @@ mod hexapod;
 pub mod high_five;
 pub mod hopper_body_config;
 pub mod ik_controller;
+pub mod imu;
 pub mod ioc_container;
 pub mod lidar;
 pub mod logging;

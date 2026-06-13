@@ -38,6 +38,7 @@ pub struct HopperConfig {
     pub zenoh: HopperZenohConfig,
     pub camera: CameraConfig,
     pub openai: HopperOpenAiConfig,
+    pub imu: Option<ImuConfig>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -64,6 +65,38 @@ pub struct HopperOpenAiConfig {
     pub api_key: String,
     #[serde(default = "default_wakeword_topic_prefix")]
     pub wakeword_topic_prefix: String,
+}
+
+fn default_imu_up_axis() -> [f32; 3] {
+    [0.0, 0.0, 1.0]
+}
+
+fn default_upside_down_angle_degrees() -> f32 {
+    125.0
+}
+
+fn default_righted_angle_degrees() -> f32 {
+    100.0
+}
+
+fn default_imu_status_topic() -> String {
+    "hopper/status/imu".to_string()
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct ImuConfig {
+    pub serial_port: String,
+    /// unit vector pointing up in the IMU frame when the robot is upright
+    #[serde(default = "default_imu_up_axis")]
+    pub up_axis: [f32; 3],
+    /// tilt angle in degrees past which the robot counts as upside down
+    #[serde(default = "default_upside_down_angle_degrees")]
+    pub upside_down_angle_degrees: f32,
+    /// tilt angle in degrees under which the robot counts as righted again
+    #[serde(default = "default_righted_angle_degrees")]
+    pub righted_angle_degrees: f32,
+    #[serde(default = "default_imu_status_topic")]
+    pub status_topic: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
